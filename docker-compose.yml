@@ -1,22 +1,44 @@
-version: '3.8'
-
 services:
   api:
     build: .
-    container_name: autohack_backend_api
+    container_name: autoXAK_backend_api
     ports:
       - "8000:8000"
     volumes:
       - .:/app
     environment:
       - PYTHONPATH=/app
+      - DATABASE_URL=postgresql+asyncpg://autohack_user:autohack_pass@postgres:5432/autohack_db
       - REDIS_HOST=redis
       - REDIS_PORT=6379
     depends_on:
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: autoXAK_postgres
+    environment:
+      POSTGRES_USER: autohack_user
+      POSTGRES_PASSWORD: autohack_pass
+      POSTGRES_DB: autohack_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U autohack_user -d autohack_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
 
   redis:
     image: redis:7.2-alpine
-    container_name: autohack_redis
+    container_name: autoXAK_redis
     ports:
       - "6379:6379"
+
+volumes:
+  pgdata:
