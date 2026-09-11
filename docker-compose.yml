@@ -11,6 +11,8 @@ services:
       - DATABASE_URL=postgresql+asyncpg://autohack_user:autohack_pass@postgres:5432/autohack_db
       - REDIS_HOST=redis
       - REDIS_PORT=6379
+      - DGIS_API_KEY=1069d305-b706-4819-840a-b8a191fda6c8
+      - DGIS_USE_MOCK=false
     depends_on:
       postgres:
         condition: service_healthy
@@ -21,15 +23,15 @@ services:
     image: postgres:16-alpine
     container_name: autoXAK_postgres
     environment:
-      POSTGRES_USER: autohack_user
-      POSTGRES_PASSWORD: autohack_pass
-      POSTGRES_DB: autohack_db
+      POSTGRES_USER: autoXAK_user
+      POSTGRES_PASSWORD: autoXAK_pass
+      POSTGRES_DB: autoXAK_db
     ports:
       - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U autohack_user -d autohack_db"]
+      test: ["CMD-SHELL", "pg_isready -U autoXAK_user -d autoXAK_db"]
       interval: 3s
       timeout: 3s
       retries: 5

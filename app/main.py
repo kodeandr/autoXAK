@@ -1,14 +1,16 @@
-from fastapi import FastAPI, HTTPException, Depends, Response
-from fastapi.responses import JSONResponse
+﻿from fastapi import FastAPI, HTTPException, Depends
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from pydantic import BaseModel
+from typing import List, Dict
 import numpy as np
-import json
 import uuid
+import os
 from contextlib import asynccontextmanager
 
 from app.core.database import engine, Base, get_db
-from app.core.redis_client import init_redis, get_redis_client, CacheService
 from app.models.telemetry import TripSessionPayload
 from app.models.results import (
     TripCalculationResult, 
@@ -20,48 +22,93 @@ from app.models.db_models import User, Trip
 from app.core.dsp.filters import SignalFilter
 from app.services.wear_engine import WearEngine
 from app.services.twin_engine import AggressiveTwinEngine
+from app.services.gis_service import GISService
+from app.services.benchmark_engine import BenchmarkEngine, VerificationReport
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    init_redis()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
     yield
 
-class UTF8JSONResponse(JSONResponse):
-    media_type = "application/json; charset=utf-8"
-
 app = FastAPI(
-    title="??????? Telemetry Engine",
-    description="???????? ???????? ??????????, ????????????? ??????? ??????, ??????????????? ? ???????????",
-    version="1.2.0",
-    default_response_class=UTF8JSONResponse,
+    title="autoXAK Telemetry Engine",
+    description="Пайплайн цифровой фильтрации, предиктивного расчета износа, LBS 2GIS и персистентности данных",
+    version="1.4.0",
     lifespan=lifespan
 )
 
 signal_filter = SignalFilter(sample_rate_hz=50.0, cutoff_hz=2.5)
 wear_engine = WearEngine(ambient_temp_c=20.0)
 twin_engine = AggressiveTwinEngine()
+gis_service = GISService()
+benchmark_engine = BenchmarkEngine()
+
+class VerificationPayload(BaseModel):
+    session_id: str
+    user_id: str
+    car_id: str
+    telemetry_stream: List[dict]
+    obd_ground_truth: Dict[str, List[float]]
 
 @app.get("/health")
 def health_check():
     return {
         "status": "healthy",
-        "service": "AutoHACK Wear & Cost Processor",
-        "version": "1.2.0"
+        "service": "autoXAK Wear & Cost Processor",
+        "version": "1.4.0"
     }
+
+@app.get("/")
+async def serve_mobile_app():
+    """Главная страница: веб-клиент мобильного трекера autoXAK"""
+    return FileResponse("static/index.html")
+
+@app.post("/api/v1/analytics/verify-run", response_model=VerificationReport)
+async def verify_experiment_run(payload: VerificationPayload):
+    stream = payload.telemetry_stream
+    if not stream or len(stream) < 50:
+        raise HTTPException(status_code=422, detail="Недостаточный объем телеметрии.")
+
+    raw_ax = [p["ax"] for p in stream]
+    raw_ay = [p["ay"] for p in stream]
+    raw_az = [p["az"] for p in stream]
+    speeds = np.array([p["speed"] for p in stream], dtype=np.float64)
+
+    coords = [{"lat": p.get("lat", 55.7512), "lon": p.get("lon", 37.6184)} for p in stream]
+    road_context = await gis_service.get_route_context(coords)
+
+    filt_x, filt_y, _ = signal_filter.isolate_linear_acceleration(raw_ax, raw_ay, raw_az)
+    horiz_acc = signal_filter.calculate_horizontal_acceleration(filt_x, filt_y)
+
+    wear_stats = wear_engine.compute_oil_wear(
+        speeds_mps=speeds, 
+        horizontal_acc=horiz_acc, 
+        traffic_score=road_context.traffic_score,
+        dt=0.02
+    )
+
+    obd = payload.obd_ground_truth
+    report = benchmark_engine.evaluate_experiment(
+        autoxak_engine_hours=wear_stats["equivalent_engine_hours"],
+        obd_rpm=obd["engine_rpm"],
+        obd_load=obd["engine_load"],
+        obd_temp=obd["oil_temperature"],
+        user_savings=[6.67, 8.20, 5.40, 7.80, 9.10],
+        dt=0.02
+    )
+    return report
 
 @app.post("/api/v1/telemetry/session", response_model=TripCalculationResult)
 async def process_telemetry_session(
     payload: TripSessionPayload, 
-    db: AsyncSession = Depends(get_db),
-    redis = Depends(get_redis_client)
+    db: AsyncSession = Depends(get_db)
 ):
     stream = payload.telemetry_stream
     if not stream or len(stream) < 50:
         raise HTTPException(
             status_code=422, 
-            detail="???????????? ????? ?????????? ??? ????????? (??????? 1 ??????? / 50 ?????)."
+            detail="Недостаточно точек телеметрии для валидации (минимум 1 секунда / 50 точек)."
         )
 
     raw_ax = [p.ax for p in stream]
@@ -69,10 +116,18 @@ async def process_telemetry_session(
     raw_az = [p.az for p in stream]
     speeds = np.array([p.speed for p in stream], dtype=np.float64)
 
+    coords = [{"lat": p.lat, "lon": p.lon} for p in stream if p.lat and p.lon]
+    road_context = await gis_service.get_route_context(coords)
+
     filt_x, filt_y, _ = signal_filter.isolate_linear_acceleration(raw_ax, raw_ay, raw_az)
     horiz_acc = signal_filter.calculate_horizontal_acceleration(filt_x, filt_y)
 
-    wear_stats = wear_engine.compute_oil_wear(speeds_mps=speeds, horizontal_acc=horiz_acc, dt=0.02)
+    wear_stats = wear_engine.compute_oil_wear(
+        speeds_mps=speeds, 
+        horizontal_acc=horiz_acc, 
+        traffic_score=road_context.traffic_score,
+        dt=0.02
+    )
     
     distance_meters = np.sum(speeds * 0.02)
     distance_km = float(distance_meters / 1000.0)
@@ -99,10 +154,16 @@ async def process_telemetry_session(
     user.total_savings_rub += savings["total_savings_rub"]
     user.current_oil_wear_percent = min(100.0, user.current_oil_wear_percent + wear_stats["oil_wear_percent"])
 
-    actual_id = str(uuid.uuid4())
+    trip_stmt = select(Trip).where(Trip.id == payload.session_id)
+    trip_res = await db.execute(trip_stmt)
+    existing_trip = trip_res.scalar_one_or_none()
+
+    effective_session_id = payload.session_id
+    if existing_trip:
+        effective_session_id = str(uuid.uuid4())
 
     new_trip = Trip(
-        id=actual_id,
+        id=effective_session_id,
         user_id=payload.user_id,
         car_id=payload.car_id,
         duration_seconds=round(duration_sec, 2),
@@ -117,10 +178,8 @@ async def process_telemetry_session(
     db.add(new_trip)
     await db.commit()
 
-    await CacheService.invalidate_dashboard(redis, payload.user_id)
-
     return TripCalculationResult(
-        session_id=actual_id,
+        session_id=effective_session_id,
         duration_seconds=round(duration_sec, 2),
         distance_km=round(distance_km, 2),
         oil_wear_percent=wear_stats["oil_wear_percent"],
@@ -129,41 +188,26 @@ async def process_telemetry_session(
     )
 
 @app.get("/api/v1/users/{user_id}/dashboard", response_model=DashboardResponse)
-async def get_user_dashboard(
-    user_id: str, 
-    response: Response,
-    db: AsyncSession = Depends(get_db),
-    redis = Depends(get_redis_client)
-):
-    cached_data = await CacheService.get_dashboard(redis, user_id)
-    if cached_data:
-        response.headers["X-Cache-Status"] = "HIT"
-        return json.loads(cached_data)
-
-    response.headers["X-Cache-Status"] = "MISS"
-
+async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db)):
     stmt = select(User).where(User.id == user_id)
     res = await db.execute(stmt)
     user = res.scalar_one_or_none()
 
     if not user:
-        raise HTTPException(status_code=404, detail="???????????? ?? ??????")
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
 
-    remaining_oil = max(0.0, round(100.0 - user.current_oil_wear_percent, 2))
+    remaining_oil = max(0.0, round(100.0 - user.current_oil_wear_percent, 1))
     cpa_active = remaining_oil <= 10.0
-    cpa_text = "???? ?????? ?????. ?????? 15% ?? Shell Helix ?? ????? ?????? ????" if cpa_active else None
+    cpa_text = "Пора менять масло. Скидка 15% на рекомендованное масло по вашей манере езды" if cpa_active else None
 
-    dashboard = DashboardResponse(
+    return DashboardResponse(
         user_id=user.id,
         month_savings_rub=round(user.total_savings_rub, 2),
         oil_remaining_percent=remaining_oil,
-        ghost_twin_status="?????-??????? (??????? ?????????)",
+        ghost_twin_status="Лихач-новичок (Средняя сложность)",
         cpa_recommended=cpa_active,
         cpa_offer_text=cpa_text
     )
-
-    await CacheService.set_dashboard(redis, user_id, dashboard.model_dump_json(), ttl_sec=60)
-    return dashboard
 
 @app.get("/api/v1/users/{user_id}/trips", response_model=TripHistoryResponse)
 async def get_user_trips(user_id: str, limit: int = 10, db: AsyncSession = Depends(get_db)):

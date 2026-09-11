@@ -1,0 +1,234 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>autoXAK - Мобильный трекер</title>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --accent: #10b981;
+            --blue: #38bdf8;
+            --danger: #ef4444;
+            --text: #f8fafc;
+            --muted: #94a3b8;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+        body { background: var(--bg); color: var(--text); padding: 16px; display: flex; flex-direction: column; min-height: 100vh; }
+        
+        .header { text-align: center; margin-bottom: 20px; padding: 20px; background: rgba(16, 185, 129, 0.1); border-radius: 16px; border: 1px solid rgba(16, 185, 129, 0.2); }
+        .header-title { font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; }
+        .savings-val { font-size: 40px; font-weight: 800; color: var(--accent); margin-top: 4px; }
+        
+        .card { background: var(--card); border-radius: 16px; padding: 18px; margin-bottom: 14px; border: 1px solid #334155; }
+        .card-header { display: flex; justify-content: space-between; font-weight: 600; margin-bottom: 12px; font-size: 15px; }
+        
+        .progress-bar { width: 100%; height: 10px; background: #334155; border-radius: 5px; overflow: hidden; margin-bottom: 8px; }
+        .progress-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #10b981, #38bdf8); transition: width 0.5s; }
+        
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; font-size: 13px; color: var(--muted); }
+        .stat-item b { color: var(--text); display: block; font-size: 16px; margin-top: 2px; }
+
+        .btn-container { margin-top: auto; padding-top: 20px; }
+        .btn { width: 100%; padding: 18px; border-radius: 14px; font-size: 17px; font-weight: 700; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 1px; transition: 0.2s; }
+        .btn-start { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: white; box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4); }
+        .btn-stop { background: linear-gradient(135deg, #dc2626, #b91c1c); color: white; box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4); }
+        .status-badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 12px; font-weight: 600; margin-top: 6px; background: #334155; color: var(--blue); }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <div class="header-title">Виртуальная копилка autoXAK</div>
+        <div class="savings-val" id="totalSavings">0.00 ₽</div>
+        <div id="cpaAlert" style="display:none; margin-top: 8px; font-size: 13px; color: #fbbf24;">⚠️ Пора менять масло (ресурс &le; 10%)</div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <span>Ресурс масла (WearEngine)</span>
+            <span id="oilPercentText">100%</span>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="oilFill"></div>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-item">Сессий записано: <b id="tripCount">0</b></div>
+            <div class="stat-item">Статус двойника: <b>Лихач-новичок</b></div>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <span>Телеметрия смартфона</span>
+            <span class="status-badge" id="sensorStatus">Датчики не активны</span>
+        </div>
+        <div class="stats-grid">
+            <div class="stat-item">Скорость (GPS): <b id="speedVal">0.0 км/ч</b></div>
+            <div class="stat-item">Точек в буфере: <b id="bufferCount">0</b></div>
+            <div class="stat-item">Ускорение X/Y: <b id="accVal">0.0 / 0.0</b></div>
+            <div class="stat-item">Гравитация Z: <b id="gzVal">9.81</b></div>
+        </div>
+    </div>
+
+    <div class="btn-container">
+        <button class="btn btn-start" id="actionBtn" onclick="toggleSession()">Начать поездку</button>
+    </div>
+
+    <script>
+        const USER_ID = "test_user_01";
+        const CAR_ID = "test_car_vag_2.0tsi";
+        let isRecording = false;
+        let telemetryBuffer = [];
+        let gpsWatchId = null;
+        let currentSpeed = 0.0;
+        let currentLat = 55.751244;
+        let currentLon = 37.618423;
+        let latestAx = 0.0, latestAy = 0.0, latestAz = 9.81;
+
+        async function updateDashboard() {
+            try {
+                const res = await fetch(/api/v1/users//dashboard);
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById("totalSavings").innerText = ${data.month_savings_rub.toFixed(2)} ₽;
+                    document.getElementById("oilPercentText").innerText = ${data.oil_remaining_percent}%;
+                    document.getElementById("oilFill").style.width = ${data.oil_remaining_percent}%;
+                    if (data.cpa_recommended) {
+                        document.getElementById("cpaAlert").style.display = "block";
+                        document.getElementById("oilFill").style.background = "#ef4444";
+                    }
+                }
+                const tripsRes = await fetch(/api/v1/users//trips);
+                if (tripsRes.ok) {
+                    const tripsData = await tripsRes.json();
+                    document.getElementById("tripCount").innerText = tripsData.total_trips;
+                }
+            } catch (e) {
+                console.error("Ошибка обновления дашборда:", e);
+            }
+        }
+
+        function handleMotion(event) {
+            if (!isRecording) return;
+            const acc = event.accelerationIncludingGravity || event.acceleration;
+            if (acc) {
+                latestAx = acc.x || 0.0;
+                latestAy = acc.y || 0.0;
+                latestAz = acc.z || 9.81;
+
+                document.getElementById("accVal").innerText = ${latestAx.toFixed(1)} / ;
+                document.getElementById("gzVal").innerText = latestAz.toFixed(2);
+
+                telemetryBuffer.push({
+                    t: Date.now() / 1000.0,
+                    ax: parseFloat(latestAx.toFixed(3)),
+                    ay: parseFloat(latestAy.toFixed(3)),
+                    az: parseFloat(latestAz.toFixed(3)),
+                    gx: 0.0, gy: 0.0, gz: 0.0,
+                    speed: parseFloat(currentSpeed.toFixed(2)),
+                    lat: currentLat,
+                    lon: currentLon
+                });
+
+                document.getElementById("bufferCount").innerText = telemetryBuffer.length;
+            }
+        }
+
+        function toggleSession() {
+            if (!isRecording) {
+                startSession();
+            } else {
+                stopSession();
+            }
+        }
+
+        async function startSession() {
+            if (typeof DeviceMotionEvent !== "undefined" && typeof DeviceMotionEvent.requestPermission === "function") {
+                const permission = await DeviceMotionEvent.requestPermission();
+                if (permission !== "granted") {
+                    alert("Необходимо разрешение на доступ к датчикам движения!");
+                    return;
+                }
+            }
+
+            telemetryBuffer = [];
+            isRecording = true;
+
+            document.getElementById("actionBtn").innerText = "Завершить поездку";
+            document.getElementById("actionBtn").className = "btn btn-stop";
+            document.getElementById("sensorStatus").innerText = "Запись 50 Гц...";
+            document.getElementById("sensorStatus").style.color = "#10b981";
+
+            window.addEventListener("devicemotion", handleMotion, true);
+
+            if ("geolocation" in navigator) {
+                gpsWatchId = navigator.geolocation.watchPosition(
+                    (pos) => {
+                        currentSpeed = pos.coords.speed !== null ? pos.coords.speed : 0.0;
+                        currentLat = pos.coords.latitude;
+                        currentLon = pos.coords.longitude;
+                        document.getElementById("speedVal").innerText = ${(currentSpeed * 3.6).toFixed(1)} км/ч;
+                    },
+                    (err) => console.warn("GPS warning:", err),
+                    { enableHighAccuracy: true, maximumAge: 1000 }
+                );
+            }
+        }
+
+        async function stopSession() {
+            isRecording = false;
+            window.removeEventListener("devicemotion", handleMotion);
+            if (gpsWatchId) navigator.geolocation.clearWatch(gpsWatchId);
+
+            document.getElementById("actionBtn").innerText = "Обработка...";
+            document.getElementById("actionBtn").disabled = true;
+            document.getElementById("sensorStatus").innerText = "Отправка в autoXAK Engine...";
+
+            if (telemetryBuffer.length < 50) {
+                alert("Поездка слишком короткая (нужно хотя бы 2-3 секунды движения).");
+                resetUI();
+                return;
+            }
+
+            const payload = {
+                user_id: USER_ID,
+                car_id: CAR_ID,
+                telemetry_stream: telemetryBuffer
+            };
+
+            try {
+                const res = await fetch("/api/v1/telemetry/session", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    alert(Поездка успешно обработана!\nДистанция:  км\nСэкономлено:  ₽\nИзнос масла: %);
+                    await updateDashboard();
+                } else {
+                    alert("Ошибка обработки сессии бэкендом.");
+                }
+            } catch (e) {
+                alert("Ошибка сети при отправке данных: " + e.message);
+            } finally {
+                resetUI();
+            }
+        }
+
+        function resetUI() {
+            document.getElementById("actionBtn").innerText = "Начать поездку";
+            document.getElementById("actionBtn").className = "btn btn-start";
+            document.getElementById("actionBtn").disabled = false;
+            document.getElementById("sensorStatus").innerText = "Готов к поездке";
+            document.getElementById("sensorStatus").style.color = "#38bdf8";
+            document.getElementById("bufferCount").innerText = "0";
+        }
+
+        window.onload = updateDashboard;
+    </script>
+</body>
+</html>
