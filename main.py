@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from pydantic import BaseModel
 from typing import List, Dict
 from app.services.benchmark_engine import BenchmarkEngine, VerificationReport
+from fastapi.responses import FileResponse
 
 from app.core.database import engine, Base, get_db
 from app.models.telemetry import TripSessionPayload
@@ -20,6 +21,8 @@ from app.core.dsp.filters import SignalFilter
 from app.services.wear_engine import WearEngine
 from app.services.twin_engine import AggressiveTwinEngine
 from app.services.gis_service import GISService
+
+import os
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -236,3 +239,10 @@ async def get_user_trips(user_id: str, limit: int = 10, db: AsyncSession = Depen
         total_trips=len(trip_items),
         trips=trip_items
     )
+    
+@app.get("/", include_in_schema=False)
+async def root():
+    html_path = os.path.join(os.path.dirname(__file__), "..", "static", "index.html")
+    if not os.path.exists(html_path):
+        html_path = "static/index.html"
+    return FileResponse(html_path)

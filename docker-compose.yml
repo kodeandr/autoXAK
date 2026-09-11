@@ -6,13 +6,13 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --ssl-keyfile /app/key.pem --ssl-certfile /app/cert.pem --reload
     environment:
       - PYTHONPATH=/app
       - DATABASE_URL=postgresql+asyncpg://autohack_user:autohack_pass@postgres:5432/autohack_db
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - DGIS_API_KEY=1069d305-b706-4819-840a-b8a191fda6c8
-      - DGIS_USE_MOCK=false
+      - DGIS_USE_MOCK=true
     depends_on:
       postgres:
         condition: service_healthy

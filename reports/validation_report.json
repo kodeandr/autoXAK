@@ -1,0 +1,17 @@
+{
+  "evaluation_status": "SUCCESS",
+  "duration_seconds": 179.9,
+  "total_samples": 8995,
+  "metrics": {
+    "mape_percent": 36.62,
+    "rmse_hours": 0.057196,
+    "pearson_correlation": 0.9886
+  },
+  "hypothesis_target": "MAPE <= 10.0%",
+  "is_hypothesis_confirmed": false,
+  "summary": {
+    "obd_final_hours": 0.16118,
+    "phone_final_hours": 0.05714,
+    "delta_percent": 64.55
+  }
+}
