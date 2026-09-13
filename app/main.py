@@ -1,14 +1,13 @@
-﻿from fastapi import FastAPI, HTTPException, Depends
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
-from pydantic import BaseModel
-from typing import List, Dict
+from sqlalchemy import select, func
 import numpy as np
 import uuid
 import os
 from contextlib import asynccontextmanager
+from pydantic import BaseModel
+from typing import List, Dict
+from fastapi.responses import FileResponse
 
 from app.core.database import engine, Base, get_db
 from app.models.telemetry import TripSessionPayload
@@ -33,16 +32,16 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="autoXAK Telemetry Engine",
-    description="Пайплайн цифровой фильтрации, предиктивного расчета износа, LBS 2GIS и персистентности данных",
-    version="1.4.0",
+    description="???????? ???????? ??????????, ????????????? ??????? ??????, LBS 2GIS ? ??????????????? ??????",
+    version="1.2.0",
     lifespan=lifespan
 )
 
+benchmark_engine = BenchmarkEngine()
 signal_filter = SignalFilter(sample_rate_hz=50.0, cutoff_hz=2.5)
 wear_engine = WearEngine(ambient_temp_c=20.0)
 twin_engine = AggressiveTwinEngine()
 gis_service = GISService()
-benchmark_engine = BenchmarkEngine()
 
 class VerificationPayload(BaseModel):
     session_id: str
@@ -51,31 +50,18 @@ class VerificationPayload(BaseModel):
     telemetry_stream: List[dict]
     obd_ground_truth: Dict[str, List[float]]
 
-@app.get("/health")
-def health_check():
-    return {
-        "status": "healthy",
-        "service": "autoXAK Wear & Cost Processor",
-        "version": "1.4.0"
-    }
-
-@app.get("/")
-async def serve_mobile_app():
-    """Главная страница: веб-клиент мобильного трекера autoXAK"""
-    return FileResponse("static/index.html")
-
 @app.post("/api/v1/analytics/verify-run", response_model=VerificationReport)
 async def verify_experiment_run(payload: VerificationPayload):
     stream = payload.telemetry_stream
     if not stream or len(stream) < 50:
-        raise HTTPException(status_code=422, detail="Недостаточный объем телеметрии.")
+        raise HTTPException(status_code=422, detail="????????????? ????? ??????????.")
 
     raw_ax = [p["ax"] for p in stream]
     raw_ay = [p["ay"] for p in stream]
     raw_az = [p["az"] for p in stream]
     speeds = np.array([p["speed"] for p in stream], dtype=np.float64)
 
-    coords = [{"lat": p.get("lat", 55.7512), "lon": p.get("lon", 37.6184)} for p in stream]
+    coords = [{"lat": p.get("lat", 55.75), "lon": p.get("lon", 37.61)} for p in stream]
     road_context = await gis_service.get_route_context(coords)
 
     filt_x, filt_y, _ = signal_filter.isolate_linear_acceleration(raw_ax, raw_ay, raw_az)
@@ -99,6 +85,14 @@ async def verify_experiment_run(payload: VerificationPayload):
     )
     return report
 
+@app.get("/health")
+def health_check():
+    return {
+        "status": "healthy",
+        "service": "autoXAK Wear & Cost Processor",
+        "version": "1.2.0"
+    }
+
 @app.post("/api/v1/telemetry/session", response_model=TripCalculationResult)
 async def process_telemetry_session(
     payload: TripSessionPayload, 
@@ -108,7 +102,7 @@ async def process_telemetry_session(
     if not stream or len(stream) < 50:
         raise HTTPException(
             status_code=422, 
-            detail="Недостаточно точек телеметрии для валидации (минимум 1 секунда / 50 точек)."
+            detail="???????????? ????? ?????????? ??? ????????? (??????? 1 ??????? / 50 ?????)."
         )
 
     raw_ax = [p.ax for p in stream]
@@ -154,16 +148,10 @@ async def process_telemetry_session(
     user.total_savings_rub += savings["total_savings_rub"]
     user.current_oil_wear_percent = min(100.0, user.current_oil_wear_percent + wear_stats["oil_wear_percent"])
 
-    trip_stmt = select(Trip).where(Trip.id == payload.session_id)
-    trip_res = await db.execute(trip_stmt)
-    existing_trip = trip_res.scalar_one_or_none()
-
-    effective_session_id = payload.session_id
-    if existing_trip:
-        effective_session_id = str(uuid.uuid4())
+    actual_id = str(uuid.uuid4())
 
     new_trip = Trip(
-        id=effective_session_id,
+        id=actual_id,
         user_id=payload.user_id,
         car_id=payload.car_id,
         duration_seconds=round(duration_sec, 2),
@@ -179,7 +167,7 @@ async def process_telemetry_session(
     await db.commit()
 
     return TripCalculationResult(
-        session_id=effective_session_id,
+        session_id=actual_id,
         duration_seconds=round(duration_sec, 2),
         distance_km=round(distance_km, 2),
         oil_wear_percent=wear_stats["oil_wear_percent"],
@@ -194,11 +182,11 @@ async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db)):
     user = res.scalar_one_or_none()
 
     if not user:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
+        raise HTTPException(status_code=404, detail="???????????? ?? ??????")
 
     remaining_oil = max(0.0, round(100.0 - user.current_oil_wear_percent, 1))
     cpa_active = remaining_oil <= 10.0
-    cpa_text = "Пора менять масло. Скидка 15% на рекомендованное масло по вашей манере езды" if cpa_active else None
+    cpa_text = "???? ?????? ?????. ?????? 15% ?? ??????????????? ????? ?? ????? ?????? ????" if cpa_active else None
 
     return DashboardResponse(
         user_id=user.id,
@@ -210,7 +198,10 @@ async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db)):
     )
 
 @app.get("/api/v1/users/{user_id}/trips", response_model=TripHistoryResponse)
-async def get_user_trips(user_id: str, limit: int = 10, db: AsyncSession = Depends(get_db)):
+async def get_user_trips(user_id: str, limit: int = 100, db: AsyncSession = Depends(get_db)):
+    count_stmt = select(func.count(Trip.id)).where(Trip.user_id == user_id)
+    total_count = (await db.execute(count_stmt)).scalar() or 0
+
     stmt = (
         select(Trip)
         .where(Trip.user_id == user_id)
@@ -234,6 +225,13 @@ async def get_user_trips(user_id: str, limit: int = 10, db: AsyncSession = Depen
 
     return TripHistoryResponse(
         user_id=user_id,
-        total_trips=len(trip_items),
+        total_trips=total_count,
         trips=trip_items
     )
+
+@app.get("/", include_in_schema=False)
+async def root():
+    html_path = os.path.join(os.path.dirname(__file__), "..", "static", "index.html")
+    if not os.path.exists(html_path):
+        html_path = "static/index.html"
+    return FileResponse(html_path)

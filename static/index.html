@@ -866,8 +866,9 @@
             document.getElementById('post-trip-modal').style.display = 'flex';
         }
 
-        function closePostTripModal() {
+        async function closePostTripModal() {
             document.getElementById('post-trip-modal').style.display = 'none';
+            await fetchDashboard();
         }
 
         /* Swipe Rail Implementation (iOS Passive Touch Handlers) */

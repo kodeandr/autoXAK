@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, func
 import numpy as np
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
@@ -23,6 +23,7 @@ from app.services.twin_engine import AggressiveTwinEngine
 from app.services.gis_service import GISService
 
 import os
+import uuid
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -164,8 +165,11 @@ async def process_telemetry_session(
     user.total_savings_rub += savings["total_savings_rub"]
     user.current_oil_wear_percent = min(100.0, user.current_oil_wear_percent + wear_stats["oil_wear_percent"])
 
+# Генерируем гарантированно валидный UUID для БД
+    actual_id = str(uuid.uuid4())
+
     new_trip = Trip(
-        id=payload.session_id,
+        id=actual_id,
         user_id=payload.user_id,
         car_id=payload.car_id,
         duration_seconds=round(duration_sec, 2),
@@ -181,7 +185,7 @@ async def process_telemetry_session(
     await db.commit()
 
     return TripCalculationResult(
-        session_id=payload.session_id,
+        session_id=actual_id,
         duration_seconds=round(duration_sec, 2),
         distance_km=round(distance_km, 2),
         oil_wear_percent=wear_stats["oil_wear_percent"],
@@ -211,8 +215,15 @@ async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db)):
         cpa_offer_text=cpa_text
     )
 
+from sqlalchemy import select, func
+
 @app.get("/api/v1/users/{user_id}/trips", response_model=TripHistoryResponse)
-async def get_user_trips(user_id: str, limit: int = 10, db: AsyncSession = Depends(get_db)):
+async def get_user_trips(user_id: str, limit: int = 100, db: AsyncSession = Depends(get_db)):
+    # 1. Считаем реальное общее количество поездок пользователя в БД
+    count_stmt = select(func.count(Trip.id)).where(Trip.user_id == user_id)
+    total_count = (await db.execute(count_stmt)).scalar() or 0
+
+    # 2. Выбираем последние поездки с учетом расширенного лимита
     stmt = (
         select(Trip)
         .where(Trip.user_id == user_id)
@@ -236,7 +247,7 @@ async def get_user_trips(user_id: str, limit: int = 10, db: AsyncSession = Depen
 
     return TripHistoryResponse(
         user_id=user_id,
-        total_trips=len(trip_items),
+        total_trips=total_count,  # Честное суммарное количество из БД
         trips=trip_items
     )
     
