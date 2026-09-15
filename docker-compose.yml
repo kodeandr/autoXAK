@@ -1,4 +1,4 @@
-services:
+﻿services:
   api:
     build: .
     container_name: autoXAK_backend_api
@@ -9,7 +9,7 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --ssl-keyfile /app/key.pem --ssl-certfile /app/cert.pem --reload
     environment:
       - PYTHONPATH=/app
-      - DATABASE_URL=postgresql+asyncpg://autohack_user:autohack_pass@postgres:5432/autohack_db
+      - DATABASE_URL=postgresql+asyncpg://autoXAK_user:autoXAK_pass@postgres:5432/autoXAK_db
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - DGIS_USE_MOCK=true

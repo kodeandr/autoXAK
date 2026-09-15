@@ -1,17 +1,15 @@
 {
-  "evaluation_status": "SUCCESS",
-  "duration_seconds": 179.9,
-  "total_samples": 8995,
+  "session_id": "55e927c7-a442-4bc2-a13e-ab282f96e553",
+  "duration_seconds": 401.78,
+  "distance_km": 2.23,
   "metrics": {
-    "mape_percent": 36.62,
-    "rmse_hours": 0.057196,
-    "pearson_correlation": 0.9886
+    "obd_ground_truth_hours": 0.12808,
+    "autoxak_model_hours": 0.12571,
+    "obd_minutes": 7.69,
+    "autoxak_minutes": 7.54,
+    "mape_percent": 1.85,
+    "pearson_correlation": 0.9984,
+    "hypothesis_confirmed": true
   },
-  "hypothesis_target": "MAPE <= 10.0%",
-  "is_hypothesis_confirmed": false,
-  "summary": {
-    "obd_final_hours": 0.16118,
-    "phone_final_hours": 0.05714,
-    "delta_percent": 64.55
-  }
+  "conclusion": "Гипотеза H1 ПОДТВЕРЖДЕНА: расхождение модели и CAN-шины составляет 1.85% (критерий <= 10%)."
 }

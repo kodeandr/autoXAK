@@ -1,10 +1,10 @@
-import os
+﻿import os
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 from sqlalchemy.orm import DeclarativeBase
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL", 
-    "postgresql+asyncpg://autohack_user:autohack_pass@postgres:5432/autohack_db"
+    "postgresql+asyncpg://autoXAK_user:autoXAK_pass@postgres:5432/autoXAK_db"
 )
 
 engine = create_async_engine(DATABASE_URL, echo=False, pool_pre_ping=True)
