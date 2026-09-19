@@ -3,54 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>autoXAK — Бортовой трекер</title>
+    <meta name="theme-color" content="#05070C">
+    <title>autoXAK — Бортовой помощник</title>
     <style>
         :root {
-            /* Шрифтовые стеки */
             --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
-            --font-mono: "Space Grotesk", "Geist Mono", ui-monospace, Menlo, Monaco, Consolas, "SF Mono", monospace;
+            --font-mono: "Space Grotesk", "Geist Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
 
-            /* Нейтральные поверхности (Dark FinTech Cockpit) */
             --color-bg-root: #05070C;
             --color-bg-elevated: #0B0F17;
             --color-bg-subtle: #111827;
-            --color-border-soft: rgba(148, 163, 184, 0.2);
-            --color-border-strong: rgba(148, 163, 184, 0.45);
+            --color-border-soft: rgba(148, 163, 184, 0.16);
+            --color-border-strong: rgba(148, 163, 184, 0.40);
 
-            /* Функциональные акценты */
-            --color-accent-savings: #22C55E;
-            --color-accent-savings-soft: rgba(34, 197, 94, 0.12);
-            --color-accent-warning: #F59E0B;
-            --color-accent-warning-soft: rgba(245, 158, 11, 0.16);
+            /* Сочные сигнальные цвета для периферического зрения */
+            --neon-green: #00E676;
+            --neon-green-glow: rgba(0, 230, 118, 0.45);
+            --neon-amber: #FF9100;
+            --neon-amber-glow: rgba(255, 145, 0, 0.55);
+            
+            --color-accent-savings: #00E676;
+            --color-accent-savings-soft: rgba(0, 230, 118, 0.14);
             --color-accent-safe: #3B82F6;
             --color-accent-safe-soft: rgba(59, 130, 246, 0.16);
             --color-accent-danger: #EF4444;
-            --color-accent-danger-soft: rgba(239, 68, 68, 0.16);
 
-            /* Типографика и цвета */
-            --color-text-primary: #F9FAFB;
+            --color-text-primary: #FFFFFF;
             --color-text-secondary: #9CA3AF;
             --color-text-muted: #6B7280;
 
-            /* Тени и стеклянные фильтры */
-            --shadow-border: 0 0 0 1px rgba(148, 163, 184, 0.2);
-            --shadow-md: 0 12px 32px rgba(5, 7, 12, 0.7);
-            --glass-bg: rgba(11, 15, 23, 0.78);
+            --shadow-card: 0 12px 32px rgba(5, 7, 12, 0.7);
+            --glass-bg: rgba(11, 15, 23, 0.88);
             --glass-blur: 16px;
 
-            /* Геометрия */
+            /* Геометрия современных смартфонов */
+            --radius-phone: 44px;
             --radius-sm: 10px;
             --radius-md: 16px;
             --radius-lg: 24px;
             --radius-pill: 9999px;
+            --transition-standard: cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        * {
+        *, *::before, *::after {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             font-family: var(--font-sans);
             -webkit-tap-highlight-color: transparent;
+            user-select: none;
         }
 
         body {
@@ -61,28 +62,31 @@
             min-height: 100vh;
             color: var(--color-text-primary);
             padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            overflow: hidden;
         }
 
         .mobile-container {
             width: 100%;
             max-width: 414px;
             height: 100vh;
-            max-height: 870px;
+            max-height: 890px;
             background-color: var(--color-bg-root);
             border: 1px solid var(--color-border-soft);
-            border-radius: 36px;
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.9);
+            border-radius: var(--radius-phone);
+            box-shadow: 0 0 50px rgba(0, 0, 0, 0.95);
             display: flex;
             flex-direction: column;
             overflow: hidden;
             position: relative;
+            isolation: isolate;
+            transform: translateZ(0);
         }
 
-        /* ---------------- STATE 1: PRE-TRIP DASHBOARD ---------------- */
+        /* ---------------- 1. ЭКРАН ПОКОЯ ---------------- */
         .dashboard-scroll {
             flex-grow: 1;
             overflow-y: auto;
-            padding: 24px 18px 12px;
+            padding: 24px 18px 16px;
             display: flex;
             flex-direction: column;
             gap: 14px;
@@ -94,41 +98,73 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 4px 4px;
+            padding: 0 2px;
+        }
+        .brand-block {
+            display: flex;
+            flex-direction: column;
         }
         .brand-title {
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            color: var(--color-text-primary);
+        }
+        .vehicle-badge {
+            font-size: 12px;
+            color: var(--color-accent-safe);
+            margin-top: 2px;
+            font-weight: 600;
+        }
+        .brand-right-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .link-setup {
+            font-size: 12px;
             color: var(--color-text-secondary);
+            text-decoration: none;
+            padding: 5px 9px;
+            border-radius: var(--radius-sm);
+            background: var(--color-bg-subtle);
+            border: 1px solid var(--color-border-soft);
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .link-setup:hover {
+            border-color: var(--color-accent-safe);
+            color: var(--color-accent-safe);
         }
         .brand-status {
             font-size: 11px;
-            padding: 3px 8px;
+            padding: 5px 10px;
             border-radius: var(--radius-pill);
             background: var(--color-accent-safe-soft);
             color: var(--color-accent-safe);
-            font-family: var(--font-mono);
+            font-weight: 600;
             display: flex;
             align-items: center;
-            gap: 5px;
+            gap: 6px;
         }
         .status-dot {
             width: 6px;
             height: 6px;
             border-radius: 50%;
             background-color: var(--color-accent-safe);
+            box-shadow: 0 0 8px var(--color-accent-safe);
         }
 
-        /* Hero Piggy Bank Card */
         .piggy-card {
             background: var(--glass-bg);
             backdrop-filter: blur(var(--glass-blur));
             border: 1px solid var(--color-border-soft);
             border-radius: var(--radius-lg);
             padding: 20px;
-            box-shadow: var(--shadow-md);
+            box-shadow: var(--shadow-card);
             position: relative;
             overflow: hidden;
         }
@@ -137,27 +173,43 @@
             position: absolute;
             top: -40px;
             right: -40px;
-            width: 120px;
-            height: 120px;
+            width: 140px;
+            height: 140px;
             background: radial-gradient(circle, var(--color-accent-savings-soft) 0%, transparent 70%);
             pointer-events: none;
+        }
+        .piggy-top-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 4px;
         }
         .piggy-label {
             font-size: 12px;
             text-transform: uppercase;
-            letter-spacing: 0.8px;
+            letter-spacing: 0.6px;
             color: var(--color-text-secondary);
-            margin-bottom: 4px;
+            font-weight: 600;
+        }
+        .link-history {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--color-accent-safe);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 2px;
         }
         .piggy-amount-row {
             display: flex;
             align-items: baseline;
             gap: 4px;
             font-family: var(--font-mono);
+            margin: 6px 0 8px;
         }
         .piggy-prefix {
             font-size: 26px;
-            color: var(--color-accent-savings);
+            color: var(--neon-green);
             font-weight: 700;
         }
         .piggy-digits {
@@ -169,17 +221,19 @@
         .piggy-sub {
             font-size: 12px;
             color: var(--color-text-secondary);
-            margin-top: 6px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            border-top: 1px solid var(--color-border-soft);
+            padding-top: 8px;
+            margin-top: 4px;
         }
 
-        /* Oil Wear Radial Card */
         .gauge-card {
             background: var(--color-bg-elevated);
             border: 1px solid var(--color-border-soft);
             border-radius: var(--radius-md);
-            padding: 18px 16px;
+            padding: 16px 18px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -187,11 +241,11 @@
         .gauge-info {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 3px;
         }
         .gauge-title {
             font-size: 14px;
-            font-weight: 600;
+            font-weight: 700;
             color: var(--color-text-primary);
         }
         .gauge-desc {
@@ -199,22 +253,20 @@
             color: var(--color-text-secondary);
         }
         .gauge-stage {
-            display: inline-block;
-            font-size: 11px;
+            font-size: 12px;
             font-weight: 700;
-            text-transform: uppercase;
             margin-top: 4px;
-            color: var(--color-accent-savings);
+            color: var(--neon-green);
         }
         .gauge-circle-wrap {
             position: relative;
-            width: 80px;
-            height: 80px;
+            width: 76px;
+            height: 76px;
         }
         .gauge-svg {
             transform: rotate(-90deg);
-            width: 80px;
-            height: 80px;
+            width: 76px;
+            height: 76px;
         }
         .gauge-bg {
             fill: none;
@@ -223,12 +275,12 @@
         }
         .gauge-fill {
             fill: none;
-            stroke: var(--color-accent-savings);
+            stroke: var(--neon-green);
             stroke-width: 6;
             stroke-linecap: round;
             stroke-dasharray: 213;
             stroke-dashoffset: 0;
-            transition: stroke-dashoffset 0.6s ease, stroke 0.4s ease;
+            transition: stroke-dashoffset 0.6s var(--transition-standard), stroke 0.4s ease;
         }
         .gauge-val-center {
             position: absolute;
@@ -237,12 +289,11 @@
             align-items: center;
             justify-content: center;
             font-family: var(--font-mono);
-            font-size: 15px;
+            font-size: 16px;
             font-weight: 700;
             color: var(--color-text-primary);
         }
 
-        /* Twin & Readiness Row */
         .specs-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -252,7 +303,7 @@
             background: var(--color-bg-elevated);
             border: 1px solid var(--color-border-soft);
             border-radius: var(--radius-sm);
-            padding: 12px;
+            padding: 12px 14px;
         }
         .spec-label {
             font-size: 11px;
@@ -261,17 +312,15 @@
             letter-spacing: 0.5px;
         }
         .spec-val {
-            font-family: var(--font-mono);
             font-size: 13px;
             font-weight: 600;
-            margin-top: 3px;
+            margin-top: 4px;
             color: var(--color-text-primary);
         }
 
-        /* Bottom Action Bar */
         .bottom-bar {
-            padding: 12px 18px 20px;
-            background: linear-gradient(180deg, transparent 0%, var(--color-bg-root) 60%);
+            padding: 12px 18px 22px;
+            background: linear-gradient(180deg, transparent 0%, var(--color-bg-root) 50%);
         }
         .btn-start-trip {
             width: 100%;
@@ -282,21 +331,18 @@
             border-radius: var(--radius-pill);
             font-size: 15px;
             font-weight: 700;
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
+            letter-spacing: 0.5px;
             cursor: pointer;
             box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
-            transition: transform 0.1s, background-color 0.2s;
+            transition: transform 0.15s ease;
         }
-        .btn-start-trip:active {
-            transform: scale(0.98);
-        }
+        .btn-start-trip:active { transform: scale(0.98); }
 
-        /* ---------------- STATE 2: IN-TRIP SAFETY HUD ---------------- */
+        /* ---------------- 2. ЭКРАН В ДВИЖЕНИИ (ЗАКРУГЛЕННЫЙ AMBIENT HUD) ---------------- */
         .safety-hud-overlay {
             position: absolute;
             inset: 0;
@@ -305,97 +351,177 @@
             display: none;
             flex-direction: column;
             justify-content: space-between;
-            padding: 44px 20px 24px;
+            padding: 40px 20px 24px;
             text-align: center;
+            border-radius: var(--radius-phone);
+            border: 3.5px solid transparent;
+            box-sizing: border-box;
+            transition: border-color 0.25s ease, box-shadow 0.25s ease;
+            overflow: hidden;
+        }
+        .safety-hud-overlay.active {
+            display: flex;
         }
 
-        .hud-header {
+        /* Насыщенное контурное свечение точно по форме экрана */
+        .safety-hud-overlay.glow-green {
+            border-color: var(--neon-green);
+            box-shadow: inset 0 0 100px rgba(0, 230, 118, 0.35), 0 0 30px rgba(0, 230, 118, 0.25);
+        }
+        .safety-hud-overlay.glow-amber {
+            border-color: var(--neon-amber);
+            box-shadow: inset 0 0 120px rgba(255, 145, 0, 0.55), 0 0 40px rgba(255, 145, 0, 0.35);
+        }
+
+        .hud-top-bar {
             display: flex;
             justify-content: space-between;
-            font-family: var(--font-mono);
-            font-size: 12px;
-            color: var(--color-text-muted);
+            align-items: center;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: var(--radius-pill);
+            padding: 10px 16px;
         }
-        .hud-live-savings {
-            color: var(--color-accent-savings);
-            font-weight: 600;
+        .hud-badge-rec {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--color-text-primary);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+        }
+        .hud-rec-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--neon-green);
+            box-shadow: 0 0 10px var(--neon-green);
+            animation: pulseRecDot 1.4s infinite;
+        }
+        @keyframes pulseRecDot {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.75); opacity: 0.4; }
+        }
+        .hud-timer {
+            font-family: var(--font-mono);
+            font-size: 18px;
+            font-weight: 800;
+            color: var(--color-text-primary);
+            letter-spacing: 0.5px;
         }
 
-        .hud-center {
+        /* Центральный G-индикатор */
+        .hud-center-stage {
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 14px;
         }
-        .radar-heartbeat {
-            width: 86px;
-            height: 86px;
+        .ambient-glow-circle {
+            width: 154px;
+            height: 154px;
             border-radius: 50%;
-            background: rgba(59, 130, 246, 0.1);
+            background: radial-gradient(circle, rgba(0, 230, 118, 0.22) 0%, rgba(5, 7, 12, 0.95) 72%);
+            border: 3px solid var(--neon-green);
+            box-shadow: 0 0 35px var(--neon-green-glow);
             display: flex;
+            flex-direction: column;
             align-items: center;
             justify-content: center;
-            position: relative;
-            margin-bottom: 24px;
-            will-change: transform, opacity;
+            transition: all 0.22s var(--transition-standard);
         }
-        .radar-heartbeat::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            border: 1.5px solid var(--color-accent-safe);
-            animation: radarPulse 2s infinite cubic-bezier(0.16, 1, 0.3, 1);
+        .ambient-glow-circle.warning {
+            border-color: var(--neon-amber);
+            background: radial-gradient(circle, rgba(255, 145, 0, 0.32) 0%, rgba(5, 7, 12, 0.95) 72%);
+            box-shadow: 0 0 50px var(--neon-amber-glow);
         }
-        @keyframes radarPulse {
-            0% { transform: scale(0.9); opacity: 0.9; }
-            100% { transform: scale(2.0); opacity: 0; }
-        }
-        .hud-icon {
-            font-size: 28px;
-        }
-        .hud-title {
-            font-size: 20px;
-            font-weight: 700;
-            color: #FFFFFF;
-            margin-bottom: 6px;
-        }
-        .hud-sub {
-            font-size: 13px;
+        .hud-savings-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
             color: var(--color-text-secondary);
-            max-width: 240px;
-            line-height: 1.4;
+            font-weight: 700;
         }
-        .hud-metrics {
-            margin-top: 24px;
+        .hud-savings-val {
             font-family: var(--font-mono);
-            font-size: 13px;
-            color: var(--color-accent-safe);
+            font-size: 34px;
+            font-weight: 800;
+            color: #FFFFFF;
+            letter-spacing: -0.5px;
+            margin-top: 2px;
+        }
+        .hud-driving-status {
+            font-size: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--neon-green);
+            transition: color 0.22s;
+        }
+        .hud-driving-status.warning {
+            color: var(--neon-amber);
         }
 
-        /* Swipe to Stop Rail */
+        /* Показатели поездки */
+        .hud-stats-strip {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            width: 100%;
+            background: rgba(15, 23, 42, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: var(--radius-md);
+            padding: 14px 16px;
+        }
+        .hud-stat-box {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            text-align: center;
+        }
+        .hud-stat-box:first-child {
+            border-right: 1px solid var(--color-border-soft);
+        }
+        .hud-stat-title {
+            font-size: 11px;
+            color: var(--color-text-secondary);
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+        .hud-stat-number {
+            font-family: var(--font-mono);
+            font-size: 20px;
+            font-weight: 800;
+            color: #FFFFFF;
+        }
+
+        /* Слайдер свайпа */
         .swipe-rail {
             width: 100%;
             height: 60px;
             background: var(--color-bg-subtle);
-            border: 1px solid var(--color-border-soft);
+            border: 1px solid var(--color-border-strong);
             border-radius: var(--radius-pill);
             position: relative;
             display: flex;
             align-items: center;
             overflow: hidden;
             touch-action: none;
-            margin-bottom: max(12px, env(safe-area-inset-bottom));
+            margin-bottom: max(6px, env(safe-area-inset-bottom));
         }
         .swipe-rail-text {
             width: 100%;
             text-align: center;
-            font-size: 12px;
-            font-weight: 700;
+            font-size: 13px;
+            font-weight: 800;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.8px;
             color: var(--color-text-secondary);
-            user-select: none;
             pointer-events: none;
         }
         .swipe-thumb {
@@ -410,42 +536,53 @@
             justify-content: center;
             color: white;
             font-weight: bold;
-            font-size: 14px;
-            box-shadow: 0 2px 10px rgba(239, 68, 68, 0.4);
-            cursor: pointer;
+            font-size: 15px;
+            box-shadow: 0 2px 14px rgba(239, 68, 68, 0.5);
+            cursor: grab;
+            touch-action: none;
+            will-change: transform;
         }
 
-        /* ---------------- STATE 3: POST-TRIP WIN-STATE MODAL ---------------- */
+        /* ---------------- 3. МОДАЛЬНОЕ ОКНО РЕЗУЛЬТАТОВ (СТРОГИЙ ЦЕНТР) ---------------- */
         .modal-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(5, 7, 12, 0.88);
-            backdrop-filter: blur(12px);
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 7, 12, 0.92);
+            backdrop-filter: blur(14px);
             z-index: 200;
             display: none;
             align-items: center;
             justify-content: center;
             padding: 20px;
+            box-sizing: border-box;
+            border-radius: var(--radius-phone);
+            overflow: hidden;
+        }
+        .modal-overlay.active {
+            display: flex;
         }
         .summary-card {
             width: 100%;
+            max-width: 370px;
+            margin: auto;
             background: var(--glass-bg);
             backdrop-filter: blur(var(--glass-blur));
             border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-md);
+            box-shadow: var(--shadow-card);
             border: 1px solid var(--color-border-strong);
             padding: 24px 20px;
             color: var(--color-text-primary);
             display: flex;
             flex-direction: column;
             gap: 16px;
-            animation: modalFade 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: modalPop 0.25s var(--transition-standard);
         }
-        @keyframes modalFade {
-            from { opacity: 0; transform: scale(0.95); }
+        @keyframes modalPop {
+            from { opacity: 0; transform: scale(0.92); }
             to { opacity: 1; transform: scale(1); }
         }
-
         .summary-header {
             display: flex;
             justify-content: space-between;
@@ -456,7 +593,7 @@
             padding: 4px 10px;
             border-radius: var(--radius-pill);
             background: var(--color-accent-savings-soft);
-            color: var(--color-accent-savings);
+            color: var(--neon-green);
             font-weight: 700;
             text-transform: uppercase;
         }
@@ -469,7 +606,7 @@
         }
         .summary-prefix {
             font-size: 22px;
-            color: var(--color-accent-savings);
+            color: var(--neon-green);
             font-weight: 700;
         }
         .summary-digits {
@@ -478,7 +615,7 @@
             color: var(--color-text-primary);
         }
         .summary-copy {
-            font-size: 12px;
+            font-size: 13px;
             color: var(--color-text-secondary);
         }
 
@@ -499,7 +636,6 @@
         .metric-label {
             font-size: 11px;
             color: var(--color-text-muted);
-            text-transform: uppercase;
         }
         .metric-val {
             font-family: var(--font-mono);
@@ -523,7 +659,7 @@
             width: 100%;
             height: 50px;
             border-radius: var(--radius-pill);
-            background: var(--color-accent-savings);
+            background: var(--neon-green);
             color: #022C22;
             border: none;
             font-size: 14px;
@@ -531,40 +667,52 @@
             text-transform: uppercase;
             letter-spacing: 0.5px;
             cursor: pointer;
-            box-shadow: 0 4px 16px rgba(34, 197, 94, 0.35);
+            box-shadow: 0 4px 16px rgba(0, 230, 118, 0.35);
         }
         .btn-claim:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
 
-    <div class="mobile-container">
-        <!-- 1. PRE-TRIP DASHBOARD -->
-        <div class="dashboard-scroll">
-            <div class="top-brand">
-                <span class="brand-title">autoXAK Telematics</span>
-                <span class="brand-status"><span class="status-dot"></span> 50 Hz Ready</span>
-            </div>
+    <main class="mobile-container">
+        <!-- 1. ЭКРАН ПОКОЯ -->
+        <section class="dashboard-scroll" id="pre-trip-view">
+            <header class="top-brand">
+                <div class="brand-block">
+                    <span class="brand-title">autoXAK</span>
+                    <span class="vehicle-badge" id="dash-car-name">Haval Jolion 1.5T • 4WD</span>
+                </div>
+                <div class="brand-right-group">
+                    <a href="/setup" class="link-setup">⚙️ Настройки</a>
+                    <div class="brand-status">
+                        <span class="status-dot"></span>
+                        <span>Готов</span>
+                    </div>
+                </div>
+            </header>
 
-            <!-- Virtual Piggy Bank -->
-            <div class="piggy-card">
-                <div class="piggy-label">Сэкономлено в копилке</div>
+            <!-- Карточка виртуальной копилки -->
+            <article class="piggy-card">
+                <div class="piggy-top-row">
+                    <span class="piggy-label">Сэкономлено в копилке</span>
+                    <a href="/history" class="link-history">История поездок ❯</a>
+                </div>
                 <div class="piggy-amount-row">
                     <span class="piggy-prefix">+₽</span>
                     <span class="piggy-digits" id="dash-savings">0.00</span>
                 </div>
                 <div class="piggy-sub">
-                    <span>Выгода vs «Агрессивный двойник»</span>
-                    <span id="dash-trips-count" style="font-family: var(--font-mono);">0 поездок</span>
+                    <span>Выгода за счет спокойного вождения</span>
+                    <span id="dash-trips-count" style="font-family: var(--font-mono); font-weight: 600;">0 поездок</span>
                 </div>
-            </div>
+            </article>
 
-            <!-- Oil Wear Radial Gauge -->
-            <div class="gauge-card">
+            <!-- Индикатор ресурса моторного масла -->
+            <article class="gauge-card">
                 <div class="gauge-info">
                     <span class="gauge-title">Ресурс моторного масла</span>
-                    <span class="gauge-desc">WearEngine: кинетика износа</span>
-                    <span class="gauge-stage" id="oil-stage-text">Optimal (100%)</span>
+                    <span class="gauge-desc">Оценка по реальным нагрузкам</span>
+                    <span class="gauge-stage" id="oil-stage-text">Отличное (100%)</span>
                 </div>
                 <div class="gauge-circle-wrap">
                     <svg class="gauge-svg" viewBox="0 0 80 80">
@@ -573,64 +721,81 @@
                     </svg>
                     <div class="gauge-val-center" id="oil-radial-val">100%</div>
                 </div>
-            </div>
+            </article>
 
-            <!-- Twin and Telemetry Status -->
+            <!-- Параметры анализа -->
             <div class="specs-grid">
                 <div class="spec-tile">
-                    <div class="spec-label">Виртуальный двойник</div>
-                    <div class="spec-val" id="ghost-status">Лихач (Средний)</div>
+                    <div class="spec-label">Сравнение стиля</div>
+                    <div class="spec-val" id="ghost-status">С умеренным лихачом</div>
                 </div>
                 <div class="spec-tile">
-                    <div class="spec-label">Протокол сенсоров</div>
-                    <div class="spec-val">IMU 50Hz + GNSS</div>
+                    <div class="spec-label">Анализ поездки</div>
+                    <div class="spec-val">Плавность и разгоны</div>
                 </div>
                 <div class="spec-tile">
-                    <div class="spec-label">GPS Скорость</div>
-                    <div class="spec-val" id="dash-speed">0.0 км/ч</div>
+                    <div class="spec-label">Связь со спутниками</div>
+                    <div class="spec-val" id="gps-status-label">GPS подключен</div>
                 </div>
                 <div class="spec-tile">
-                    <div class="spec-label">Буфер отсчетов</div>
-                    <div class="spec-val" id="dash-buffer">0 точек</div>
+                    <div class="spec-label">Дорожная обстановка</div>
+                    <div class="spec-val">С учетом заторов</div>
                 </div>
             </div>
-        </div>
+        </section>
 
-        <div class="bottom-bar">
-            <button class="btn-start-trip" onclick="startTripSession()">
+        <!-- Кнопка старта -->
+        <footer class="bottom-bar">
+            <button class="btn-start-trip" id="btn-start" type="button">
                 <span>▶</span> Начать поездку
             </button>
-        </div>
+        </footer>
 
-        <!-- 2. IN-TRIP SAFETY HUD (NHTSA Compliance) -->
-        <div class="safety-hud-overlay" id="safety-hud">
-            <div class="hud-header">
-                <span>autoXAK SAFETY HUD</span>
-                <span class="hud-live-savings" id="hud-timer">00:00</span>
-            </div>
-
-            <div class="hud-center">
-                <div class="radar-heartbeat">
-                    <div class="hud-icon">📡</div>
+        <!-- 2. ЭКРАН В ДВИЖЕНИИ (IN-TRIP AMBIENT HUD) -->
+        <section class="safety-hud-overlay glow-green" id="safety-hud">
+            <!-- Верхняя строка статуса -->
+            <div class="hud-top-bar">
+                <div class="hud-badge-rec">
+                    <span class="hud-rec-dot"></span>
+                    <span>ПОЕЗДКА АКТИВНА</span>
                 </div>
-                <div class="hud-title">Сессия телеметрии</div>
-                <div class="hud-sub">Экран заблокирован для безопасности дорожного движения.</div>
-                <div class="hud-metrics" id="hud-points-stream">Буфер: 0 сэмплов</div>
+                <div class="hud-timer" id="hud-timer">00:00</div>
             </div>
 
-            <!-- Swipe Rail for Trip Completion -->
+            <!-- Центральный амбиентный G-индикатор -->
+            <div class="hud-center-stage">
+                <div class="ambient-glow-circle" id="hud-glow-ring">
+                    <span class="hud-savings-label">В копилку</span>
+                    <span class="hud-savings-val" id="hud-live-savings">+0.00 ₽</span>
+                </div>
+                <div class="hud-driving-status" id="hud-driving-hint">Плавный ход • Зона выгоды</div>
+            </div>
+
+            <!-- Полезные метрики для водителя -->
+            <div class="hud-stats-strip">
+                <div class="hud-stat-box">
+                    <span class="hud-stat-title">Дистанция</span>
+                    <span class="hud-stat-number" id="hud-dist-val">0.0 км</span>
+                </div>
+                <div class="hud-stat-box">
+                    <span class="hud-stat-title">Плавность стиля</span>
+                    <span class="hud-stat-number" id="hud-smooth-val">100%</span>
+                </div>
+            </div>
+
+            <!-- Слайдер завершения -->
             <div class="swipe-rail" id="swipeRail">
                 <div class="swipe-rail-text" id="swipeText">Свайп для завершения ❯❯</div>
                 <div class="swipe-thumb" id="swipeThumb">❯❯</div>
             </div>
-        </div>
+        </section>
 
-        <!-- 3. POST-TRIP WIN-STATE MODAL -->
+        <!-- 3. МОДАЛЬНОЕ ОКНО РЕЗУЛЬТАТОВ (СТРОГИЙ ЦЕНТР) -->
         <div class="modal-overlay" id="post-trip-modal">
             <div class="summary-card">
                 <div class="summary-header">
                     <span style="font-size: 12px; color: var(--color-text-secondary); text-transform: uppercase;">Итог поездки</span>
-                    <span class="summary-tag">Победа над двойником</span>
+                    <span class="summary-tag">Вы обошли лихача!</span>
                 </div>
 
                 <div>
@@ -638,7 +803,7 @@
                         <span class="summary-prefix">+₽</span>
                         <span class="summary-digits" id="res-savings-num">0.00</span>
                     </div>
-                    <p class="summary-copy">Сэкономлено на топливе и ресурсе ДВС</p>
+                    <p class="summary-copy">Сэкономлено на бензине и сохранности мотора</p>
                 </div>
 
                 <div class="summary-metrics">
@@ -647,62 +812,118 @@
                         <span class="metric-val" id="res-km">0.00 км</span>
                     </div>
                     <div class="metric-item">
-                        <span class="metric-label">Время</span>
+                        <span class="metric-label">Время в пути</span>
                         <span class="metric-val" id="res-sec">0 с</span>
                     </div>
                     <div class="metric-item">
                         <span class="metric-label">Износ масла</span>
-                        <span class="metric-val" style="color: var(--color-accent-warning);" id="res-wear">0.000%</span>
+                        <span class="metric-val" style="color: var(--neon-amber);" id="res-wear">0.000%</span>
                     </div>
                     <div class="metric-item">
-                        <span class="metric-label">Статус сессии</span>
-                        <span class="metric-val" style="color: var(--color-accent-savings);">PROCESSED</span>
+                        <span class="metric-label">Статус</span>
+                        <span class="metric-val" style="color: var(--neon-green);">Сохранено</span>
                     </div>
                 </div>
 
                 <div class="cpa-trigger-box" id="cpa-trigger">
-                    ⚠️ <strong>Ресурс масла ниже нормы.</strong> Зафиксирован регламентный порог ТО. Рекомендуется подбор масла и запись на сервис.
+                    ⚠️ <strong>Ресурс масла на исходе.</strong> Рекомендуем записаться на плановое ТО или подобрать рекомендованное масло.
                 </div>
 
-                <button class="btn-claim" onclick="closePostTripModal()">Забрать в копилку</button>
+                <button class="btn-claim" id="btn-claim-modal" type="button">Забрать в копилку</button>
             </div>
         </div>
-    </div>
+    </main>
 
     <script>
+        'use strict';
+
         const USER_ID = "test_user_01";
-        const CAR_ID = "test_car_vag_2.0tsi";
+
+        const CAR_CATALOG = {
+            "haval_jolion_15t": "Haval Jolion 1.5T • 4WD",
+            "chery_tiggo_7pro": "Chery Tiggo 7 Pro 1.5T",
+            "geely_coolray_15t": "Geely Coolray 1.5T DCT",
+            "skoda_octavia_14tsi": "Skoda Octavia 1.4 TSI",
+            "custom_sedan": "Седан B/C-класса",
+            "custom_suv": "Кроссовер SUV"
+        };
+
+        let currentCarId = "haval_jolion_15t";
 
         let isRecording = false;
         let telemetryBuffer = [];
         let sensorTimer = null;
         let gpsWatchId = null;
         let tripStartTime = 0;
+        let wakeLockSentinel = null;
 
         let curAx = 0.0, curAy = 0.0, curAz = 9.81;
         let curSpeed = 0.0, curLat = 55.751244, curLon = 37.618423;
+        let lastLat = null, lastLon = null;
+        
+        let sessionDistanceMeters = 0.0;
+        let totalSamplesCount = 0;
+        let aggressiveSamplesCount = 0;
+
+        function updateCarHeader() {
+            const savedProfile = localStorage.getItem("autoXAK_profile");
+            if (savedProfile) {
+                try {
+                    const parsed = JSON.parse(savedProfile);
+                    if (parsed.car_id) {
+                        currentCarId = parsed.car_id;
+                        const humanName = CAR_CATALOG[parsed.car_id] || parsed.car_id;
+                        document.getElementById('dash-car-name').innerText = humanName;
+                    }
+                } catch (_) {}
+            }
+        }
 
         function createUUID() {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                const r = Math.random() * 16 | 0;
-                const v = c === 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
+            return (crypto.randomUUID && typeof crypto.randomUUID === 'function')
+                ? crypto.randomUUID()
+                : 'sess-' + Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
+        }
+
+        function calcDistanceMeters(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const phi1 = lat1 * Math.PI / 180;
+            const phi2 = lat2 * Math.PI / 180;
+            const deltaPhi = (lat2 - lat1) * Math.PI / 180;
+            const deltaLambda = (lon2 - lon1) * Math.PI / 180;
+
+            const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
+                      Math.cos(phi1) * Math.cos(phi2) *
+                      Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        }
+
+        async function acquireWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLockSentinel = await navigator.wakeLock.request('screen');
+                } catch (_) {}
+            }
+        }
+
+        function releaseWakeLock() {
+            if (wakeLockSentinel) {
+                wakeLockSentinel.release().then(() => { wakeLockSentinel = null; });
+            }
         }
 
         async function fetchDashboard() {
+            updateCarHeader();
             try {
                 const res = await fetch(`/api/v1/users/${USER_ID}/dashboard`);
                 if (!res.ok) return;
                 const data = await res.json();
 
-                // 1. Копилка
                 document.getElementById('dash-savings').innerText = Number(data.month_savings_rub).toFixed(2);
 
-                // 2. Радиальный индикатор масла (213 px perimeter)
                 const oil = Math.max(0, Math.min(100, Number(data.oil_remaining_percent)));
                 document.getElementById('oil-radial-val').innerText = `${oil.toFixed(0)}%`;
-                
+
                 const circle = document.getElementById('oil-radial-bar');
                 const stageText = document.getElementById('oil-stage-text');
                 const offset = 213 - (213 * (oil / 100));
@@ -710,43 +931,42 @@
 
                 if (oil < 20) {
                     circle.style.stroke = 'var(--color-accent-danger)';
-                    stageText.innerText = `Critical (${oil.toFixed(1)}%)`;
+                    stageText.innerText = `Критический (${oil.toFixed(1)}%)`;
                     stageText.style.color = 'var(--color-accent-danger)';
                 } else if (oil < 60) {
-                    circle.style.stroke = 'var(--color-accent-warning)';
-                    stageText.innerText = `Attention (${oil.toFixed(1)}%)`;
-                    stageText.style.color = 'var(--color-accent-warning)';
+                    circle.style.stroke = 'var(--neon-amber)';
+                    stageText.innerText = `Внимание (${oil.toFixed(1)}%)`;
+                    stageText.style.color = 'var(--neon-amber)';
                 } else {
-                    circle.style.stroke = 'var(--color-accent-savings)';
-                    stageText.innerText = `Optimal (${oil.toFixed(1)}%)`;
-                    stageText.style.color = 'var(--color-accent-savings)';
+                    circle.style.stroke = 'var(--neon-green)';
+                    stageText.innerText = `Отличное (${oil.toFixed(1)}%)`;
+                    stageText.style.color = 'var(--neon-green)';
                 }
 
                 if (data.ghost_twin_status) {
                     document.getElementById('ghost-status').innerText = data.ghost_twin_status;
                 }
 
-                // Число поездок
                 const tripsRes = await fetch(`/api/v1/users/${USER_ID}/trips`);
                 if (tripsRes.ok) {
                     const tripsData = await tripsRes.json();
                     document.getElementById('dash-trips-count').innerText = `${tripsData.total_trips} поездок`;
                 }
             } catch (e) {
-                console.error("Dashboard error:", e);
+                console.error('[Dashboard] Ошибка загрузки:', e);
             }
         }
 
-        async function requestSensors() {
+        async function setupSensors() {
             if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
                 try {
                     const perm = await DeviceMotionEvent.requestPermission();
                     if (perm !== 'granted') {
-                        alert("Требуется разрешение на опрос датчиков движения.");
+                        alert("Для предиктивного расчета экономии требуется доступ к датчикам движения.");
                         return false;
                     }
                 } catch (e) {
-                    console.warn("Motion permission exception:", e);
+                    console.warn(e);
                 }
             }
 
@@ -757,33 +977,42 @@
                     curAy = Number(acc.y) || 0.0;
                     curAz = Number(acc.z) || 9.81;
                 }
-            }, true);
+            }, { passive: true });
 
             if ('geolocation' in navigator) {
                 gpsWatchId = navigator.geolocation.watchPosition(
                     (p) => {
                         curLat = p.coords.latitude;
                         curLon = p.coords.longitude;
-                        curSpeed = (p.coords.speed !== null && p.coords.speed >= 0) ? p.coords.speed : 0.0;
-                        document.getElementById('dash-speed').innerText = `${(curSpeed * 3.6).toFixed(1)} км/ч`;
+                        curSpeed = (p.coords.speed !== null && p.coords.speed >= 0.5) ? p.coords.speed : 0.0;
+                        document.getElementById('gps-status-label').innerText = "GPS активен";
                     },
-                    (err) => console.warn("GPS error:", err),
-                    { enableHighAccuracy: true, maximumAge: 1000, timeout: 5000 }
+                    (err) => {
+                        document.getElementById('gps-status-label').innerText = "GPS поиск...";
+                    },
+                    { enableHighAccuracy: true, maximumAge: 500, timeout: 6000 }
                 );
             }
             return true;
         }
 
         async function startTripSession() {
-            const ok = await requestSensors();
+            const ok = await setupSensors();
             if (!ok) return;
+
+            await acquireWakeLock();
 
             telemetryBuffer = [];
             isRecording = true;
             tripStartTime = Date.now();
+            sessionDistanceMeters = 0.0;
+            totalSamplesCount = 0;
+            aggressiveSamplesCount = 0;
+            lastLat = null;
+            lastLon = null;
 
             resetSwipeRail();
-            document.getElementById('safety-hud').style.display = 'flex';
+            document.getElementById('safety-hud').classList.add('active');
 
             sensorTimer = setInterval(() => {
                 if (!isRecording) return;
@@ -800,13 +1029,56 @@
                     lon: curLon
                 });
 
-                document.getElementById('hud-points-stream').innerText = `Буфер: ${telemetryBuffer.length} сэмплов (50 Hz)`;
-                document.getElementById('dash-buffer').innerText = `${telemetryBuffer.length} точек`;
+                totalSamplesCount++;
 
+                // 1. Таймер
                 const elapsed = Math.floor((Date.now() - tripStartTime) / 1000);
                 const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
                 const s = String(elapsed % 60).padStart(2, '0');
                 document.getElementById('hud-timer').innerText = `${m}:${s}`;
+
+                // 2. Индикатор перегрузок G-Force (сочный закругленный ореол)
+                const horizAcc = Math.sqrt(curAx * curAx + curAy * curAy);
+                const hudOverlay = document.getElementById('safety-hud');
+                const glowRing = document.getElementById('hud-glow-ring');
+                const hint = document.getElementById('hud-driving-hint');
+
+                if (horizAcc > 1.8) {
+                    aggressiveSamplesCount++;
+                    hudOverlay.className = "safety-hud-overlay active glow-amber";
+                    glowRing.className = "ambient-glow-circle warning";
+                    hint.innerText = "Резкий маневр • Потеря выгоды";
+                    hint.className = "hud-driving-status warning";
+                } else {
+                    hudOverlay.className = "safety-hud-overlay active glow-green";
+                    glowRing.className = "ambient-glow-circle";
+                    hint.innerText = "Плавный ход • Зона выгоды";
+                    hint.className = "hud-driving-status";
+                }
+
+                // 3. Расчет пройденной дистанции
+                if (lastLat !== null && curLat !== null) {
+                    const d = calcDistanceMeters(lastLat, lastLon, curLat, curLon);
+                    if (d > 1.2 && curSpeed >= 0.5) {
+                        sessionDistanceMeters += d;
+                    }
+                }
+                lastLat = curLat;
+                lastLon = curLon;
+
+                const kmVal = (sessionDistanceMeters / 1000.0).toFixed(1);
+                document.getElementById('hud-dist-val').innerText = `${kmVal} км`;
+
+                // 4. Расчет показателя плавности вождения
+                const smoothPercent = totalSamplesCount > 0 
+                    ? Math.max(0, Math.round(100 - (aggressiveSamplesCount / totalSamplesCount) * 100))
+                    : 100;
+                document.getElementById('hud-smooth-val').innerText = `${smoothPercent}%`;
+
+                // 5. Живая оценка экономии рублей в реальном времени
+                const liveRub = (sessionDistanceMeters / 1000.0) * 0.64;
+                document.getElementById('hud-live-savings').innerText = `+${liveRub.toFixed(2)} ₽`;
+
             }, 20);
         }
 
@@ -814,19 +1086,24 @@
             if (!isRecording) return;
             isRecording = false;
             clearInterval(sensorTimer);
-            if (gpsWatchId) navigator.geolocation.clearWatch(gpsWatchId);
 
-            document.getElementById('safety-hud').style.display = 'none';
+            if (gpsWatchId) {
+                navigator.geolocation.clearWatch(gpsWatchId);
+                gpsWatchId = null;
+            }
+
+            releaseWakeLock();
+            document.getElementById('safety-hud').classList.remove('active');
 
             if (telemetryBuffer.length < 50) {
-                alert("Сессия слишком короткая (необходимо хотя бы 2-3 секунды движения).");
+                alert("Поездка слишком короткая. Для анализа требуется от 2-3 секунд движения.");
                 return;
             }
 
             const payload = {
                 session_id: createUUID(),
                 user_id: USER_ID,
-                car_id: CAR_ID,
+                car_id: currentCarId,
                 telemetry_stream: telemetryBuffer
             };
 
@@ -843,10 +1120,10 @@
                     await fetchDashboard();
                 } else {
                     const err = await res.text();
-                    alert(`Ошибка API (${res.status}): ${err}`);
+                    alert(`Ошибка сохранения (${res.status}): ${err}`);
                 }
             } catch (err) {
-                alert(`Сетевой сбой отправки: ${err.message}`);
+                alert(`Ошибка связи с сервером: ${err.message}`);
             }
         }
 
@@ -863,15 +1140,15 @@
                 cpaBox.style.display = 'none';
             }
 
-            document.getElementById('post-trip-modal').style.display = 'flex';
+            document.getElementById('post-trip-modal').classList.add('active');
         }
 
         async function closePostTripModal() {
-            document.getElementById('post-trip-modal').style.display = 'none';
+            document.getElementById('post-trip-modal').classList.remove('active');
             await fetchDashboard();
         }
 
-        /* Swipe Rail Implementation (iOS Passive Touch Handlers) */
+        /* Надежный свайп-контрол с Pointer Events */
         const rail = document.getElementById('swipeRail');
         const thumb = document.getElementById('swipeThumb');
         const railText = document.getElementById('swipeText');
@@ -882,46 +1159,18 @@
         let maxTranslate = 0;
 
         function calcMax() {
-            maxTranslate = rail.offsetWidth - thumb.offsetWidth - 8;
+            maxTranslate = Math.max(0, rail.offsetWidth - thumb.offsetWidth - 8);
         }
 
-        thumb.addEventListener('touchstart', (e) => {
-            isDragging = true;
-            startX = e.touches[0].clientX;
-            calcMax();
-            thumb.style.transition = 'none';
-        }, { passive: true });
-
-        window.addEventListener('touchmove', (e) => {
-            if (!isDragging) return;
-            const dx = e.touches[0].clientX - startX;
-            curTranslate = Math.max(0, Math.min(dx, maxTranslate));
-            thumb.style.transform = `translateX(${curTranslate}px)`;
-            railText.style.opacity = (1 - (curTranslate / maxTranslate) * 0.9).toString();
-        }, { passive: true });
-
-        window.addEventListener('touchend', () => {
-            if (!isDragging) return;
-            isDragging = false;
-            if (curTranslate >= maxTranslate * 0.75) {
-                thumb.style.transition = 'transform 0.15s ease-out';
-                thumb.style.transform = `translateX(${maxTranslate}px)`;
-                railText.innerText = "Финализация...";
-                setTimeout(completeTripSession, 120);
-            } else {
-                resetSwipeRail();
-            }
-        });
-
-        // Mouse Support
-        thumb.addEventListener('mousedown', (e) => {
+        thumb.addEventListener('pointerdown', (e) => {
             isDragging = true;
             startX = e.clientX;
             calcMax();
             thumb.style.transition = 'none';
+            try { thumb.setPointerCapture(e.pointerId); } catch (_) {}
         });
 
-        window.addEventListener('mousemove', (e) => {
+        window.addEventListener('pointermove', (e) => {
             if (!isDragging) return;
             const dx = e.clientX - startX;
             curTranslate = Math.max(0, Math.min(dx, maxTranslate));
@@ -929,13 +1178,15 @@
             railText.style.opacity = (1 - (curTranslate / maxTranslate) * 0.9).toString();
         });
 
-        window.addEventListener('mouseup', () => {
+        window.addEventListener('pointerup', (e) => {
             if (!isDragging) return;
             isDragging = false;
+            try { thumb.releasePointerCapture(e.pointerId); } catch (_) {}
+
             if (curTranslate >= maxTranslate * 0.75) {
                 thumb.style.transition = 'transform 0.15s ease-out';
                 thumb.style.transform = `translateX(${maxTranslate}px)`;
-                railText.innerText = "Финализация...";
+                railText.innerText = "Расчет выгоды...";
                 setTimeout(completeTripSession, 120);
             } else {
                 resetSwipeRail();
@@ -950,7 +1201,13 @@
             curTranslate = 0;
         }
 
-        window.addEventListener('DOMContentLoaded', fetchDashboard);
+        document.getElementById('btn-start').addEventListener('click', startTripSession);
+        document.getElementById('btn-claim-modal').addEventListener('click', closePostTripModal);
+
+        window.addEventListener('DOMContentLoaded', () => {
+            updateCarHeader();
+            fetchDashboard();
+        });
     </script>
 </body>
 </html>

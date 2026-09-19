@@ -1,4 +1,3 @@
-from typing import Tuple
 """
 Тяговый баланс автомобиля и модель виртуального агрессивного двойника (TwinEngine).
 Опирается на:
@@ -7,6 +6,7 @@ from typing import Tuple
 - Ericsson [SRC-12] & Cabrera et al. [SRC-13] (Нормативы динамического перерасхода топлива).
 """
 import numpy as np
+from typing import Tuple
 from app.models.vehicle_profiles import VehiclePhysicalProfile
 
 class TwinEngine:
@@ -98,5 +98,5 @@ class TwinEngine:
             "saved_fuel_liters": round(float(saved_liters), 2)
         }
 
-# Алиас для обратной совместимости с тестами и API
 AggressiveTwinEngine = TwinEngine
+
