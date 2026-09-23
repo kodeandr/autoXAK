@@ -1,9 +1,16 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="autoXAK">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>autoXAK — Параметры автомобиля</title>
+    <!-- Подключение менеджера сессий -->
+    <script src="/static/session.js"></script>
     <style>
         :root {
             --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
@@ -15,12 +22,11 @@
             --color-border-soft: rgba(148, 163, 184, 0.16);
             --color-border-strong: rgba(148, 163, 184, 0.40);
 
-            --color-accent-savings: #22C55E;
-            --color-accent-savings-soft: rgba(34, 197, 94, 0.12);
+            --color-accent-savings: #00E676;
+            --color-accent-savings-soft: rgba(0, 230, 118, 0.14);
             --color-accent-safe: #3B82F6;
             --color-accent-safe-soft: rgba(59, 130, 246, 0.16);
             --color-accent-warning: #F59E0B;
-            --color-accent-warning-soft: rgba(245, 158, 11, 0.16);
 
             --color-text-primary: #F9FAFB;
             --color-text-secondary: #9CA3AF;
@@ -30,13 +36,14 @@
             --glass-bg: rgba(11, 15, 23, 0.85);
             --glass-blur: 16px;
 
+            --radius-phone: 44px;
             --radius-sm: 10px;
             --radius-md: 16px;
             --radius-lg: 24px;
             --radius-pill: 9999px;
         }
 
-        * {
+        *, *::before, *::after {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
@@ -61,7 +68,7 @@
             max-height: 890px;
             background-color: var(--color-bg-root);
             border: 1px solid var(--color-border-soft);
-            border-radius: 36px;
+            border-radius: var(--radius-phone);
             box-shadow: 0 0 40px rgba(0, 0, 0, 0.9);
             display: flex;
             flex-direction: column;
@@ -69,9 +76,8 @@
             position: relative;
         }
 
-        /* Навигационная шапка */
         .top-nav {
-            padding: 18px 20px 12px;
+            padding: 20px 20px 12px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -95,10 +101,10 @@
         }
 
         .nav-title {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
             color: var(--color-text-secondary);
         }
 
@@ -131,9 +137,7 @@
             gap: 8px;
         }
 
-        .section-icon {
-            font-size: 18px;
-        }
+        .section-icon { font-size: 18px; }
 
         .section-title {
             font-size: 14px;
@@ -245,7 +249,6 @@
             color: var(--color-accent-savings);
         }
 
-        /* Исправленная поддержка appearance */
         .custom-range {
             width: 100%;
             -webkit-appearance: none;
@@ -264,11 +267,11 @@
             border-radius: 50%;
             background: var(--color-accent-savings);
             cursor: pointer;
-            box-shadow: 0 0 10px rgba(34, 197, 94, 0.5);
+            box-shadow: 0 0 10px rgba(0, 230, 118, 0.5);
         }
 
         .bottom-bar {
-            padding: 12px 18px 20px;
+            padding: 12px 18px 22px;
             background: linear-gradient(180deg, transparent 0%, var(--color-bg-root) 60%);
         }
 
@@ -283,7 +286,7 @@
             font-weight: 700;
             letter-spacing: 0.5px;
             cursor: pointer;
-            box-shadow: 0 4px 18px rgba(34, 197, 94, 0.35);
+            box-shadow: 0 4px 18px rgba(0, 230, 118, 0.35);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -318,15 +321,15 @@
 <body>
 
     <div class="mobile-container">
-        <div class="top-nav">
+        <header class="top-nav">
             <a href="/" class="btn-back">❮ Назад</a>
             <span class="nav-title">Гараж и калибровка</span>
             <div style="width: 45px;"></div>
-        </div>
+        </header>
 
-        <div class="content-scroll">
+        <main class="content-scroll">
             <!-- Секция 1: Выбор авто -->
-            <div class="setup-card">
+            <section class="setup-card">
                 <div class="section-header">
                     <span class="section-icon">🚗</span>
                     <span class="section-title">Автомобиль</span>
@@ -363,10 +366,10 @@
                         <strong id="p-fuel">8.5 л / 100 км</strong>
                     </div>
                 </div>
-            </div>
+            </section>
 
             <!-- Секция 2: Состояние моторного масла -->
-            <div class="setup-card">
+            <section class="setup-card">
                 <div class="section-header">
                     <span class="section-icon">🛢️</span>
                     <span class="section-title">Состояние масла</span>
@@ -381,18 +384,18 @@
                     <input type="range" class="custom-range" id="oil-range" min="0" max="12000" step="500" value="0" oninput="onOilRangeChange(this.value)">
                 </div>
 
-                <button class="btn-reset-service" onclick="resetOilService()">
+                <button class="btn-reset-service" type="button" onclick="resetOilService()">
                     <span>🔄</span> Сбросить (Я только что заменил масло)
                 </button>
-            </div>
+            </section>
 
             <!-- Секция 3: Экономические параметры -->
-            <div class="setup-card">
+            <section class="setup-card">
                 <div class="section-header">
                     <span class="section-icon">💳</span>
                     <span class="section-title">Цены и нормативы</span>
                 </div>
-                <p class="section-desc">Используются для расчета рублевой выгоды от спокойного стиля езды.</p>
+                <p class="section-desc">Используются для расчета выгоды от спокойного стиля езды.</p>
 
                 <div class="input-group">
                     <label class="input-label">Тип топлива</label>
@@ -414,18 +417,20 @@
                         <input type="number" class="custom-input" id="input-service-cost" value="9500" step="500">
                     </div>
                 </div>
-            </div>
-        </div>
+            </section>
+        </main>
 
-        <div class="bottom-bar">
-            <button class="btn-save" onclick="saveConfiguration()">
+        <footer class="bottom-bar">
+            <button class="btn-save" type="button" onclick="saveConfiguration()">
                 <span>✓</span> Применить и сохранить
             </button>
-        </div>
+        </footer>
     </div>
 
     <script>
-        const USER_ID = "test_user_01";
+        'use strict';
+
+        let currentUserId = AutoXAKSession.getUserId();
 
         const CAR_DATABASE = {
             "haval_jolion_15t": { mass: 1505, cda: 0.76, oil: 3.8, fuel: 8.5, name: "Haval Jolion 1.5T 4WD" },
@@ -436,7 +441,6 @@
             "custom_suv": { mass: 1650, cda: 0.82, oil: 4.5, fuel: 9.5, name: "Кроссовер SUV" }
         };
 
-        let selectedFuelName = "АИ-95";
         let currentWearPercent = 0.0;
 
         function onCarSelected() {
@@ -466,18 +470,85 @@
 
         function selectFuel(name, price, element) {
             document.querySelectorAll('.chip-btn').forEach(btn => btn.classList.remove('active'));
-            element.classList.add('active');
-            selectedFuelName = name;
-            document.getElementById('input-fuel-price').value = price.toFixed(2);
+            if (element) element.classList.add('active');
+            document.getElementById('input-fuel-price').value = Number(price).toFixed(2);
+        }
+
+        function highlightFuelChip(price) {
+            const numPrice = Number(price);
+            document.querySelectorAll('.chip-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.innerText === 'АИ-92' && Math.abs(numPrice - 53.50) < 0.1) btn.classList.add('active');
+                if (btn.innerText === 'АИ-95' && Math.abs(numPrice - 62.00) < 0.1) btn.classList.add('active');
+                if (btn.innerText === 'АИ-100' && Math.abs(numPrice - 78.50) < 0.1) btn.classList.add('active');
+                if (btn.innerText === 'ДТ' && Math.abs(numPrice - 67.80) < 0.1) btn.classList.add('active');
+            });
+        }
+
+        async function loadCurrentConfig() {
+            let carId = "haval_jolion_15t";
+            let fuelPrice = 62.00;
+            let serviceCost = 9500.0;
+            let wearPercent = 0.0;
+
+            // 1. Читаем локальный кэш
+            const saved = localStorage.getItem("autoXAK_profile");
+            if (saved) {
+                try {
+                    const p = JSON.parse(saved);
+                    if (p.car_id) carId = p.car_id;
+                    if (p.fuel_price_rub) fuelPrice = p.fuel_price_rub;
+                    if (p.service_cost_rub) serviceCost = p.service_cost_rub;
+                    if (p.current_oil_wear_percent !== undefined) wearPercent = p.current_oil_wear_percent;
+                } catch (_) {}
+            }
+
+            // 2. Получаем актуальные параметры с бэкенда
+            try {
+                const res = await fetch(`/api/v1/users/${currentUserId}/dashboard`, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...AutoXAKSession.getAuthHeaders()
+                    }
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.car_id) carId = data.car_id;
+                    if (data.fuel_price_rub) fuelPrice = data.fuel_price_rub;
+                    if (data.service_cost_rub) serviceCost = data.service_cost_rub;
+                    if (data.oil_remaining_percent !== undefined) {
+                        wearPercent = Math.max(0, 100.0 - data.oil_remaining_percent);
+                    }
+                }
+            } catch (_) {}
+
+            // Выставляем значения в интерфейс
+            const carSelect = document.getElementById('car-selector');
+            if (carSelect) {
+                carSelect.value = carId;
+                onCarSelected();
+            }
+
+            document.getElementById('input-fuel-price').value = Number(fuelPrice).toFixed(2);
+            document.getElementById('input-service-cost').value = Math.round(serviceCost);
+
+            const approxKm = Math.min(12000, Math.round((wearPercent / 100.0) * 10000));
+            const oilRange = document.getElementById('oil-range');
+            if (oilRange) {
+                oilRange.value = approxKm;
+                onOilRangeChange(approxKm);
+            }
+
+            highlightFuelChip(fuelPrice);
         }
 
         async function saveConfiguration() {
             const carKey = document.getElementById('car-selector').value;
-            const fuelPrice = parseFloat(document.getElementById('input-fuel-price').value);
-            const serviceCost = parseFloat(document.getElementById('input-service-cost').value);
+            const fuelPrice = parseFloat(document.getElementById('input-fuel-price').value) || 62.0;
+            const serviceCost = parseFloat(document.getElementById('input-service-cost').value) || 9500.0;
 
             const payload = {
-                user_id: USER_ID,
+                user_id: currentUserId,
                 car_id: carKey,
                 current_oil_wear_percent: currentWearPercent,
                 fuel_price_rub: fuelPrice,
@@ -485,25 +556,36 @@
             };
 
             try {
-                const res = await fetch(`/api/v1/users/${USER_ID}/profile`, {
+                const res = await fetch(`/api/v1/users/${currentUserId}/profile`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...AutoXAKSession.getAuthHeaders()
+                    },
                     body: JSON.stringify(payload)
                 });
 
                 if (res.ok) {
                     localStorage.setItem("autoXAK_profile", JSON.stringify(payload));
-                    alert("Параметры успешно сохранены!");
                     window.location.href = "/";
                 } else {
+                    const err = await res.text();
+                    console.error("Ошибка сохранения на сервере:", err);
                     localStorage.setItem("autoXAK_profile", JSON.stringify(payload));
                     window.location.href = "/";
                 }
             } catch (err) {
+                console.error("Сетевая ошибка сохранения:", err);
                 localStorage.setItem("autoXAK_profile", JSON.stringify(payload));
                 window.location.href = "/";
             }
         }
+
+        window.addEventListener('DOMContentLoaded', async () => {
+            const session = await AutoXAKSession.ensureAuthenticated();
+            currentUserId = session.userId;
+            await loadCurrentConfig();
+        });
     </script>
 </body>
 </html>

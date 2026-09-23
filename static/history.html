@@ -1,9 +1,16 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="autoXAK">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>autoXAK — Сводная аналитика</title>
+    <!-- 1. Подключаем менеджер сессий -->
+    <script src="/static/session.js"></script>
     <style>
         :root {
             --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
@@ -18,9 +25,7 @@
             --color-accent-savings: #22C55E;
             --color-accent-savings-soft: rgba(34, 197, 94, 0.12);
             --color-accent-warning: #F59E0B;
-            --color-accent-warning-soft: rgba(245, 158, 11, 0.16);
             --color-accent-safe: #3B82F6;
-            --color-accent-safe-soft: rgba(59, 130, 246, 0.16);
 
             --color-text-primary: #F9FAFB;
             --color-text-secondary: #9CA3AF;
@@ -30,13 +35,14 @@
             --glass-bg: rgba(11, 15, 23, 0.82);
             --glass-blur: 16px;
 
+            --radius-phone: 44px;
             --radius-sm: 10px;
             --radius-md: 16px;
             --radius-lg: 24px;
             --radius-pill: 9999px;
         }
 
-        * {
+        *, *::before, *::after {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
@@ -61,7 +67,7 @@
             max-height: 890px;
             background-color: var(--color-bg-root);
             border: 1px solid var(--color-border-soft);
-            border-radius: 36px;
+            border-radius: var(--radius-phone);
             box-shadow: 0 0 40px rgba(0, 0, 0, 0.9);
             display: flex;
             flex-direction: column;
@@ -69,9 +75,8 @@
             position: relative;
         }
 
-        /* Навигационная панель */
         .top-nav {
-            padding: 18px 20px 10px;
+            padding: 20px 20px 12px;
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -91,14 +96,13 @@
             align-items: center;
             gap: 6px;
             cursor: pointer;
-            padding: 6px 0;
             text-decoration: none;
         }
 
         .nav-title {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
             text-transform: uppercase;
             color: var(--color-text-secondary);
         }
@@ -114,7 +118,6 @@
         }
         .content-scroll::-webkit-scrollbar { display: none; }
 
-        /* Фильтры периодов */
         .filter-pills {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -143,7 +146,6 @@
             box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
         }
 
-        /* Выпадающая панель произвольных дат */
         .custom-range-box {
             display: none;
             background: var(--color-bg-elevated);
@@ -184,15 +186,14 @@
             background: var(--color-accent-safe);
             border: none;
             color: white;
-            padding: 8px;
+            padding: 9px;
             border-radius: var(--radius-sm);
-            font-weight: 600;
+            font-weight: 700;
             font-size: 12px;
             cursor: pointer;
             text-transform: uppercase;
         }
 
-        /* Hero Карточка сводки */
         .summary-hero-card {
             background: var(--glass-bg);
             backdrop-filter: blur(var(--glass-blur));
@@ -257,7 +258,6 @@
             color: var(--color-text-primary);
         }
 
-        /* Сетка метрик 2x2 */
         .metrics-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -293,7 +293,6 @@
             color: var(--color-text-secondary);
         }
 
-        /* Заголовок секции списка */
         .section-header {
             font-size: 13px;
             font-weight: 700;
@@ -306,7 +305,6 @@
             align-items: center;
         }
 
-        /* Список поездок */
         .trips-timeline {
             display: flex;
             flex-direction: column;
@@ -321,10 +319,6 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: border-color 0.2s;
-        }
-        .trip-item-card:hover {
-            border-color: var(--color-border-strong);
         }
 
         .trip-meta {
@@ -378,15 +372,14 @@
 <body>
 
     <div class="mobile-container">
-        <!-- Шапка навигации -->
-        <div class="top-nav">
+        <header class="top-nav">
             <a href="/" class="btn-back">❮ Назад</a>
             <span class="nav-title">Сводка за период</span>
             <div style="width: 45px;"></div>
-        </div>
+        </header>
 
-        <div class="content-scroll">
-            <!-- Селектор быстрых окон -->
+        <main class="content-scroll">
+            <!-- Селектор окон -->
             <div class="filter-pills">
                 <button class="pill-btn" onclick="applyPreset('today')">Сегодня</button>
                 <button class="pill-btn" onclick="applyPreset('7d')">7 дней</button>
@@ -409,8 +402,8 @@
                 <button class="btn-apply" onclick="fetchPeriodData()">Применить диапазон</button>
             </div>
 
-            <!-- Hero KPI: Общая выгода и масло -->
-            <div class="summary-hero-card">
+            <!-- Hero KPI -->
+            <section class="summary-hero-card">
                 <div class="hero-label">Сэкономлено за выбранный период</div>
                 <div class="hero-amount">
                     <span class="hero-prefix">+₽</span>
@@ -426,14 +419,14 @@
                         <strong id="sum-trips-count">0 сессий</strong>
                     </div>
                 </div>
-            </div>
+            </section>
 
-            <!-- Сетка операционных метрик -->
-            <div class="metrics-grid">
+            <!-- Сетка метрик -->
+            <section class="metrics-grid">
                 <div class="metric-tile">
                     <span class="metric-tile-title">Дистанция</span>
                     <span class="metric-tile-value" id="val-distance">0.0 км</span>
-                    <span class="metric-tile-sub">Суммарный километраж</span>
+                    <span class="metric-tile-sub">Суммарный пробег</span>
                 </div>
                 <div class="metric-tile">
                     <span class="metric-tile-title">Время в пути</span>
@@ -447,10 +440,10 @@
                 </div>
                 <div class="metric-tile">
                     <span class="metric-tile-title">Заторы / ХХ</span>
-                    <span class="metric-tile-value" id="val-idle">0.0%</span>
+                    <span class="metric-tile-value" id="val-idle">0%</span>
                     <span class="metric-tile-sub">Доля холостого хода</span>
                 </div>
-            </div>
+            </section>
 
             <!-- Список сессий -->
             <div class="section-header">
@@ -459,19 +452,21 @@
             </div>
 
             <div class="trips-timeline" id="trips-list">
-                <div class="empty-placeholder">Загрузка данных телеметрии...</div>
+                <div class="empty-placeholder">Загрузка данных...</div>
             </div>
-        </div>
+        </main>
     </div>
 
     <script>
-        const USER_ID = "test_user_01";
+        'use strict';
+
+        let currentUserId = AutoXAKSession.getUserId();
         let currentStartDate = null;
         let currentEndDate = null;
 
         function applyPreset(preset) {
             document.querySelectorAll('.pill-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            if (event && event.target) event.target.classList.add('active');
 
             const customBox = document.getElementById('custom-box');
             const now = new Date();
@@ -512,14 +507,20 @@
                 currentEndDate = new Date(eVal + "T23:59:59Z").toISOString();
             }
 
-            let url = `/api/v1/users/${USER_ID}/analytics/period`;
+            let url = `/api/v1/users/${currentUserId}/analytics/period`;
             const params = new URLSearchParams();
             if (currentStartDate) params.append("start_date", currentStartDate);
             if (currentEndDate) params.append("end_date", currentEndDate);
             if (params.toString()) url += `?${params.toString()}`;
 
             try {
-                const res = await fetch(url);
+                const res = await fetch(url, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...AutoXAKSession.getAuthHeaders()
+                    }
+                });
+
                 if (!res.ok) {
                     const err = await res.text();
                     console.error("Ошибка загрузки аналитики:", err);
@@ -535,18 +536,15 @@
         function renderAnalytics(data) {
             const summary = data.summary;
 
-            // 1. Hero показатели
             document.getElementById('sum-savings').innerText = Number(summary.total_savings_rub).toFixed(2);
             document.getElementById('sum-oil-wear').innerText = `${Number(summary.total_oil_wear_percent).toFixed(3)}%`;
             document.getElementById('sum-trips-count').innerText = `${summary.total_trips} сессий`;
 
-            // 2. Сетка метрик
             document.getElementById('val-distance').innerText = `${Number(summary.total_distance_km).toFixed(1)} км`;
             document.getElementById('val-duration').innerText = `${Number(summary.total_duration_hours).toFixed(1)} ч`;
             document.getElementById('val-speed').innerText = `${Number(summary.avg_speed_kmh).toFixed(1)} км/ч`;
             document.getElementById('val-idle').innerText = `${(Number(summary.avg_idle_ratio) * 100).toFixed(0)}%`;
 
-            // 3. Список поездок
             document.getElementById('trips-badge').innerText = `${data.trips.length} шт.`;
             const listEl = document.getElementById('trips-list');
             listEl.innerHTML = '';
@@ -584,8 +582,11 @@
             });
         }
 
-        // Автоматическая инициализация окна 30 дней
-        window.addEventListener('DOMContentLoaded', () => {
+        // Единый стартовый поток: авторизация -> расчет дат -> загрузка
+        window.addEventListener('DOMContentLoaded', async () => {
+            const session = await AutoXAKSession.ensureAuthenticated();
+            currentUserId = session.userId;
+
             const now = new Date();
             const start = new Date(now.getTime() - 30 * 24 * 3600 * 1000);
             currentStartDate = start.toISOString();

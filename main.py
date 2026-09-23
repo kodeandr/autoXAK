@@ -16,13 +16,15 @@ from app.core.database import engine, Base, get_db
 from app.models.telemetry import TripSessionPayload
 from app.models.results import (
     TripCalculationResult, 
-    DashboardResponse, 
     TripHistoryResponse, 
     TripSummaryItem
 )
 from app.models.db_models import User, Trip
 from app.core.dsp.filters import SignalFilter
 from app.services.wear_engine import WearEngine
+
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from app.core.security import create_access_token, decode_access_token
 
 try:
     from app.services.twin_engine import TwinEngine, AggressiveTwinEngine
@@ -39,13 +41,59 @@ except ImportError:
 from app.services.gis_service import GISService
 from app.services.benchmark_engine import BenchmarkEngine, VerificationReport
 
+security_scheme = HTTPBearer(auto_error=False)
 
-# --- Инициализация профилей ТС ---
+class AuthHandshakePayload(BaseModel):
+    device_id: str = Field(..., description="Уникальный отпечаток устройства / браузера")
+    preferred_car_id: Optional[str] = Field(default="haval_jolion_15t")
+
+
+class AuthResponse(BaseModel):
+    token: str
+    user_id: str
+    car_id: str
+    is_new_user: bool
+    
+
+async def get_current_user(
+    auth: Optional[HTTPAuthorizationCredentials] = Depends(security_scheme),
+    db: AsyncSession = Depends(get_db)
+) -> User:
+    """
+    Извлекает и валидирует пользователя по Bearer-токену.
+    Если передан fallback (для обратной совместимости в dev-режиме), берет тестового.
+    """
+    if not auth or not auth.credentials:
+        # Fallback на случай прямого обращения в отладке
+        stmt = select(User).where(User.id == "test_user_01")
+        res = await db.execute(stmt)
+        user = res.scalar_one_or_none()
+        if user:
+            return user
+        raise HTTPException(status_code=401, detail="Требуется авторизация (Bearer token)")
+
+    payload = decode_access_token(auth.credentials)
+    if not payload or "sub" not in payload:
+        raise HTTPException(status_code=401, detail="Недействительный или просроченный токен")
+
+    user_id = payload["sub"]
+    stmt = select(User).where(User.id == user_id)
+    res = await db.execute(stmt)
+    user = res.scalar_one_or_none()
+
+    if not user:
+        raise HTTPException(status_code=401, detail="Пользователь не найден")
+
+    return user
+
+# --- Резервный и эталонный профили ТС ---
 
 def get_default_profile() -> Any:
     if VEHICLE_REGISTRY:
         if "haval_jolion_15t" in VEHICLE_REGISTRY:
             return VEHICLE_REGISTRY["haval_jolion_15t"]
+        if "test_car_vag_2.0tsi" in VEHICLE_REGISTRY:
+            return VEHICLE_REGISTRY["test_car_vag_2.0tsi"]
         return next(iter(VEHICLE_REGISTRY.values()))
 
     class _FallbackOilProfile:
@@ -79,7 +127,7 @@ def resolve_car_profile(car_id: Optional[str]) -> Any:
     return get_default_profile()
 
 
-# --- DTO Схемы для сводной аналитики за период ---
+# --- DTO Схемы Pydantic v2 ---
 
 class TripPeriodItem(BaseModel):
     session_id: str
@@ -107,8 +155,20 @@ class PeriodAnalyticsResponse(BaseModel):
     end_date: datetime
     summary: TripsPeriodSummaryMetrics
     trips: List[TripPeriodItem]
-    
-    
+
+
+class DashboardResponse(BaseModel):
+    user_id: str
+    car_id: str = Field(default="haval_jolion_15t", description="Идентификатор автомобиля пользователя")
+    fuel_price_rub: float = Field(default=62.00, description="Установленная цена топлива, ₽/л")
+    service_cost_rub: float = Field(default=9500.0, description="Стоимость планового ТО, ₽")
+    month_savings_rub: float = Field(..., description="Сэкономлено за месяц, ₽")
+    oil_remaining_percent: float = Field(..., description="Остаточный ресурс масла, %")
+    ghost_twin_status: str = Field(..., description="Статус сравнения с двойником")
+    cpa_recommended: bool = Field(default=False, description="Флаг рекомендации замены масла")
+    cpa_offer_text: Optional[str] = Field(default=None, description="Текст партнерского предложения")
+
+
 class UserProfileUpdatePayload(BaseModel):
     user_id: str
     car_id: str = Field(default="haval_jolion_15t", description="Идентификатор ТС в реестре")
@@ -137,11 +197,11 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="autoXAK Telemetry Engine",
     description="Пайплайн цифровой фильтрации, предиктивного расчета износа, LBS 2GIS и персистентности данных",
-    version="1.3.0",
+    version="1.4.0",
     lifespan=lifespan
 )
 
-# Раздача статических файлов
+# Монтирование статических файлов
 static_candidates = [
     os.path.join(os.path.dirname(__file__), "..", "static"),
     os.path.join(os.path.dirname(__file__), "static"),
@@ -155,12 +215,21 @@ if STATIC_DIR:
 DEFAULT_PROFILE = get_default_profile()
 benchmark_engine = BenchmarkEngine()
 signal_filter = SignalFilter(sample_rate_hz=50.0, cutoff_hz=2.5)
-wear_engine = WearEngine(profile=DEFAULT_PROFILE)
-twin_engine = TwinEngine(profile=DEFAULT_PROFILE)
+
+try:
+    wear_engine = WearEngine(profile=DEFAULT_PROFILE)
+except TypeError:
+    wear_engine = WearEngine(DEFAULT_PROFILE)
+
+try:
+    twin_engine = TwinEngine(profile=DEFAULT_PROFILE)
+except TypeError:
+    twin_engine = TwinEngine(DEFAULT_PROFILE)
+
 gis_service = GISService()
 
 
-# --- Раздача страниц ---
+# --- Раздача страниц (GET и HEAD) ---
 
 def _resolve_static_file(filename: str) -> str:
     search_paths = [
@@ -175,14 +244,19 @@ def _resolve_static_file(filename: str) -> str:
     raise HTTPException(status_code=404, detail=f"Файл {filename} не найден")
 
 
-@app.get("/", include_in_schema=False)
+@app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
 async def root():
     return FileResponse(_resolve_static_file("index.html"))
 
 
-@app.get("/history", include_in_schema=False)
+@app.api_route("/history", methods=["GET", "HEAD"], include_in_schema=False)
 async def history_page():
     return FileResponse(_resolve_static_file("history.html"))
+
+
+@app.api_route("/setup", methods=["GET", "HEAD"], include_in_schema=False)
+async def setup_page():
+    return FileResponse(_resolve_static_file("setup.html"))
 
 
 @app.get("/health")
@@ -190,7 +264,7 @@ def health_check():
     return {
         "status": "healthy",
         "service": "autoXAK Wear & Cost Processor",
-        "version": "1.3.0"
+        "version": "1.4.0"
     }
 
 
@@ -219,21 +293,40 @@ async def process_telemetry_session(
     filt_x, filt_y, _ = signal_filter.isolate_linear_acceleration(raw_ax, raw_ay, raw_az)
     horiz_acc = signal_filter.calculate_horizontal_acceleration(filt_x, filt_y)
 
-    profile = resolve_car_profile(payload.car_id)
-    trip_wear_engine = WearEngine(profile=profile)
-    trip_twin_engine = TwinEngine(profile=profile)
-
     user_stmt = select(User).where(User.id == payload.user_id)
     result = await db.execute(user_stmt)
     user = result.scalar_one_or_none()
 
     if not user:
-        user = User(
-            id=payload.user_id,
-            total_savings_rub=0.0,
-            current_oil_wear_percent=0.0
-        )
+        user_kwargs = {
+            "id": payload.user_id,
+            "total_savings_rub": 0.0,
+            "current_oil_wear_percent": 0.0
+        }
+        if hasattr(User, "car_id"):
+            user_kwargs["car_id"] = payload.car_id or "haval_jolion_15t"
+        if hasattr(User, "fuel_price_rub"):
+            user_kwargs["fuel_price_rub"] = 62.00
+        if hasattr(User, "service_cost_rub"):
+            user_kwargs["service_cost_rub"] = 9500.0
+        user = User(**user_kwargs)
         db.add(user)
+
+    # Применение персонального профиля ТС и тарифов пользователя
+    resolved_car_id = payload.car_id or getattr(user, "car_id", "haval_jolion_15t")
+    user_fuel_price = getattr(user, "fuel_price_rub", 62.00)
+    user_service_cost = getattr(user, "service_cost_rub", 9500.0)
+
+    profile = resolve_car_profile(resolved_car_id)
+    try:
+        trip_wear_engine = WearEngine(profile=profile)
+    except TypeError:
+        trip_wear_engine = WearEngine(profile)
+
+    try:
+        trip_twin_engine = TwinEngine(profile=profile)
+    except TypeError:
+        trip_twin_engine = TwinEngine(profile)
 
     current_life_pct = max(0.0, 100.0 - user.current_oil_wear_percent)
     dt = 0.02
@@ -241,7 +334,7 @@ async def process_telemetry_session(
     distance_meters = np.sum(speeds * dt)
     distance_km = float(distance_meters / 1000.0)
 
-    # 1. Расчет износа масла
+    # 1. Расчет износа моторного масла
     if hasattr(trip_wear_engine, "evaluate_trip_wear"):
         wear_stats = trip_wear_engine.evaluate_trip_wear(
             dt=dt, 
@@ -264,7 +357,7 @@ async def process_telemetry_session(
         oil_wear_pct = float(wear_stats.get("oil_wear_percent", 0.0))
         idle_ratio = float(wear_stats.get("idle_ratio", 0.0))
 
-    # 2. Моделирование агрессивного двойника
+    # 2. Моделирование агрессивного двойника с учетом тарифов пользователя
     if hasattr(trip_twin_engine, "evaluate_financial_delta") and hasattr(trip_twin_engine, "simulate_aggressive_twin_kinematics"):
         twin_speed, twin_ax = trip_twin_engine.simulate_aggressive_twin_kinematics(speeds, dt=dt)
         twin_wear_stats = trip_wear_engine.evaluate_trip_wear(
@@ -275,12 +368,25 @@ async def process_telemetry_session(
         ) if hasattr(trip_wear_engine, "evaluate_trip_wear") else wear_stats
 
         twin_equiv_hours = float(twin_wear_stats.get("equivalent_hours", equiv_hours))
-        savings = trip_twin_engine.evaluate_financial_delta(
-            distance_km=distance_km,
-            user_equiv_hours=equiv_hours,
-            user_ax=horiz_acc,
-            twin_equiv_hours=twin_equiv_hours
-        )
+
+        # Передача индивидуальных тарифов пользователя в расчет дельты
+        try:
+            savings = trip_twin_engine.evaluate_financial_delta(
+                distance_km=distance_km,
+                user_equiv_hours=equiv_hours,
+                user_ax=horiz_acc,
+                twin_equiv_hours=twin_equiv_hours,
+                fuel_price_rub=user_fuel_price,
+                service_cost_rub=user_service_cost
+            )
+        except TypeError:
+            savings = trip_twin_engine.evaluate_financial_delta(
+                distance_km=distance_km,
+                user_equiv_hours=equiv_hours,
+                user_ax=horiz_acc,
+                twin_equiv_hours=twin_equiv_hours
+            )
+
         fuel_saved_rub = float(savings.get("fuel_savings_rub", 0.0))
         oil_saved_rub = float(savings.get("oil_savings_rub", 0.0))
         total_savings_rub = float(savings.get("total_savings_rub", fuel_saved_rub + oil_saved_rub))
@@ -302,7 +408,7 @@ async def process_telemetry_session(
     new_trip = Trip(
         id=actual_id,
         user_id=payload.user_id,
-        car_id=payload.car_id,
+        car_id=resolved_car_id,
         duration_seconds=round(duration_sec, 2),
         distance_km=round(distance_km, 2),
         equivalent_engine_hours=round(equiv_hours, 5),
@@ -340,6 +446,9 @@ async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db)):
 
     return DashboardResponse(
         user_id=user.id,
+        car_id=getattr(user, "car_id", "haval_jolion_15t") or "haval_jolion_15t",
+        fuel_price_rub=getattr(user, "fuel_price_rub", 62.00) or 62.00,
+        service_cost_rub=getattr(user, "service_cost_rub", 9500.0) or 9500.0,
         month_savings_rub=round(user.total_savings_rub, 2),
         oil_remaining_percent=remaining_oil,
         ghost_twin_status="Лихач-новичок (Средняя сложность)",
@@ -481,6 +590,90 @@ async def get_period_analytics(
         trips=trip_items
     )
 
+@app.post("/api/v1/auth/handshake", response_model=AuthResponse)
+async def auth_handshake(payload: AuthHandshakePayload, db: AsyncSession = Depends(get_db)):
+    """
+    Device-First авторизация: находит существующего пользователя по device_id или создает нового.
+    """
+    user_id = f"dev_{payload.device_id[:16]}"
+    
+    stmt = select(User).where(User.id == user_id)
+    res = await db.execute(stmt)
+    user = res.scalar_one_or_none()
+    is_new = False
+
+    if not user:
+        is_new = True
+        user = User(
+            id=user_id,
+            car_id=payload.preferred_car_id or "haval_jolion_15t",
+            fuel_price_rub=62.0,
+            service_cost_rub=9500.0,
+            total_savings_rub=0.0,
+            current_oil_wear_percent=0.0
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+
+    token = create_access_token(user_id=user.id)
+
+    return AuthResponse(
+        token=token,
+        user_id=user.id,
+        car_id=user.car_id,
+        is_new_user=is_new
+    )
+
+
+@app.post("/api/v1/users/{user_id}/profile")
+async def update_user_vehicle_profile(
+    user_id: str,
+    payload: UserProfileUpdatePayload,
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Обновляет привязку автомобиля, экономические тарифы и точку отсчета ресурса моторного масла.
+    """
+    user_stmt = select(User).where(User.id == user_id)
+    res = await db.execute(user_stmt)
+    user = res.scalar_one_or_none()
+
+    if not user:
+        user_kwargs = {
+            "id": user_id,
+            "total_savings_rub": 0.0,
+            "current_oil_wear_percent": payload.current_oil_wear_percent
+        }
+        if hasattr(User, "car_id"):
+            user_kwargs["car_id"] = payload.car_id
+        if hasattr(User, "fuel_price_rub"):
+            user_kwargs["fuel_price_rub"] = payload.fuel_price_rub
+        if hasattr(User, "service_cost_rub"):
+            user_kwargs["service_cost_rub"] = payload.service_cost_rub
+        user = User(**user_kwargs)
+        db.add(user)
+    else:
+        if hasattr(user, "car_id"):
+            user.car_id = payload.car_id
+        if hasattr(user, "fuel_price_rub"):
+            user.fuel_price_rub = payload.fuel_price_rub
+        if hasattr(user, "service_cost_rub"):
+            user.service_cost_rub = payload.service_cost_rub
+        user.current_oil_wear_percent = payload.current_oil_wear_percent
+
+    await db.commit()
+    await db.refresh(user)
+
+    return {
+        "status": "CONFIG_SAVED",
+        "user_id": user.id,
+        "car_id": getattr(user, "car_id", payload.car_id),
+        "current_oil_wear_percent": user.current_oil_wear_percent,
+        "fuel_price_rub": getattr(user, "fuel_price_rub", payload.fuel_price_rub),
+        "service_cost_rub": getattr(user, "service_cost_rub", payload.service_cost_rub)
+    }
+
 
 @app.post("/api/v1/analytics/verify-run", response_model=VerificationReport)
 async def verify_experiment_run(payload: VerificationPayload):
@@ -517,42 +710,3 @@ async def verify_experiment_run(payload: VerificationPayload):
     )
 
     return report
-
-@app.post("/api/v1/users/{user_id}/profile")
-async def update_user_vehicle_profile(
-    user_id: str,
-    payload: UserProfileUpdatePayload,
-    db: AsyncSession = Depends(get_db)
-):
-    """
-    Обновляет привязку автомобиля, экономические коэффициенты и точку отсчета ресурса масла.
-    """
-    user_stmt = select(User).where(User.id == user_id)
-    res = await db.execute(user_stmt)
-    user = res.scalar_one_or_none()
-
-    if not user:
-        user = User(
-            id=user_id,
-            total_savings_rub=0.0,
-            current_oil_wear_percent=payload.current_oil_wear_percent
-        )
-        db.add(user)
-    else:
-        # Прямая калибровка текущего состояния масла водителя
-        user.current_oil_wear_percent = payload.current_oil_wear_percent
-
-    await db.commit()
-
-    return {
-        "status": "CONFIG_SAVED",
-        "user_id": user_id,
-        "car_id": payload.car_id,
-        "current_oil_wear_percent": user.current_oil_wear_percent,
-        "fuel_price_rub": payload.fuel_price_rub,
-        "service_cost_rub": payload.service_cost_rub
-    }
-
-@app.get("/setup", include_in_schema=False)
-async def setup_page():
-    return FileResponse(_resolve_static_file("setup.html"))

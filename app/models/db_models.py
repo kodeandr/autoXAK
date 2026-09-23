@@ -1,53 +1,52 @@
-import uuid
-from datetime import datetime
-from sqlalchemy import String, Float, DateTime, ForeignKey, Index
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+﻿from datetime import datetime
+from sqlalchemy import Column, String, Float, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
 from app.core.database import Base
+
 
 class User(Base):
     __tablename__ = "users"
 
-    id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
-    
-    total_savings_rub: Mapped[float] = mapped_column(Float, default=0.0)
-    current_oil_wear_percent: Mapped[float] = mapped_column(Float, default=0.0)
+    id = Column(String, primary_key=True, index=True)
+    car_id = Column(String, default="haval_jolion_15t", nullable=False)
+    fuel_price_rub = Column(Float, default=62.0, nullable=False)
+    service_cost_rub = Column(Float, default=9500.0, nullable=False)
+    total_savings_rub = Column(Float, default=0.0, nullable=False)
+    current_oil_wear_percent = Column(Float, default=0.0, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    trips: Mapped[list["Trip"]] = relationship("Trip", back_populates="user", cascade="all, delete-orphan")
-
-
-class Car(Base):
-    __tablename__ = "cars"
-
-    id: Mapped[str] = mapped_column(String(64), primary_key=True)
-    brand: Mapped[str] = mapped_column(String(64))
-    model: Mapped[str] = mapped_column(String(64))
-    engine_type: Mapped[str] = mapped_column(String(32), default="TGDI")
-    engine_displacement_l: Mapped[float] = mapped_column(Float, default=2.0)
-    base_oil_hours: Mapped[float] = mapped_column(Float, default=250.0)
+    trips = relationship("Trip", back_populates="user", cascade="all, delete-orphan")
+    leads = relationship("CPALead", back_populates="user", cascade="all, delete-orphan")
 
 
 class Trip(Base):
     __tablename__ = "trips"
 
-    id: Mapped[str] = mapped_column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id: Mapped[str] = mapped_column(String(64), ForeignKey("users.id", ondelete="CASCADE"), index=True)
-    car_id: Mapped[str] = mapped_column(String(64), index=True)
-    
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, index=True)
-    duration_seconds: Mapped[float] = mapped_column(Float)
-    distance_km: Mapped[float] = mapped_column(Float)
-    
-    equivalent_engine_hours: Mapped[float] = mapped_column(Float)
-    oil_wear_percent: Mapped[float] = mapped_column(Float)
-    idle_ratio: Mapped[float] = mapped_column(Float)
-    
-    fuel_saved_rub: Mapped[float] = mapped_column(Float)
-    oil_saved_rub: Mapped[float] = mapped_column(Float)
-    total_savings_rub: Mapped[float] = mapped_column(Float)
+    id = Column(String, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    car_id = Column(String, default="haval_jolion_15t", nullable=False)
+    duration_seconds = Column(Float, nullable=False)
+    distance_km = Column(Float, nullable=False)
+    equivalent_engine_hours = Column(Float, nullable=False)
+    oil_wear_percent = Column(Float, nullable=False)
+    idle_ratio = Column(Float, nullable=False)
+    fuel_saved_rub = Column(Float, nullable=False)
+    oil_saved_rub = Column(Float, nullable=False)
+    total_savings_rub = Column(Float, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
 
-    user: Mapped["User"] = relationship("User", back_populates="trips")
+    user = relationship("User", back_populates="trips")
 
-    __table_args__ = (
-        Index("idx_trip_user_created", "user_id", "created_at"),
-    )
+
+class CPALead(Base):
+    __tablename__ = "cpa_leads"
+
+    id = Column(String, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    car_id = Column(String, nullable=False)
+    partner_id = Column(String, default="autodoc_partner_01", nullable=False)
+    promo_code = Column(String, nullable=False)
+    discount_rub = Column(Float, default=500.0, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    user = relationship("User", back_populates="leads")
