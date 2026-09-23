@@ -5,7 +5,6 @@ import uuid
 import urllib.request
 import numpy as np
 
-# Единый кинематический ездовой цикл (60 секунд, 3000 точек, dt = 0.02 с)
 TOTAL_POINTS = 3000
 DT = 0.02
 BASE_TIME = time.time()
@@ -42,32 +41,31 @@ for i in range(TOTAL_POINTS):
         "lon": 37.618423
     })
 
-# Физически согласованная матрица параметров CAN/OBD-II
-VEHICLE_CONFIGS = [
+# Сравниваем разные модификации одного семейства и кроссовер
+TEST_TRIMS = [
     {
-        "car_id": "haval_jolion_15t",
-        "title": "Haval Jolion 1.5T 4WD (1505 кг, SUV 4WD)",
-        # Согласованная нагрузка с учетом массы 1505 кг и гидромуфты 4WD
+        "car_id": "skoda_octavia_14tsi_dsg",
+        "title": "Skoda Octavia 1.4 TSI FWD (1285 кг)",
+        "accel_load": 70.0, "accel_rpm": (1400, 2400), "accel_temp": 95.0,
+        "cruise_load": 27.0, "cruise_rpm": 1450, "cruise_temp": 91.0,
+        "idle_load": 14.5, "idle_rpm": 750, "idle_temp": 89.0,
+        "decel_load": 10.5, "decel_rpm": (800, 1300), "decel_temp": 90.0
+    },
+    {
+        "car_id": "skoda_octavia_20tsi_dsg_4wd",
+        "title": "Skoda Octavia 2.0 TSI 4WD (1455 кг)",
+        "accel_load": 76.0, "accel_rpm": (1450, 2500), "accel_temp": 98.0,
+        "cruise_load": 35.5, "cruise_rpm": 1600, "cruise_temp": 94.0,
+        "idle_load": 17.0, "idle_rpm": 800, "idle_temp": 91.0,
+        "decel_load": 11.0, "decel_rpm": (850, 1400), "decel_temp": 92.0
+    },
+    {
+        "car_id": "haval_jolion_15t_4wd",
+        "title": "Haval Jolion 1.5T 4WD (1505 кг)",
         "accel_load": 79.5, "accel_rpm": (1500, 2550), "accel_temp": 99.0,
         "cruise_load": 38.0, "cruise_rpm": 1650, "cruise_temp": 95.0,
         "idle_load": 17.5, "idle_rpm": 800, "idle_temp": 91.0,
         "decel_load": 11.5, "decel_rpm": (850, 1450), "decel_temp": 92.0
-    },
-    {
-        "car_id": "skoda_octavia_14tsi",
-        "title": "Skoda Octavia 1.4 TSI (1265 кг, Sedan FWD)",
-        "accel_load": 69.0, "accel_rpm": (1400, 2350), "accel_temp": 95.0,
-        "cruise_load": 26.5, "cruise_rpm": 1450, "cruise_temp": 91.0,
-        "idle_load": 14.0, "idle_rpm": 750, "idle_temp": 89.0,
-        "decel_load": 10.0, "decel_rpm": (800, 1300), "decel_temp": 90.0
-    },
-    {
-        "car_id": "geely_coolray_15t",
-        "title": "Geely Coolray 1.5T DCT (1340 кг, Crossover FWD)",
-        "accel_load": 75.0, "accel_rpm": (1500, 2500), "accel_temp": 97.0,
-        "cruise_load": 34.0, "cruise_rpm": 1600, "cruise_temp": 93.0,
-        "idle_load": 16.0, "idle_rpm": 800, "idle_temp": 90.0,
-        "decel_load": 11.0, "decel_rpm": (800, 1400), "decel_temp": 91.0
     }
 ]
 
@@ -77,7 +75,7 @@ ctx.verify_mode = ssl.CERT_NONE
 
 results = []
 
-for cfg in VEHICLE_CONFIGS:
+for cfg in TEST_TRIMS:
     rpm_list = []
     load_list = []
     temp_list = []
@@ -135,16 +133,15 @@ for cfg in VEHICLE_CONFIGS:
             "autoxak_h": report.get("autoxak_predicted_hours"),
             "obd_h": report.get("obd_ground_truth_hours"),
             "mape": report.get("mape_percent"),
-            "confirmed": report.get("hypothesis_confirmed"),
-            "p_val": report.get("p_value")
+            "confirmed": report.get("hypothesis_confirmed")
         })
 
-print("\n" + "=" * 86)
-print("              СВОДНЫЙ ОТЧЕТ КРОСС-ВАЛИДАЦИИ МОДЕЛИ autoXAK (3 АВТОМОБИЛЯ)")
-print("=" * 86)
-print(f"{'Автомобиль':<40} | {'autoXAK (ч)':<11} | {'OBD-II (ч)':<10} | {'MAPE (%)':<8} | {'H1'} ")
-print("-" * 86)
+print("\n" + "=" * 90)
+print("       КРОСС-ВАЛИДАЦИЯ МОДИФИКАЦИЙ ИЗ РЕЛЯЦИОННОЙ БД POSTGRESQL (TOP-FLEET)")
+print("=" * 90)
+print(f"{'Модификация автомобиля':<42} | {'autoXAK (ч)':<11} | {'OBD-II (ч)':<10} | {'MAPE (%)':<8} | {'H1'} ")
+print("-" * 90)
 for r in results:
     status = "OK (<=10%)" if r["confirmed"] else "FAIL (>10%)"
-    print(f"{r['title']:<40} | {r['autoxak_h']:<11} | {r['obd_h']:<10} | {r['mape']:<8.2f} | {status}")
-print("=" * 86 + "\n")
+    print(f"{r['title']:<42} | {r['autoxak_h']:<11} | {r['obd_h']:<10} | {r['mape']:<8.2f} | {status}")
+print("=" * 90 + "\n")

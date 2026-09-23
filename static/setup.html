@@ -9,7 +9,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>autoXAK — Параметры автомобиля</title>
-    <!-- Подключение менеджера сессий -->
+    <!-- Менеджер сессий autoXAK -->
     <script src="/static/session.js"></script>
     <style>
         :root {
@@ -27,6 +27,7 @@
             --color-accent-safe: #3B82F6;
             --color-accent-safe-soft: rgba(59, 130, 246, 0.16);
             --color-accent-warning: #F59E0B;
+            --color-accent-danger: #EF4444;
 
             --color-text-primary: #F9FAFB;
             --color-text-secondary: #9CA3AF;
@@ -183,28 +184,79 @@
             border-color: var(--color-accent-safe);
         }
 
+        .custom-select:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         .physics-preview {
             background: rgba(59, 130, 246, 0.08);
             border: 1px solid rgba(59, 130, 246, 0.25);
             border-radius: var(--radius-md);
-            padding: 10px 12px;
+            padding: 12px;
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 8px;
+            gap: 10px;
             font-size: 11px;
         }
 
         .physics-item span {
             color: var(--color-text-muted);
             display: block;
+            margin-bottom: 2px;
         }
 
         .physics-item strong {
             font-family: var(--font-mono);
             color: var(--color-accent-safe);
+            font-size: 12px;
         }
 
-        .chips-grid {
+        .synth-toggle {
+            background: none;
+            border: none;
+            color: var(--color-accent-safe);
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            padding: 4px 0;
+            text-align: left;
+        }
+
+        .synth-box {
+            display: none;
+            flex-direction: column;
+            gap: 10px;
+            padding: 12px;
+            border-radius: var(--radius-md);
+            background: rgba(17, 24, 39, 0.6);
+            border: 1px dashed var(--color-border-strong);
+        }
+        .synth-box.active { display: flex; }
+
+        .btn-synth-apply {
+            background: var(--color-accent-safe);
+            color: #ffffff;
+            border: none;
+            border-radius: var(--radius-sm);
+            padding: 8px 12px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        /* Сетка чипсов брендов АЗС и топлива */
+        .chips-grid-brand {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
+        }
+
+        .chips-grid-fuel {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             gap: 6px;
@@ -214,9 +266,9 @@
             background: var(--color-bg-subtle);
             border: 1px solid var(--color-border-soft);
             color: var(--color-text-secondary);
-            padding: 10px 0;
+            padding: 9px 0;
             border-radius: var(--radius-sm);
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
             cursor: pointer;
             text-align: center;
@@ -228,6 +280,53 @@
             color: white;
             border-color: var(--color-accent-safe);
             box-shadow: 0 2px 10px rgba(59, 130, 246, 0.35);
+        }
+
+        /* Интеллектуальный степпер цены */
+        .price-stepper-wrap {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-step {
+            width: 44px;
+            height: 44px;
+            border-radius: var(--radius-md);
+            background: var(--color-bg-subtle);
+            border: 1px solid var(--color-border-soft);
+            color: var(--color-text-primary);
+            font-size: 18px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+        }
+        .btn-step:active {
+            transform: scale(0.92);
+            border-color: var(--color-accent-safe);
+        }
+
+        .fuel-badge-info {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+            padding: 8px 10px;
+            border-radius: var(--radius-sm);
+            background: rgba(15, 23, 42, 0.7);
+            border: 1px solid var(--color-border-soft);
+        }
+
+        .fuel-status-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+            background: var(--color-accent-savings);
         }
 
         .slider-wrap {
@@ -293,7 +392,6 @@
             gap: 8px;
             transition: transform 0.1s;
         }
-
         .btn-save:active { transform: scale(0.98); }
 
         .btn-reset-service {
@@ -311,7 +409,6 @@
             gap: 6px;
             transition: all 0.2s;
         }
-
         .btn-reset-service:hover {
             border-color: var(--color-accent-safe);
             color: var(--color-accent-safe);
@@ -328,42 +425,102 @@
         </header>
 
         <main class="content-scroll">
-            <!-- Секция 1: Выбор авто -->
+            <!-- Секция 1: Иерархический выбор модификации ТС -->
             <section class="setup-card">
                 <div class="section-header">
                     <span class="section-icon">🚗</span>
                     <span class="section-title">Автомобиль</span>
                 </div>
-                <p class="section-desc">Выберите автомобиль для автоматической настройки физической модели.</p>
+                <p class="section-desc">Точные паспортные константы массы, трансмиссии и аэродинамики кузова.</p>
 
                 <div class="input-group">
-                    <label class="input-label">Модификация авто</label>
-                    <select class="custom-select" id="car-selector" onchange="onCarSelected()">
-                        <option value="haval_jolion_15t">Haval Jolion 1.5T 4WD (150 л.с.)</option>
-                        <option value="chery_tiggo_7pro">Chery Tiggo 7 Pro 1.5T (147 л.с.)</option>
-                        <option value="geely_coolray_15t">Geely Coolray 1.5T DCT (150 л.с.)</option>
-                        <option value="skoda_octavia_14tsi">Skoda Octavia A7 1.4 TSI (150 л.с.)</option>
-                        <option value="custom_sedan">Другой седан (Класс B/C, ~1250 кг)</option>
-                        <option value="custom_suv">Другой кроссовер (~1600 кг)</option>
+                    <label class="input-label">Марка</label>
+                    <select class="custom-select" id="make-selector" onchange="onMakeChanged()">
+                        <option value="">Загрузка реестра...</option>
                     </select>
                 </div>
 
-                <div class="physics-preview">
+                <div class="input-group">
+                    <label class="input-label">Модель</label>
+                    <select class="custom-select" id="model-selector" onchange="onModelChanged()" disabled>
+                        <option value="">Сначала выберите марку</option>
+                    </select>
+                </div>
+
+                <div class="input-group">
+                    <label class="input-label">Модификация силового агрегата</label>
+                    <select class="custom-select" id="trim-selector" onchange="onTrimChanged()" disabled>
+                        <option value="">Сначала выберите модель</option>
+                    </select>
+                </div>
+
+                <!-- Блок синтезатора для редких авто -->
+                <button type="button" class="synth-toggle" onclick="toggleSynthBox()">
+                    <span id="synth-arrow">▸</span> Настроить вручную (если авто нет в списке)
+                </button>
+
+                <div id="synth-box" class="synth-box">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                        <div class="input-group">
+                            <label class="input-label">Тип кузова</label>
+                            <select id="synth-body" class="custom-select" style="padding: 8px 10px; font-size: 13px;">
+                                <option value="sedan">Седан (Cd*A ~0.61)</option>
+                                <option value="liftback">Лифтбек (~0.64)</option>
+                                <option value="crossover" selected>Кроссовер (~0.77)</option>
+                                <option value="suv">Внедорожник (~1.00)</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Снаряж. масса, кг</label>
+                            <input type="number" id="synth-weight" class="custom-input" style="padding: 8px 10px; font-size: 13px;" value="1450" step="50">
+                        </div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
+                        <div class="input-group">
+                            <label class="input-label">Объем ДВС</label>
+                            <input type="number" id="synth-disp" class="custom-input" style="padding: 8px 10px; font-size: 13px;" value="1.5" step="0.1">
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Привод</label>
+                            <select id="synth-drive" class="custom-select" style="padding: 8px 6px; font-size: 13px;">
+                                <option value="FWD">FWD</option>
+                                <option value="AWD">AWD</option>
+                                <option value="RWD">RWD</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label class="input-label">Коробка</label>
+                            <select id="synth-trans" class="custom-select" style="padding: 8px 6px; font-size: 13px;">
+                                <option value="DCT">Робот</option>
+                                <option value="AT">Автомат</option>
+                                <option value="MT">Механика</option>
+                                <option value="CVT">Вариатор</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn-synth-apply" onclick="applyCustomSynthesis()">
+                        ⚙️ Рассчитать профиль
+                    </button>
+                </div>
+
+                <div class="physics-preview" id="physics-panel">
                     <div class="physics-item">
                         <span>Снаряженная масса:</span>
                         <strong id="p-mass">1505 кг</strong>
                     </div>
                     <div class="physics-item">
-                        <span>Лобовое сопротивление:</span>
-                        <strong id="p-cda">0.76 м²</strong>
+                        <span>Мощность ДВС:</span>
+                        <strong id="p-power">150 л.с.</strong>
                     </div>
                     <div class="physics-item">
-                        <span>Объем масла:</span>
+                        <span>Объем картера:</span>
                         <strong id="p-oil">3.8 л</strong>
                     </div>
                     <div class="physics-item">
-                        <span>Базовый расход:</span>
-                        <strong id="p-fuel">8.5 л / 100 км</strong>
+                        <span>Рекоменд. масло:</span>
+                        <strong id="p-grade" style="color: var(--color-accent-savings);">0W-20 (C5)</strong>
                     </div>
                 </div>
             </section>
@@ -389,33 +546,62 @@
                 </button>
             </section>
 
-            <!-- Секция 3: Экономические параметры -->
+            <!-- Секция 3: Интеллектуальные цены топлива и нормативы -->
             <section class="setup-card">
                 <div class="section-header">
                     <span class="section-icon">💳</span>
                     <span class="section-title">Цены и нормативы</span>
                 </div>
-                <p class="section-desc">Используются для расчета выгоды от спокойного стиля езды.</p>
+                <p class="section-desc">Динамический мониторинг цен по региону и сетевым АЗС.</p>
 
+                <!-- Выбор сети АЗС -->
                 <div class="input-group">
-                    <label class="input-label">Тип топлива</label>
-                    <div class="chips-grid">
-                        <div class="chip-btn" onclick="selectFuel('АИ-92', 53.50, this)">АИ-92</div>
-                        <div class="chip-btn active" onclick="selectFuel('АИ-95', 62.00, this)">АИ-95</div>
-                        <div class="chip-btn" onclick="selectFuel('АИ-100', 78.50, this)">АИ-100</div>
-                        <div class="chip-btn" onclick="selectFuel('ДТ', 67.80, this)">ДТ</div>
+                    <label class="input-label">Сеть АЗС</label>
+                    <div class="chips-grid-brand" id="brand-chips">
+                        <div class="chip-btn active" data-brand="rosneft" onclick="selectBrand('rosneft', this)">Роснефть</div>
+                        <div class="chip-btn" data-brand="lukoil" onclick="selectBrand('lukoil', this)">Лукойл</div>
+                        <div class="chip-btn" data-brand="gpn" onclick="selectBrand('gpn', this)">ГПН</div>
+                        <div class="chip-btn" data-brand="independent" onclick="selectBrand('independent', this)">Частные</div>
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 4px;">
-                    <div class="input-group">
-                        <label class="input-label">Цена топлива (₽/л)</label>
-                        <input type="number" class="custom-input" id="input-fuel-price" value="62.00" step="0.5">
+                <!-- Выбор марки топлива -->
+                <div class="input-group">
+                    <label class="input-label">Марка топлива</label>
+                    <div class="chips-grid-fuel" id="fuel-chips">
+                        <div class="chip-btn" data-fuel="ai92" onclick="selectFuelGrade('ai92', this)">АИ-92</div>
+                        <div class="chip-btn active" data-fuel="ai95" onclick="selectFuelGrade('ai95', this)">АИ-95</div>
+                        <div class="chip-btn" data-fuel="ai100" onclick="selectFuelGrade('ai100', this)">АИ-100</div>
+                        <div class="chip-btn" data-fuel="dt" onclick="selectFuelGrade('dt', this)">ДТ</div>
                     </div>
-                    <div class="input-group">
-                        <label class="input-label">Цена ТО (₽)</label>
-                        <input type="number" class="custom-input" id="input-service-cost" value="9500" step="500">
+                </div>
+
+                <!-- Блок стоимости с кнопками шага -->
+                <div class="input-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <label class="input-label">Цена за литр (₽)</label>
+                        <span id="fuel-geo-label" style="font-size: 10px; color: var(--color-accent-safe); font-family: var(--font-mono);">Москва (GPS)</span>
                     </div>
+                    <div class="price-stepper-wrap">
+                        <button type="button" class="btn-step" onclick="stepFuelPrice(-0.50)">−</button>
+                        <input type="number" class="custom-input" id="input-fuel-price" value="72.40" step="0.10" style="text-align: center; font-weight: 700; font-family: var(--font-mono); font-size: 16px;">
+                        <button type="button" class="btn-step" onclick="stepFuelPrice(+0.50)">+</button>
+                    </div>
+                </div>
+
+                <!-- Плашка доступности топлива на АЗС -->
+                <div class="fuel-badge-info" id="fuel-status-box">
+                    <div style="display: flex; align-items: center;">
+                        <span class="fuel-status-dot" id="fuel-status-dot"></span>
+                        <span id="fuel-source-label" style="color: var(--color-text-secondary);">Роснефть (Москва)</span>
+                    </div>
+                    <span id="fuel-avail-badge" style="color: var(--color-accent-savings); font-weight: 600;">В наличии</span>
+                </div>
+
+                <!-- Стоимость стандартного ТО -->
+                <div class="input-group" style="margin-top: 4px;">
+                    <label class="input-label">Цена стандартного ТО (₽)</label>
+                    <input type="number" class="custom-input" id="input-service-cost" value="9500" step="500">
                 </div>
             </section>
         </main>
@@ -431,26 +617,256 @@
         'use strict';
 
         let currentUserId = AutoXAKSession.getUserId();
-
-        const CAR_DATABASE = {
-            "haval_jolion_15t": { mass: 1505, cda: 0.76, oil: 3.8, fuel: 8.5, name: "Haval Jolion 1.5T 4WD" },
-            "chery_tiggo_7pro": { mass: 1465, cda: 0.78, oil: 4.1, fuel: 8.8, name: "Chery Tiggo 7 Pro 1.5T" },
-            "geely_coolray_15t": { mass: 1390, cda: 0.74, oil: 4.0, fuel: 7.9, name: "Geely Coolray 1.5T" },
-            "skoda_octavia_14tsi": { mass: 1280, cda: 0.63, oil: 4.0, fuel: 6.9, name: "Skoda Octavia 1.4 TSI" },
-            "custom_sedan": { mass: 1250, cda: 0.65, oil: 3.5, fuel: 7.5, name: "Седан B/C-класса" },
-            "custom_suv": { mass: 1650, cda: 0.82, oil: 4.5, fuel: 9.5, name: "Кроссовер SUV" }
-        };
-
+        let catalogData = [];
+        let activeTrimId = "haval_jolion_15t_4wd";
         let currentWearPercent = 0.0;
 
-        function onCarSelected() {
-            const val = document.getElementById('car-selector').value;
-            const car = CAR_DATABASE[val];
-            if (car) {
-                document.getElementById('p-mass').innerText = `${car.mass} кг`;
-                document.getElementById('p-cda').innerText = `${car.cda} м²`;
-                document.getElementById('p-oil').innerText = `${car.oil} л`;
-                document.getElementById('p-fuel').innerText = `${car.fuel} л / 100 км`;
+        let activeBrand = "rosneft";
+        let activeFuelGrade = "ai95";
+        let userLocation = { lat: 55.75, lon: 37.61, region: "77" };
+
+        async function initGeoLocation() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        userLocation.lat = pos.coords.latitude;
+                        userLocation.lon = pos.coords.longitude;
+                        fetchLiveFuelPrice();
+                    },
+                    () => { fetchLiveFuelPrice(); },
+                    { timeout: 4000 }
+                );
+            } else {
+                fetchLiveFuelPrice();
+            }
+        }
+
+        async function fetchLiveFuelPrice() {
+            try {
+                const params = new URLSearchParams({
+                    lat: userLocation.lat,
+                    lon: userLocation.lon,
+                    brand: activeBrand,
+                    fuel_grade: activeFuelGrade
+                });
+                const res = await fetch(`/api/v1/fuel/current-price?${params}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    document.getElementById("input-fuel-price").value = Number(data.recommended_price_rub).toFixed(2);
+                    document.getElementById("fuel-source-label").innerText = data.source_label;
+                    document.getElementById("fuel-geo-label").innerText = `${data.region_name} (Код ${data.region_code})`;
+
+                    const dot = document.getElementById("fuel-status-dot");
+                    const badge = document.getElementById("fuel-avail-badge");
+                    if (data.availability_status === "NORMAL") {
+                        dot.style.background = "var(--color-accent-savings)";
+                        badge.style.color = "var(--color-accent-savings)";
+                        badge.innerText = "В наличии";
+                    } else if (data.availability_status === "SHORTAGE") {
+                        dot.style.background = "var(--color-accent-warning)";
+                        badge.style.color = "var(--color-accent-warning)";
+                        badge.innerText = "Очереди / Дефицит";
+                    } else {
+                        dot.style.background = "var(--color-accent-danger)";
+                        badge.style.color = "var(--color-accent-danger)";
+                        badge.innerText = "Перебои с поставками";
+                    }
+                }
+            } catch (err) {
+                console.warn("Сетевой сбой получения котировок топлива:", err);
+            }
+        }
+
+        function selectBrand(brand, element) {
+            document.querySelectorAll("#brand-chips .chip-btn").forEach(b => b.classList.remove("active"));
+            if (element) element.classList.add("active");
+            activeBrand = brand;
+            fetchLiveFuelPrice();
+        }
+
+        function selectFuelGrade(grade, element) {
+            document.querySelectorAll("#fuel-chips .chip-btn").forEach(b => b.classList.remove("active"));
+            if (element) element.classList.add("active");
+            activeFuelGrade = grade;
+            fetchLiveFuelPrice();
+        }
+
+        function stepFuelPrice(delta) {
+            const el = document.getElementById("input-fuel-price");
+            let val = parseFloat(el.value) || 72.40;
+            val = Math.max(30.0, Math.min(150.0, val + delta));
+            el.value = val.toFixed(2);
+        }
+
+        function autoSelectFuelByTrim(trimId) {
+            let targetFuel = "ai95";
+            if (trimId.includes("20tsi") || trimId.includes("turbo_high")) {
+                targetFuel = "ai100";
+            } else if (trimId.includes("16mpi") || trimId.includes("vesta_16")) {
+                targetFuel = "ai92";
+            } else if (trimId.includes("diesel") || trimId.includes("_dt")) {
+                targetFuel = "dt";
+            } else {
+                targetFuel = "ai95";
+            }
+
+            const btn = document.querySelector(`#fuel-chips .chip-btn[data-fuel="${targetFuel}"]`);
+            if (btn) selectFuelGrade(targetFuel, btn);
+        }
+
+        async function loadCatalog() {
+            try {
+                const res = await fetch("/api/v1/vehicles/catalog", {
+                    headers: AutoXAKSession.getAuthHeaders()
+                });
+                if (res.ok) {
+                    catalogData = await res.json();
+                    populateMakeSelector();
+                }
+            } catch (err) {
+                console.warn("Каталог офлайн:", err);
+            }
+        }
+
+        function populateMakeSelector() {
+            const makeSel = document.getElementById("make-selector");
+            makeSel.innerHTML = '<option value="">-- Выберите марку --</option>';
+            catalogData.forEach(mk => {
+                makeSel.innerHTML += `<option value="${mk.id}">${mk.name}</option>`;
+            });
+        }
+
+        function onMakeChanged() {
+            const makeId = document.getElementById("make-selector").value;
+            const modelSel = document.getElementById("model-selector");
+            const trimSel = document.getElementById("trim-selector");
+
+            modelSel.innerHTML = '<option value="">-- Выберите модель --</option>';
+            trimSel.innerHTML = '<option value="">-- Выберите комплектацию --</option>';
+            modelSel.disabled = !makeId;
+            trimSel.disabled = true;
+
+            if (!makeId) return;
+            const make = catalogData.find(m => m.id === makeId);
+            if (make && make.models) {
+                make.models.forEach(md => {
+                    modelSel.innerHTML += `<option value="${md.id}">${md.name} (${md.body_type})</option>`;
+                });
+            }
+        }
+
+        function onModelChanged() {
+            const makeId = document.getElementById("make-selector").value;
+            const modelId = document.getElementById("model-selector").value;
+            const trimSel = document.getElementById("trim-selector");
+
+            trimSel.innerHTML = '<option value="">-- Выберите комплектацию --</option>';
+            trimSel.disabled = !modelId;
+
+            if (!modelId) return;
+            const make = catalogData.find(m => m.id === makeId);
+            const model = make ? make.models.find(m => m.id === modelId) : null;
+            if (model && model.trims) {
+                model.trims.forEach(tr => {
+                    trimSel.innerHTML += `<option value="${tr.id}">${tr.badge_name}</option>`;
+                });
+            }
+        }
+
+        function onTrimChanged() {
+            const trimId = document.getElementById("trim-selector").value;
+            if (!trimId) return;
+            activeTrimId = trimId;
+
+            let trimObj = null;
+            for (const mk of catalogData) {
+                for (const md of mk.models) {
+                    const t = md.trims.find(x => x.id === trimId);
+                    if (t) { trimObj = t; break; }
+                }
+            }
+
+            if (trimObj) {
+                document.getElementById("p-mass").innerText = `${trimObj.curb_weight_kg} кг`;
+                document.getElementById("p-power").innerText = `${trimObj.power_hp} л.с.`;
+                document.getElementById("p-oil").innerText = `${trimObj.oil_capacity_l} л`;
+                document.getElementById("p-grade").innerText = `${trimObj.oil_grade} (${trimObj.recommended_oil_brand})`;
+                autoSelectFuelByTrim(trimId);
+            }
+        }
+
+        function selectTrimInCatalog(trimId) {
+            for (const mk of catalogData) {
+                for (const md of mk.models) {
+                    const t = md.trims.find(x => x.id === trimId);
+                    if (t) {
+                        const makeSel = document.getElementById("make-selector");
+                        makeSel.value = mk.id;
+                        onMakeChanged();
+
+                        const modelSel = document.getElementById("model-selector");
+                        modelSel.value = md.id;
+                        onModelChanged();
+
+                        const trimSel = document.getElementById("trim-selector");
+                        trimSel.value = t.id;
+                        onTrimChanged();
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function toggleSynthBox() {
+            const box = document.getElementById("synth-box");
+            const arrow = document.getElementById("synth-arrow");
+            box.classList.toggle("active");
+            arrow.innerText = box.classList.contains("active") ? "▾" : "▸";
+        }
+
+        async function applyCustomSynthesis() {
+            const bodyType = document.getElementById("synth-body").value;
+            const weight = parseFloat(document.getElementById("synth-weight").value) || 1400.0;
+            const disp = parseFloat(document.getElementById("synth-disp").value) || 1.5;
+            const drive = document.getElementById("synth-drive").value;
+            const trans = document.getElementById("synth-trans").value;
+
+            const payload = {
+                body_type: bodyType,
+                engine_disp_l: disp,
+                is_turbo: true,
+                drivetrain: drive,
+                transmission: trans,
+                curb_weight_kg: weight
+            };
+
+            try {
+                const res = await fetch("/api/v1/vehicles/synthesize", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        ...AutoXAKSession.getAuthHeaders()
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    activeTrimId = data.car_id;
+                    const p = data.profile;
+
+                    document.getElementById("p-mass").innerText = `${p.curb_weight_kg} кг`;
+                    document.getElementById("p-power").innerText = `${Math.round(p.rated_power_kw * 1.36)} л.с.`;
+                    document.getElementById("p-oil").innerText = `${p.oil_capacity_l} л`;
+                    document.getElementById("p-grade").innerText = `${p.oil_grade} (${p.oil_spec})`;
+
+                    toggleSynthBox();
+                    await loadCatalog();
+                    selectTrimInCatalog(activeTrimId);
+                }
+            } catch (err) {
+                console.error("Ошибка синтеза:", err);
             }
         }
 
@@ -458,7 +874,6 @@
             const km = Number(val);
             const wear = Math.min(100.0, (km / 10000) * 100);
             currentWearPercent = wear;
-
             const remaining = Math.max(0, 100 - wear);
             document.getElementById('oil-km-val').innerText = `${km} км (Остаток ${remaining.toFixed(0)}%)`;
         }
@@ -468,30 +883,12 @@
             onOilRangeChange(0);
         }
 
-        function selectFuel(name, price, element) {
-            document.querySelectorAll('.chip-btn').forEach(btn => btn.classList.remove('active'));
-            if (element) element.classList.add('active');
-            document.getElementById('input-fuel-price').value = Number(price).toFixed(2);
-        }
-
-        function highlightFuelChip(price) {
-            const numPrice = Number(price);
-            document.querySelectorAll('.chip-btn').forEach(btn => {
-                btn.classList.remove('active');
-                if (btn.innerText === 'АИ-92' && Math.abs(numPrice - 53.50) < 0.1) btn.classList.add('active');
-                if (btn.innerText === 'АИ-95' && Math.abs(numPrice - 62.00) < 0.1) btn.classList.add('active');
-                if (btn.innerText === 'АИ-100' && Math.abs(numPrice - 78.50) < 0.1) btn.classList.add('active');
-                if (btn.innerText === 'ДТ' && Math.abs(numPrice - 67.80) < 0.1) btn.classList.add('active');
-            });
-        }
-
         async function loadCurrentConfig() {
-            let carId = "haval_jolion_15t";
-            let fuelPrice = 62.00;
+            let carId = "haval_jolion_15t_4wd";
+            let fuelPrice = 72.40;
             let serviceCost = 9500.0;
             let wearPercent = 0.0;
 
-            // 1. Читаем локальный кэш
             const saved = localStorage.getItem("autoXAK_profile");
             if (saved) {
                 try {
@@ -503,7 +900,6 @@
                 } catch (_) {}
             }
 
-            // 2. Получаем актуальные параметры с бэкенда
             try {
                 const res = await fetch(`/api/v1/users/${currentUserId}/dashboard`, {
                     headers: {
@@ -522,12 +918,8 @@
                 }
             } catch (_) {}
 
-            // Выставляем значения в интерфейс
-            const carSelect = document.getElementById('car-selector');
-            if (carSelect) {
-                carSelect.value = carId;
-                onCarSelected();
-            }
+            activeTrimId = carId;
+            selectTrimInCatalog(carId);
 
             document.getElementById('input-fuel-price').value = Number(fuelPrice).toFixed(2);
             document.getElementById('input-service-cost').value = Math.round(serviceCost);
@@ -538,25 +930,22 @@
                 oilRange.value = approxKm;
                 onOilRangeChange(approxKm);
             }
-
-            highlightFuelChip(fuelPrice);
         }
 
         async function saveConfiguration() {
-            const carKey = document.getElementById('car-selector').value;
-            const fuelPrice = parseFloat(document.getElementById('input-fuel-price').value) || 62.0;
+            const fuelPrice = parseFloat(document.getElementById('input-fuel-price').value) || 72.40;
             const serviceCost = parseFloat(document.getElementById('input-service-cost').value) || 9500.0;
 
             const payload = {
                 user_id: currentUserId,
-                car_id: carKey,
+                car_id: activeTrimId,
                 current_oil_wear_percent: currentWearPercent,
                 fuel_price_rub: fuelPrice,
                 service_cost_rub: serviceCost
             };
 
             try {
-                const res = await fetch(`/api/v1/users/${currentUserId}/profile`, {
+                await fetch(`/api/v1/users/${currentUserId}/profile`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -565,15 +954,8 @@
                     body: JSON.stringify(payload)
                 });
 
-                if (res.ok) {
-                    localStorage.setItem("autoXAK_profile", JSON.stringify(payload));
-                    window.location.href = "/";
-                } else {
-                    const err = await res.text();
-                    console.error("Ошибка сохранения на сервере:", err);
-                    localStorage.setItem("autoXAK_profile", JSON.stringify(payload));
-                    window.location.href = "/";
-                }
+                localStorage.setItem("autoXAK_profile", JSON.stringify(payload));
+                window.location.href = "/";
             } catch (err) {
                 console.error("Сетевая ошибка сохранения:", err);
                 localStorage.setItem("autoXAK_profile", JSON.stringify(payload));
@@ -584,7 +966,9 @@
         window.addEventListener('DOMContentLoaded', async () => {
             const session = await AutoXAKSession.ensureAuthenticated();
             currentUserId = session.userId;
+            await loadCatalog();
             await loadCurrentConfig();
+            await initGeoLocation();
         });
     </script>
 </body>

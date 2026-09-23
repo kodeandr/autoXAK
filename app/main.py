@@ -9,83 +9,76 @@ from pydantic import BaseModel, Field
 from fastapi import FastAPI, HTTPException, Depends, Query
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
+from sqlalchemy.orm import selectinload
 
 from app.core.database import engine, Base, get_db
-from app.core.security import create_access_token, decode_access_token
+from app.core.security import create_access_token
 from app.core.dsp.filters import SignalFilter
 from app.core.dsp.alignment import IMUAlignmentService
 from app.models.telemetry import TripSessionPayload
-from app.models.results import (
-    TripCalculationResult, 
-    TripHistoryResponse, 
-    TripSummaryItem
+from app.models.results import TripCalculationResult, TripHistoryResponse, TripSummaryItem
+from app.models.db_models import (
+    User, Trip, CPALead, VehicleMake, VehicleModel, VehicleTrim, FuelRegionalPrice
 )
-from app.models.db_models import User, Trip, CPALead
 from app.services.wear_engine import WearEngine
-
-try:
-    from app.services.twin_engine import TwinEngine, AggressiveTwinEngine
-except ImportError:
-    from app.services.twin_engine import TwinEngine
-    AggressiveTwinEngine = TwinEngine
-
-try:
-    from app.models.vehicle_profiles import VehiclePhysicalProfile, VEHICLE_REGISTRY
-except ImportError:
-    VehiclePhysicalProfile = None
-    VEHICLE_REGISTRY = {}
-
+from app.services.twin_engine import TwinEngine
 from app.services.gis_service import GISService
 from app.services.benchmark_engine import BenchmarkEngine, VerificationReport
+from app.services.profile_synthesizer import ProfileSynthesizer, SyntheticCarInput
+from app.models.vehicle_profiles import VEHICLE_REGISTRY, VehiclePhysicalProfile, OilProfile
 
 security_scheme = HTTPBearer(auto_error=False)
 
 
-def get_default_profile() -> Any:
-    if VEHICLE_REGISTRY:
-        if "haval_jolion_15t" in VEHICLE_REGISTRY:
-            return VEHICLE_REGISTRY["haval_jolion_15t"]
-        if "test_car_vag_2.0tsi" in VEHICLE_REGISTRY:
-            return VEHICLE_REGISTRY["test_car_vag_2.0tsi"]
-        return next(iter(VEHICLE_REGISTRY.values()))
+async def resolve_car_profile_async(car_id: Optional[str], db: AsyncSession) -> Any:
+    if not car_id:
+        car_id = "haval_jolion_15t_4wd"
 
-    class _FallbackOilProfile:
-        nominal_service_hours: float = 250.0
-        base_activation_energy_jmol: float = 75000.0
-        aged_activation_energy_jmol: float = 45000.0
-        zddp_activation_volume_m3: float = 1.2e-29
-        zddp_activation_energy_jmol: float = 85000.0
-        oil_grade: str = "5W-30"
+    try:
+        stmt = (
+            select(VehicleTrim)
+            .options(selectinload(VehicleTrim.model).selectinload(VehicleModel.make))
+            .where(VehicleTrim.id == car_id)
+        )
+        res = await db.execute(stmt)
+        trim = res.scalar_one_or_none()
 
-    class _FallbackProfile:
-        car_id: str = "haval_jolion_15t"
-        brand: str = "Haval"
-        model: str = "Jolion 1.5T 4WD"
-        curb_weight_kg: float = 1505.0
-        rolling_resistance_coeff: float = 0.012
-        drag_coefficient_area: float = 0.32 * 2.38
-        drivetrain_efficiency: float = 0.90
-        base_city_fuel_rate_l100km: float = 8.5
-        engine_displacement_l: float = 1.5
-        rated_power_kw: float = 110.0
-        oil_capacity_l: float = 3.8
-        oil_profile: Any = _FallbackOilProfile()
+        if trim:
+            brand_name = "Auto"
+            if trim.model and trim.model.make:
+                brand_name = trim.model.make.name
 
-    return _FallbackProfile()
+            return VehiclePhysicalProfile(
+                car_id=trim.id,
+                brand=brand_name,
+                model=trim.badge_name,
+                curb_weight_kg=trim.curb_weight_kg,
+                rolling_resistance_coeff=trim.rolling_resistance_coeff,
+                drag_coefficient_area=trim.drag_coefficient_area,
+                drivetrain_efficiency=trim.drivetrain_efficiency,
+                engine_displacement_l=trim.engine_displacement_l,
+                rated_power_kw=trim.rated_power_kw,
+                oil_capacity_l=trim.oil_capacity_l,
+                oil_profile=OilProfile(
+                    nominal_service_hours=trim.nominal_service_hours,
+                    oil_grade=trim.oil_grade
+                )
+            )
+    except Exception:
+        pass
 
-
-def resolve_car_profile(car_id: Optional[str]) -> Any:
-    if car_id and VEHICLE_REGISTRY and car_id in VEHICLE_REGISTRY:
+    if car_id in VEHICLE_REGISTRY:
         return VEHICLE_REGISTRY[car_id]
-    return get_default_profile()
+
+    return VEHICLE_REGISTRY.get("haval_jolion_15t") or next(iter(VEHICLE_REGISTRY.values()))
 
 
 class AuthHandshakePayload(BaseModel):
-    device_id: str = Field(..., description="Уникальный отпечаток устройства / браузера")
-    preferred_car_id: Optional[str] = Field(default="haval_jolion_15t")
+    device_id: str
+    preferred_car_id: Optional[str] = "haval_jolion_15t_4wd"
 
 
 class AuthResponse(BaseModel):
@@ -114,52 +107,25 @@ class CPAClickPayload(BaseModel):
     partner_id: Optional[str] = "autodoc_partner_01"
 
 
-class TripPeriodItem(BaseModel):
-    session_id: str
-    created_at: datetime
-    duration_seconds: float
-    distance_km: float
-    idle_ratio: float
-    oil_wear_percent: float
-    total_savings_rub: float
-
-
-class TripsPeriodSummaryMetrics(BaseModel):
-    total_trips: int = Field(..., description="Количество поездок за период")
-    total_distance_km: float = Field(..., description="Суммарная дистанция, км")
-    total_duration_hours: float = Field(..., description="Суммарное время за рулем, ч")
-    total_savings_rub: float = Field(..., description="Совокупная экономия, ₽")
-    total_oil_wear_percent: float = Field(..., description="Накопленный износ масла, %")
-    avg_speed_kmh: float = Field(..., description="Средняя скорость движения, км/ч")
-    avg_idle_ratio: float = Field(..., description="Средняя доля пробок / холостого хода")
-
-
-class PeriodAnalyticsResponse(BaseModel):
-    user_id: str
-    start_date: datetime
-    end_date: datetime
-    summary: TripsPeriodSummaryMetrics
-    trips: List[TripPeriodItem]
-
-
 class DashboardResponse(BaseModel):
     user_id: str
-    car_id: str = Field(default="haval_jolion_15t", description="Идентификатор автомобиля пользователя")
-    fuel_price_rub: float = Field(default=62.00, description="Установленная цена топлива, ₽/л")
-    service_cost_rub: float = Field(default=9500.0, description="Стоимость планового ТО, ₽")
-    month_savings_rub: float = Field(..., description="Сэкономлено за месяц, ₽")
-    oil_remaining_percent: float = Field(..., description="Остаточный ресурс масла, %")
-    ghost_twin_status: str = Field(..., description="Статус сравнения с двойником")
-    cpa_recommended: bool = Field(default=False, description="Флаг рекомендации замены масла")
-    cpa_offer_text: Optional[str] = Field(default=None, description="Текст партнерского предложения")
+    car_id: str
+    car_badge: str
+    fuel_price_rub: float
+    service_cost_rub: float
+    month_savings_rub: float
+    oil_remaining_percent: float
+    ghost_twin_status: str
+    cpa_recommended: bool
+    cpa_offer_text: Optional[str]
 
 
 class UserProfileUpdatePayload(BaseModel):
     user_id: str
-    car_id: str = Field(default="haval_jolion_15t", description="Идентификатор ТС в реестре")
-    current_oil_wear_percent: float = Field(default=0.0, ge=0.0, le=100.0, description="Текущий накопленный износ масла, %")
-    fuel_price_rub: float = Field(default=62.00, gt=0.0, description="Цена литра топлива, ₽")
-    service_cost_rub: float = Field(default=9500.0, gt=0.0, description="Стоимость планового ТО, ₽")
+    car_id: str
+    current_oil_wear_percent: float = Field(default=0.0, ge=0.0, le=100.0)
+    fuel_price_rub: float = Field(default=72.40, gt=0.0)
+    service_cost_rub: float = Field(default=9500.0, gt=0.0)
 
 
 class VerificationPayload(BaseModel):
@@ -170,14 +136,16 @@ class VerificationPayload(BaseModel):
     obd_ground_truth: Dict[str, List[float]]
 
 
-OIL_RECOMMENDATION_MATRIX = {
-    "haval_jolion_15t": {"name": "Haval Jolion 1.5T", "oil": "TotalEnergies Quartz 9000", "viscosity": "0W-20", "volume": 3.8},
-    "chery_tiggo_7pro": {"name": "Chery Tiggo 7 Pro", "oil": "Chery Motor Oil Synthetic", "viscosity": "5W-30", "volume": 4.1},
-    "geely_coolray_15t": {"name": "Geely Coolray 1.5T", "oil": "LUKOIL GENESIS ARMORTECH", "viscosity": "0W-20", "volume": 4.0},
-    "skoda_octavia_14tsi": {"name": "Skoda Octavia 1.4 TSI", "oil": "VAG LongLife III FE", "viscosity": "0W-30", "volume": 4.0},
-    "custom_sedan": {"name": "Седан", "oil": "Sintec Platinum 7000", "viscosity": "5W-30", "volume": 3.8},
-    "custom_suv": {"name": "Кроссовер SUV", "oil": "ZIC TOP LS", "viscosity": "5W-30", "volume": 4.5}
-}
+class FuelPriceResolveResponse(BaseModel):
+    region_code: str
+    region_name: str
+    brand: str
+    brand_display_name: str
+    recommended_price_rub: float
+    fuel_grade: str
+    prices: Dict[str, float]
+    availability_status: str
+    source_label: str
 
 
 @asynccontextmanager
@@ -189,8 +157,8 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="autoXAK Telemetry Engine",
-    description="Пайплайн цифровой фильтрации, предиктивного расчета износа, LBS 2GIS и CPA-монетизации",
-    version="1.8.0",
+    description="Тяговый баланс ТС, динамические цены топлива и CPA-монетизация",
+    version="2.1.0",
     lifespan=lifespan
 )
 
@@ -200,80 +168,228 @@ static_candidates = [
     "static",
     "/app/static"
 ]
-STATIC_DIR = next((cand for cand in static_candidates if os.path.isdir(cand)), None)
+STATIC_DIR = next((c for c in static_candidates if os.path.isdir(c)), None)
 if STATIC_DIR:
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-DEFAULT_PROFILE = get_default_profile()
 benchmark_engine = BenchmarkEngine()
 signal_filter = SignalFilter(sample_rate_hz=50.0, cutoff_hz=2.5)
 imu_alignment = IMUAlignmentService(sample_rate_hz=50.0)
-
-try:
-    wear_engine = WearEngine(profile=DEFAULT_PROFILE)
-except TypeError:
-    wear_engine = WearEngine(DEFAULT_PROFILE)
-
-try:
-    twin_engine = TwinEngine(profile=DEFAULT_PROFILE)
-except TypeError:
-    twin_engine = TwinEngine(DEFAULT_PROFILE)
-
 gis_service = GISService()
 
 
-def _resolve_static_file(filename: str) -> str:
-    search_paths = [
-        os.path.join(os.path.dirname(__file__), "..", "static", filename),
-        os.path.join(os.path.dirname(__file__), "static", filename),
-        os.path.join("static", filename),
-        os.path.join("/app/static", filename)
-    ]
-    for path in search_paths:
-        if os.path.exists(path):
-            return path
-    raise HTTPException(status_code=404, detail=f"Файл {filename} не найден")
+def _resolve_static(filename: str) -> str:
+    for base in [os.path.join(os.path.dirname(__file__), "..", "static"), "static", "/app/static"]:
+        p = os.path.join(base, filename)
+        if os.path.exists(p):
+            return p
+    raise HTTPException(status_code=404, detail="File not found")
 
 
 @app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
 async def root():
-    return FileResponse(_resolve_static_file("index.html"))
+    return FileResponse(_resolve_static("index.html"))
 
 
 @app.api_route("/history", methods=["GET", "HEAD"], include_in_schema=False)
 async def history_page():
-    return FileResponse(_resolve_static_file("history.html"))
+    return FileResponse(_resolve_static("history.html"))
 
 
 @app.api_route("/setup", methods=["GET", "HEAD"], include_in_schema=False)
 async def setup_page():
-    return FileResponse(_resolve_static_file("setup.html"))
+    return FileResponse(_resolve_static("setup.html"))
 
 
 @app.get("/health")
 def health_check():
-    return {
-        "status": "healthy",
-        "service": "autoXAK Wear & Cost Processor",
-        "version": "1.8.0"
-    }
+    return {"status": "healthy", "version": "2.1.0"}
 
+
+# ---------------- ДИНАМИЧЕСКИЕ ЦЕНЫ ТОПЛИВА ----------------
+
+@app.get("/api/v1/fuel/current-price", response_model=FuelPriceResolveResponse)
+async def get_fuel_price_estimate(
+    lat: Optional[float] = Query(None),
+    lon: Optional[float] = Query(None),
+    region_code: Optional[str] = Query("77"),
+    brand: Optional[str] = Query("rosneft"),
+    fuel_grade: Optional[str] = Query("ai95"),
+    db: AsyncSession = Depends(get_db)
+):
+    target_region = region_code or "77"
+    if lat is not None and lon is not None:
+        if 55.0 <= lat <= 56.5 and 36.5 <= lon <= 38.5:
+            target_region = "77"  # Москва
+        elif 59.5 <= lat <= 60.5 and 29.5 <= lon <= 31.0:
+            target_region = "78"  # СПб
+        elif 43.5 <= lat <= 46.5 and 37.0 <= lon <= 41.0:
+            target_region = "23"  # Краснодар
+        elif 56.0 <= lat <= 57.5 and 59.5 <= lon <= 62.0:
+            target_region = "66"  # Свердловск
+
+    target_brand = brand or "rosneft"
+    entry = None
+
+    try:
+        stmt = select(FuelRegionalPrice).where(
+            FuelRegionalPrice.region_code == target_region,
+            FuelRegionalPrice.brand == target_brand
+        )
+        res = await db.execute(stmt)
+        entry = res.scalar_one_or_none()
+
+        if not entry:
+            stmt_fb = select(FuelRegionalPrice).where(
+                FuelRegionalPrice.region_code == "77",
+                FuelRegionalPrice.brand == "rosneft"
+            )
+            res_fb = await db.execute(stmt_fb)
+            entry = res_fb.scalar_one_or_none()
+    except Exception:
+        pass
+
+    norm_grade = (fuel_grade or "ai95").lower().replace("-", "")
+
+    if entry:
+        prices_map = {
+            "ai92": float(entry.price_ai92),
+            "ai95": float(entry.price_ai95),
+            "ai100": float(entry.price_ai100),
+            "dt": float(entry.price_dt)
+        }
+        reg_code = entry.region_code
+        reg_name = entry.region_name
+        b_code = entry.brand
+        b_name = entry.brand_display_name
+        avail = entry.availability_status
+        src_label = f"{entry.brand_display_name} ({entry.region_name})"
+    else:
+        # Гарантированный in-memory fallback при пустой таблице БД
+        prices_map = {
+            "ai92": 65.20,
+            "ai95": 72.40,
+            "ai100": 101.50,
+            "dt": 80.60
+        }
+        reg_code = target_region
+        reg_name = "Москва" if target_region == "77" else "Регион РФ"
+        b_code = target_brand
+        b_name = target_brand.capitalize()
+        avail = "NORMAL"
+        src_label = f"{b_name} ({reg_name})"
+
+    target_price = prices_map.get(norm_grade, prices_map.get("ai95", 72.40))
+
+    return FuelPriceResolveResponse(
+        region_code=reg_code,
+        region_name=reg_name,
+        brand=b_code,
+        brand_display_name=b_name,
+        recommended_price_rub=round(target_price, 2),
+        fuel_grade=norm_grade.upper(),
+        prices=prices_map,
+        availability_status=avail,
+        source_label=src_label
+    )
+
+
+# ---------------- КАТАЛОГ АВТОМОБИЛЕЙ И СИНТЕЗАТОР ----------------
+
+@app.get("/api/v1/vehicles/catalog")
+async def get_vehicle_catalog(db: AsyncSession = Depends(get_db)):
+    stmt = (
+        select(VehicleMake)
+        .options(selectinload(VehicleMake.models).selectinload(VehicleModel.trims))
+        .order_by(VehicleMake.name)
+    )
+    res = await db.execute(stmt)
+    makes = res.scalars().all()
+
+    catalog = []
+    for mk in makes:
+        mk_dict = {"id": mk.id, "name": mk.name, "models": []}
+        for md in mk.models:
+            md_dict = {"id": md.id, "name": md.name, "body_type": md.body_type, "trims": []}
+            for tr in md.trims:
+                md_dict["trims"].append({
+                    "id": tr.id,
+                    "badge_name": tr.badge_name,
+                    "curb_weight_kg": tr.curb_weight_kg,
+                    "power_hp": int(round(tr.rated_power_kw * 1.35962)),
+                    "oil_grade": tr.oil_grade,
+                    "oil_capacity_l": tr.oil_capacity_l,
+                    "recommended_oil_brand": tr.recommended_oil_brand
+                })
+            mk_dict["models"].append(md_dict)
+        catalog.append(mk_dict)
+
+    return catalog
+
+
+@app.post("/api/v1/vehicles/synthesize")
+async def synthesize_car_profile(input_data: SyntheticCarInput, db: AsyncSession = Depends(get_db)):
+    profile_dict = ProfileSynthesizer.synthesize_profile(input_data)
+    trim_id = profile_dict["car_id"]
+
+    custom_make = await db.get(VehicleMake, "custom")
+    if not custom_make:
+        custom_make = VehicleMake(id="custom", name="Пользовательский", country="Universal")
+        db.add(custom_make)
+        await db.flush()
+
+    custom_model_id = f"custom_{input_data.body_type}"
+    custom_model = await db.get(VehicleModel, custom_model_id)
+    if not custom_model:
+        custom_model = VehicleModel(
+            id=custom_model_id,
+            make_id="custom",
+            name=f"{input_data.body_type.capitalize()} (Кастом)",
+            body_type=input_data.body_type
+        )
+        db.add(custom_model)
+        await db.flush()
+
+    trim = await db.get(VehicleTrim, trim_id)
+    if not trim:
+        trim = VehicleTrim(
+            id=trim_id,
+            model_id=custom_model.id,
+            badge_name=f"{input_data.engine_disp_l}L {input_data.transmission} ({input_data.drivetrain})",
+            curb_weight_kg=profile_dict["curb_weight_kg"],
+            drag_coefficient_area=profile_dict["drag_coefficient_area"],
+            rolling_resistance_coeff=profile_dict["rolling_resistance_coeff"],
+            drivetrain_efficiency=profile_dict["drivetrain_efficiency"],
+            engine_displacement_l=profile_dict["engine_displacement_l"],
+            rated_power_kw=profile_dict["rated_power_kw"],
+            drivetrain_type=input_data.drivetrain,
+            transmission_type=input_data.transmission,
+            oil_capacity_l=profile_dict["oil_capacity_l"],
+            oil_grade=profile_dict["oil_grade"],
+            oil_spec=profile_dict["oil_spec"],
+            recommended_oil_brand="LUKOIL GENESIS",
+            nominal_service_hours=250.0
+        )
+        db.add(trim)
+        await db.commit()
+
+    return {"status": "SYNTHESIZED", "car_id": trim_id, "profile": profile_dict}
+
+
+# ---------------- АВТОРИЗАЦИЯ И ДАШБОРД ----------------
 
 @app.post("/api/v1/auth/handshake", response_model=AuthResponse)
 async def auth_handshake(payload: AuthHandshakePayload, db: AsyncSession = Depends(get_db)):
     user_id = f"dev_{payload.device_id[:16]}"
-
-    stmt = select(User).where(User.id == user_id)
-    res = await db.execute(stmt)
-    user = res.scalar_one_or_none()
+    user = await db.get(User, user_id)
     is_new = False
 
     if not user:
         is_new = True
         user = User(
             id=user_id,
-            car_id=payload.preferred_car_id or "haval_jolion_15t",
-            fuel_price_rub=62.0,
+            car_id=payload.preferred_car_id or "haval_jolion_15t_4wd",
+            fuel_price_rub=72.40,
             service_cost_rub=9500.0,
             total_savings_rub=0.0,
             current_oil_wear_percent=0.0
@@ -283,47 +399,75 @@ async def auth_handshake(payload: AuthHandshakePayload, db: AsyncSession = Depen
         await db.refresh(user)
 
     token = create_access_token(user_id=user.id)
+    return AuthResponse(token=token, user_id=user.id, car_id=user.car_id, is_new_user=is_new)
 
-    return AuthResponse(
-        token=token,
+
+@app.get("/api/v1/users/{user_id}/dashboard", response_model=DashboardResponse)
+async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db)):
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Пользователь не найден")
+
+    trim = await db.get(VehicleTrim, user.car_id)
+    badge = trim.badge_name if trim else user.car_id
+
+    remaining_oil = max(0.0, round(100.0 - user.current_oil_wear_percent, 1))
+    cpa_active = remaining_oil <= 20.0
+    cpa_text = "Ресурс масла на исходе. Нажмите, чтобы забрать скидку на ТО" if cpa_active else None
+
+    return DashboardResponse(
         user_id=user.id,
         car_id=user.car_id,
-        is_new_user=is_new
+        car_badge=badge,
+        fuel_price_rub=user.fuel_price_rub,
+        service_cost_rub=user.service_cost_rub,
+        month_savings_rub=round(user.total_savings_rub, 2),
+        oil_remaining_percent=remaining_oil,
+        ghost_twin_status="Агрессивный двойник (DCT/Turbo)",
+        cpa_recommended=cpa_active,
+        cpa_offer_text=cpa_text
     )
 
 
 @app.get("/api/v1/cpa/offer/{user_id}", response_model=CPAOfferResponse)
 async def get_personalized_cpa_offer(user_id: str, db: AsyncSession = Depends(get_db)):
-    stmt = select(User).where(User.id == user_id)
-    user = (await db.execute(stmt)).scalar_one_or_none()
+    user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Пользователь не найден")
 
-    car_id = getattr(user, "car_id", "haval_jolion_15t") or "haval_jolion_15t"
-    oil_spec = OIL_RECOMMENDATION_MATRIX.get(car_id, OIL_RECOMMENDATION_MATRIX["haval_jolion_15t"])
+    trim = await db.get(VehicleTrim, user.car_id)
+    if trim:
+        car_name = trim.badge_name
+        rec_oil = trim.recommended_oil_brand
+        oil_grade = trim.oil_grade
+        oil_volume = trim.oil_capacity_l
+    else:
+        car_name = "Haval Jolion 1.5T"
+        rec_oil = "TotalEnergies Quartz 9000"
+        oil_grade = "0W-20"
+        oil_volume = 3.8
 
     savings_discount = float(min(1500.0, max(500.0, round(user.total_savings_rub * 0.3, 0))))
     promo = f"XAK-{user.id[-4:].upper()}-{int(savings_discount)}"
 
     return CPAOfferResponse(
         user_id=user.id,
-        car_name=oil_spec["name"],
-        recommended_oil=oil_spec["oil"],
-        oil_viscosity=oil_spec["viscosity"],
-        oil_volume_liters=oil_spec["volume"],
+        car_name=car_name,
+        recommended_oil=rec_oil,
+        oil_viscosity=oil_grade,
+        oil_volume_liters=oil_volume,
         service_discount_rub=savings_discount,
         promo_code=promo,
         partner_url=f"https://auto-partner.ru/order?promo={promo}",
-        headline=f"Рекомендованное ТО для {oil_spec['name']}",
-        description=f"Масло {oil_spec['oil']} ({oil_spec['viscosity']}, {oil_spec['volume']} л). Скидка из вашей копилки: {int(savings_discount)} ₽."
+        headline=f"Рекомендованное ТО для {car_name}",
+        description=f"Масло {rec_oil} ({oil_grade}, {oil_volume} л). Скидка из вашей копилки: {int(savings_discount)} ₽."
     )
 
 
 @app.post("/api/v1/cpa/claim")
 async def claim_cpa_offer(payload: CPAClickPayload, db: AsyncSession = Depends(get_db)):
-    stmt = select(User).where(User.id == payload.user_id)
-    user = (await db.execute(stmt)).scalar_one_or_none()
-    car_id = user.car_id if user else "haval_jolion_15t"
+    user = await db.get(User, payload.user_id)
+    car_id = user.car_id if user else "haval_jolion_15t_4wd"
 
     lead = CPALead(
         id=str(uuid.uuid4()),
@@ -339,148 +483,59 @@ async def claim_cpa_offer(payload: CPAClickPayload, db: AsyncSession = Depends(g
 
 
 @app.post("/api/v1/telemetry/session", response_model=TripCalculationResult)
-async def process_telemetry_session(
-    payload: TripSessionPayload, 
-    db: AsyncSession = Depends(get_db)
-):
+async def process_telemetry_session(payload: TripSessionPayload, db: AsyncSession = Depends(get_db)):
     stream = payload.telemetry_stream
     if not stream or len(stream) < 50:
-        raise HTTPException(
-            status_code=422, 
-            detail="Недостаточно точек телеметрии для валидации (минимум 1 секунда / 50 точек)."
-        )
+        raise HTTPException(status_code=422, detail="Недостаточно точек телеметрии.")
 
     raw_ax = np.array([p.ax for p in stream], dtype=np.float64)
     raw_ay = np.array([p.ay for p in stream], dtype=np.float64)
     raw_az = np.array([p.az for p in stream], dtype=np.float64)
     speeds = np.array([p.speed for p in stream], dtype=np.float64)
 
-    coords = [{"lat": p.lat, "lon": p.lon} for p in stream if p.lat and p.lon]
-    road_context = await gis_service.get_route_context(coords)
-
-    # Двухфазная автокалибровка базиса ISO 8855
-    a_long, a_lat, a_vert, align_meta = imu_alignment.calibrate_and_transform(
-        raw_ax=raw_ax,
-        raw_ay=raw_ay,
-        raw_az=raw_az,
-        speeds_mps=speeds
-    )
-
-    dt = 0.02
-    # Фильтрация частот вибрации ДВС (ФНЧ 2.5 Гц)
+    a_long, a_lat, _, _ = imu_alignment.calibrate_and_transform(raw_ax, raw_ay, raw_az, speeds)
     filt_long = signal_filter.apply_butterworth_lpf(a_long)
     filt_lat = signal_filter.apply_butterworth_lpf(a_lat)
 
-    # ФИЗИЧЕСКИ КОРРЕКТНЫЙ РАСЧЕТ ТЯГИ:
-    # ax_engine сохраняет знак продольного ускорения (+ тяга, - торможение)
-    # Боковая перегрузка добавляется к нагрузке только как сопротивление качению в виражах
-    cornering_resistance = 0.08 * (filt_lat ** 2)
-    effective_acc = np.where(filt_long >= 0, filt_long + cornering_resistance, filt_long)
+    cornering = 0.08 * (filt_lat ** 2)
+    effective_acc = np.where(filt_long >= 0, filt_long + cornering, filt_long)
 
-    user_stmt = select(User).where(User.id == payload.user_id)
-    result = await db.execute(user_stmt)
-    user = result.scalar_one_or_none()
-
+    user = await db.get(User, payload.user_id)
     if not user:
-        user = User(
-            id=payload.user_id,
-            car_id=payload.car_id or "haval_jolion_15t",
-            fuel_price_rub=62.00,
-            service_cost_rub=9500.0,
-            total_savings_rub=0.0,
-            current_oil_wear_percent=0.0
-        )
+        user = User(id=payload.user_id, car_id=payload.car_id or "haval_jolion_15t_4wd")
         db.add(user)
 
-    resolved_car_id = payload.car_id or getattr(user, "car_id", "haval_jolion_15t")
-    user_fuel_price = getattr(user, "fuel_price_rub", 62.00)
-    user_service_cost = getattr(user, "service_cost_rub", 9500.0)
+    resolved_car_id = payload.car_id or user.car_id
+    profile = await resolve_car_profile_async(resolved_car_id, db)
+    wear_eng = WearEngine(profile=profile)
+    twin_eng = TwinEngine(profile=profile)
 
-    profile = resolve_car_profile(resolved_car_id)
-    try:
-        trip_wear_engine = WearEngine(profile=profile)
-    except TypeError:
-        trip_wear_engine = WearEngine(profile)
-
-    try:
-        trip_twin_engine = TwinEngine(profile=profile)
-    except TypeError:
-        trip_twin_engine = TwinEngine(profile)
-
-    current_life_pct = max(0.0, 100.0 - user.current_oil_wear_percent)
+    dt = 0.02
     duration_sec = len(stream) * dt
-    distance_meters = np.sum(speeds * dt)
-    distance_km = float(distance_meters / 1000.0)
+    distance_km = float(np.sum(speeds * dt) / 1000.0)
 
-    # Передаем знаковое продольное ускорение в модель кинетики
-    if hasattr(trip_wear_engine, "evaluate_trip_wear"):
-        wear_stats = trip_wear_engine.evaluate_trip_wear(
-            dt=dt, 
-            speed_mps=speeds, 
-            ax_mps2=effective_acc, 
-            current_life_pct=current_life_pct
-        )
-        equiv_hours = float(wear_stats["equivalent_hours"])
-        oil_wear_pct = float(wear_stats["oil_wear_percent"])
-        idle_duration = float(wear_stats.get("idle_duration_sec", 0.0))
-        idle_ratio = idle_duration / duration_sec if duration_sec > 0 else 0.0
-    else:
-        wear_stats = trip_wear_engine.compute_oil_wear(
-            speeds_mps=speeds, 
-            horizontal_acc=effective_acc, 
-            traffic_score=getattr(road_context, 'traffic_score', 1.0) if road_context else 1.0,
-            dt=dt
-        )
-        equiv_hours = float(wear_stats.get("equivalent_engine_hours", wear_stats.get("equivalent_hours", 0.0)))
-        oil_wear_pct = float(wear_stats.get("oil_wear_percent", 0.0))
-        idle_ratio = float(wear_stats.get("idle_ratio", 0.0))
+    wear_stats = wear_eng.evaluate_trip_wear(dt=dt, speed_mps=speeds, ax_mps2=effective_acc)
+    equiv_hours = float(wear_stats["equivalent_hours"])
+    oil_wear_pct = float(wear_stats["oil_wear_percent"])
+    idle_ratio = wear_stats["idle_duration_sec"] / duration_sec if duration_sec > 0 else 0.0
 
-    if hasattr(trip_twin_engine, "evaluate_financial_delta") and hasattr(trip_twin_engine, "simulate_aggressive_twin_kinematics"):
-        twin_speed, twin_ax = trip_twin_engine.simulate_aggressive_twin_kinematics(speeds, dt=dt)
-        twin_wear_stats = trip_wear_engine.evaluate_trip_wear(
-            dt=dt, 
-            speed_mps=twin_speed, 
-            ax_mps2=twin_ax, 
-            current_life_pct=current_life_pct
-        ) if hasattr(trip_wear_engine, "evaluate_trip_wear") else wear_stats
+    twin_speed, twin_ax = twin_eng.simulate_aggressive_twin_kinematics(speeds, dt=dt)
+    twin_wear = wear_eng.evaluate_trip_wear(dt=dt, speed_mps=twin_speed, ax_mps2=twin_ax)
+    twin_equiv_h = float(twin_wear["equivalent_hours"])
 
-        twin_equiv_hours = float(twin_wear_stats.get("equivalent_hours", equiv_hours))
+    savings = twin_eng.evaluate_financial_delta(
+        distance_km=distance_km,
+        user_equiv_hours=equiv_hours,
+        user_ax=effective_acc,
+        twin_equiv_hours=twin_equiv_h,
+        fuel_price_rub=user.fuel_price_rub,
+        service_cost_rub=user.service_cost_rub
+    )
 
-        try:
-            savings = trip_twin_engine.evaluate_financial_delta(
-                distance_km=distance_km,
-                user_equiv_hours=equiv_hours,
-                user_ax=effective_acc,
-                twin_equiv_hours=twin_equiv_hours,
-                fuel_price_rub=user_fuel_price,
-                service_cost_rub=user_service_cost
-            )
-        except TypeError:
-            savings = trip_twin_engine.evaluate_financial_delta(
-                distance_km=distance_km,
-                user_equiv_hours=equiv_hours,
-                user_ax=effective_acc,
-                twin_equiv_hours=twin_equiv_hours
-            )
-
-        fuel_saved_rub = float(savings.get("fuel_savings_rub", 0.0))
-        oil_saved_rub = float(savings.get("oil_savings_rub", 0.0))
-        total_savings_rub = float(savings.get("total_savings_rub", fuel_saved_rub + oil_saved_rub))
-    else:
-        savings = trip_twin_engine.simulate_twin_and_delta(
-            speeds_mps=speeds,
-            user_wear_percent=oil_wear_pct,
-            dt=dt
-        )
-        fuel_saved_rub = float(savings.get("fuel_saved_rub", 0.0))
-        oil_saved_rub = float(savings.get("oil_saved_rub", 0.0))
-        total_savings_rub = float(savings.get("total_savings_rub", 0.0))
-
-    user.total_savings_rub += total_savings_rub
+    user.total_savings_rub += savings["total_savings_rub"]
     user.current_oil_wear_percent = min(100.0, user.current_oil_wear_percent + oil_wear_pct)
 
     actual_id = str(uuid.uuid4())
-
     new_trip = Trip(
         id=actual_id,
         user_id=payload.user_id,
@@ -490,9 +545,9 @@ async def process_telemetry_session(
         equivalent_engine_hours=round(equiv_hours, 5),
         oil_wear_percent=round(oil_wear_pct, 5),
         idle_ratio=round(idle_ratio, 3),
-        fuel_saved_rub=round(fuel_saved_rub, 2),
-        oil_saved_rub=round(oil_saved_rub, 2),
-        total_savings_rub=round(total_savings_rub, 2)
+        fuel_saved_rub=round(savings["fuel_savings_rub"], 2),
+        oil_saved_rub=round(savings["oil_savings_rub"], 2),
+        total_savings_rub=round(savings["total_savings_rub"], 2)
     )
     db.add(new_trip)
     await db.commit()
@@ -502,181 +557,14 @@ async def process_telemetry_session(
         duration_seconds=round(duration_sec, 2),
         distance_km=round(distance_km, 2),
         oil_wear_percent=round(oil_wear_pct, 5),
-        cost_savings_rub=round(total_savings_rub, 2),
+        cost_savings_rub=round(savings["total_savings_rub"], 2),
         status="PROCESSED"
     )
 
 
-@app.get("/api/v1/users/{user_id}/dashboard", response_model=DashboardResponse)
-async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db)):
-    stmt = select(User).where(User.id == user_id)
-    res = await db.execute(stmt)
-    user = res.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="Пользователь не найден")
-
-    remaining_oil = max(0.0, round(100.0 - user.current_oil_wear_percent, 1))
-    cpa_active = remaining_oil <= 20.0
-    cpa_text = "Ресурс масла на исходе. Нажмите, чтобы забрать скидку на замену из копилки" if cpa_active else None
-
-    return DashboardResponse(
-        user_id=user.id,
-        car_id=getattr(user, "car_id", "haval_jolion_15t") or "haval_jolion_15t",
-        fuel_price_rub=getattr(user, "fuel_price_rub", 62.00) or 62.00,
-        service_cost_rub=getattr(user, "service_cost_rub", 9500.0) or 9500.0,
-        month_savings_rub=round(user.total_savings_rub, 2),
-        oil_remaining_percent=remaining_oil,
-        ghost_twin_status="Лихач-новичок (Средняя сложность)",
-        cpa_recommended=cpa_active,
-        cpa_offer_text=cpa_text
-    )
-
-
-@app.get("/api/v1/users/{user_id}/trips", response_model=TripHistoryResponse)
-async def get_user_trips(user_id: str, limit: int = 100, db: AsyncSession = Depends(get_db)):
-    count_stmt = select(func.count(Trip.id)).where(Trip.user_id == user_id)
-    total_count = (await db.execute(count_stmt)).scalar() or 0
-
-    stmt = (
-        select(Trip)
-        .where(Trip.user_id == user_id)
-        .order_by(Trip.created_at.desc())
-        .limit(limit)
-    )
-    res = await db.execute(stmt)
-    trips = res.scalars().all()
-
-    trip_items = [
-        TripSummaryItem(
-            session_id=str(t.id),
-            created_at=t.created_at,
-            duration_seconds=t.duration_seconds,
-            distance_km=t.distance_km,
-            total_savings_rub=t.total_savings_rub,
-            oil_wear_percent=t.oil_wear_percent
-        )
-        for t in trips
-    ]
-
-    return TripHistoryResponse(
-        user_id=user_id,
-        total_trips=total_count,
-        trips=trip_items
-    )
-
-
-@app.get("/api/v1/users/{user_id}/analytics/period", response_model=PeriodAnalyticsResponse)
-async def get_period_analytics(
-    user_id: str,
-    start_date: Optional[datetime] = Query(
-        None, description="Начало периода (ISO 8601). По умолчанию: 30 дней назад"
-    ),
-    end_date: Optional[datetime] = Query(
-        None, description="Конец периода (ISO 8601). По умолчанию: текущий момент"
-    ),
-    db: AsyncSession = Depends(get_db)
-):
-    now = datetime.now(timezone.utc)
-    if end_date is None:
-        end_date = now
-    if start_date is None:
-        start_date = end_date - timedelta(days=30)
-
-    if start_date > end_date:
-        raise HTTPException(
-            status_code=400, 
-            detail="Параметр start_date не может быть позже end_date"
-        )
-
-    start_naive = start_date.astimezone(timezone.utc).replace(tzinfo=None) if start_date.tzinfo else start_date
-    end_naive = end_date.astimezone(timezone.utc).replace(tzinfo=None) if end_date.tzinfo else end_date
-
-    agg_stmt = select(
-        func.count(Trip.id).label("total_trips"),
-        func.coalesce(func.sum(Trip.distance_km), 0.0).label("total_dist"),
-        func.coalesce(func.sum(Trip.duration_seconds), 0.0).label("total_seconds"),
-        func.coalesce(func.sum(Trip.total_savings_rub), 0.0).label("total_savings"),
-        func.coalesce(func.sum(Trip.oil_wear_percent), 0.0).label("total_oil_wear"),
-        func.coalesce(func.avg(Trip.idle_ratio), 0.0).label("avg_idle")
-    ).where(
-        and_(
-            Trip.user_id == user_id,
-            Trip.created_at >= start_naive,
-            Trip.created_at <= end_naive
-        )
-    )
-
-    agg_res = await db.execute(agg_stmt)
-    agg_row = agg_res.one()
-
-    total_trips = int(agg_row.total_trips or 0)
-    total_dist = float(agg_row.total_dist or 0.0)
-    total_secs = float(agg_row.total_seconds or 0.0)
-    total_savings = float(agg_row.total_savings or 0.0)
-    total_wear = float(agg_row.total_oil_wear or 0.0)
-    avg_idle = float(agg_row.avg_idle or 0.0)
-
-    total_hours = total_secs / 3600.0
-    avg_speed = (total_dist / total_hours) if total_hours > 0 else 0.0
-
-    summary_metrics = TripsPeriodSummaryMetrics(
-        total_trips=total_trips,
-        total_distance_km=round(total_dist, 2),
-        total_duration_hours=round(total_hours, 2),
-        total_savings_rub=round(total_savings, 2),
-        total_oil_wear_percent=round(total_wear, 4),
-        avg_speed_kmh=round(avg_speed, 1),
-        avg_idle_ratio=round(avg_idle, 3)
-    )
-
-    trips_stmt = (
-        select(Trip)
-        .where(
-            and_(
-                Trip.user_id == user_id,
-                Trip.created_at >= start_naive,
-                Trip.created_at <= end_naive
-            )
-        )
-        .order_by(Trip.created_at.desc())
-        .limit(200)
-    )
-    trips_res = await db.execute(trips_stmt)
-    trips_rows = trips_res.scalars().all()
-
-    trip_items = [
-        TripPeriodItem(
-            session_id=str(t.id),
-            created_at=t.created_at,
-            duration_seconds=round(float(t.duration_seconds or 0.0), 1),
-            distance_km=round(float(t.distance_km or 0.0), 2),
-            idle_ratio=round(float(t.idle_ratio or 0.0), 3),
-            oil_wear_percent=round(float(t.oil_wear_percent or 0.0), 4),
-            total_savings_rub=round(float(t.total_savings_rub or 0.0), 2)
-        )
-        for t in trips_rows
-    ]
-
-    return PeriodAnalyticsResponse(
-        user_id=user_id,
-        start_date=start_naive,
-        end_date=end_naive,
-        summary=summary_metrics,
-        trips=trip_items
-    )
-
-
 @app.post("/api/v1/users/{user_id}/profile")
-async def update_user_vehicle_profile(
-    user_id: str,
-    payload: UserProfileUpdatePayload,
-    db: AsyncSession = Depends(get_db)
-):
-    user_stmt = select(User).where(User.id == user_id)
-    res = await db.execute(user_stmt)
-    user = res.scalar_one_or_none()
-
+async def update_user_vehicle_profile(user_id: str, payload: UserProfileUpdatePayload, db: AsyncSession = Depends(get_db)):
+    user = await db.get(User, user_id)
     if not user:
         user = User(
             id=user_id,
@@ -694,20 +582,11 @@ async def update_user_vehicle_profile(
         user.current_oil_wear_percent = payload.current_oil_wear_percent
 
     await db.commit()
-    await db.refresh(user)
-
-    return {
-        "status": "CONFIG_SAVED",
-        "user_id": user.id,
-        "car_id": user.car_id,
-        "current_oil_wear_percent": user.current_oil_wear_percent,
-        "fuel_price_rub": user.fuel_price_rub,
-        "service_cost_rub": user.service_cost_rub
-    }
+    return {"status": "CONFIG_SAVED", "car_id": user.car_id}
 
 
 @app.post("/api/v1/analytics/verify-run", response_model=VerificationReport)
-async def verify_experiment_run(payload: VerificationPayload):
+async def verify_experiment_run(payload: VerificationPayload, db: AsyncSession = Depends(get_db)):
     stream = payload.telemetry_stream
     if not stream or len(stream) < 50:
         raise HTTPException(status_code=422, detail="Недостаточный объем телеметрии.")
@@ -721,19 +600,13 @@ async def verify_experiment_run(payload: VerificationPayload):
     filt_long = signal_filter.apply_butterworth_lpf(a_long)
     filt_lat = signal_filter.apply_butterworth_lpf(a_lat)
 
-    # Знаковая передача тяги: разгон тянет мотор, торможение сбрасывает в ПХХ/холостой ход
-    cornering_resistance = 0.08 * (filt_lat ** 2)
-    effective_acc = np.where(filt_long >= 0, filt_long + cornering_resistance, filt_long)
+    cornering = 0.08 * (filt_lat ** 2)
+    effective_acc = np.where(filt_long >= 0, filt_long + cornering, filt_long)
 
-    profile = resolve_car_profile(payload.car_id)
-    engine_inst = WearEngine(profile=profile)
-
-    if hasattr(engine_inst, "evaluate_trip_wear"):
-        wear_stats = engine_inst.evaluate_trip_wear(dt=0.02, speed_mps=speeds, ax_mps2=effective_acc)
-        autoxak_hours = float(wear_stats["equivalent_hours"])
-    else:
-        wear_stats = engine_inst.compute_oil_wear(speeds_mps=speeds, horizontal_acc=effective_acc, dt=0.02)
-        autoxak_hours = float(wear_stats.get("equivalent_engine_hours", wear_stats.get("equivalent_hours", 0.0)))
+    profile = await resolve_car_profile_async(payload.car_id, db)
+    wear_eng = WearEngine(profile=profile)
+    wear_stats = wear_eng.evaluate_trip_wear(dt=0.02, speed_mps=speeds, ax_mps2=effective_acc)
+    autoxak_hours = float(wear_stats["equivalent_hours"])
 
     obd = payload.obd_ground_truth
     report = benchmark_engine.evaluate_experiment(
@@ -744,5 +617,4 @@ async def verify_experiment_run(payload: VerificationPayload):
         user_savings=[6.67, 8.20, 5.40, 7.80, 9.10],
         dt=0.02
     )
-
     return report
