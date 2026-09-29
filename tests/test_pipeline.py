@@ -1,4 +1,4 @@
-import pytest
+﻿import pytest
 import numpy as np
 from app.core.dsp.filters import SignalFilter
 from app.core.dsp.simplifier import PathSimplifier

@@ -5,3 +5,5 @@ venv/
 .pytest_cache/
 data/*.json
 data/*.csv
+.coverage
+

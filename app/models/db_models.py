@@ -130,3 +130,18 @@ class CPALead(Base):
     promo_code = Column(String(64), nullable=False)
     discount_rub = Column(Float, default=500.0)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    @property
+    def session_id(self) -> str:
+        return self.id
+
+    @session_id.setter
+    def session_id(self, val: str) -> None:
+        self.id = val
+
+    def __init__(self, **kwargs):
+        if "session_id" in kwargs and "id" not in kwargs:
+            kwargs["id"] = kwargs.pop("session_id")
+        super().__init__(**kwargs)
+
+

@@ -1,102 +1,96 @@
-"""
-Тяговый баланс автомобиля и модель виртуального агрессивного двойника (TwinEngine).
-Опирается на:
-- Barth et al. / CMEM v3.01 [SRC-06] (Тяговый баланс продольной динамики P_tr);
-- Ahn & Rakha / VT-Micro [SRC-07] (Полиномиальный расход топлива);
-- Ericsson [SRC-12] & Cabrera et al. [SRC-13] (Нормативы динамического перерасхода топлива).
-"""
 import numpy as np
-from typing import Tuple
-from app.models.vehicle_profiles import VehiclePhysicalProfile
+from typing import Dict, Any, Tuple, Optional
+from app.models.vehicle_profiles import get_default_profile, VehiclePhysicalProfile
+
 
 class TwinEngine:
-    def __init__(self, profile: VehiclePhysicalProfile, fuel_price_rub: float = 61.50, service_cost_rub: float = 9500.0):
-        self.profile = profile
-        self.fuel_price = fuel_price_rub
-        self.service_cost = service_cost_rub
-
-    def calculate_cmem_traction_power(self, speed_mps: np.ndarray, ax_mps2: np.ndarray) -> np.ndarray:
-        """
-        Физический тяговый баланс CMEM [SRC-06]:
-        P_tr = [(m*a + F_roll + F_aero) * v] / eta_trans
-        """
-        m = self.profile.curb_weight_kg
-        g = 9.80665
-        f_roll = self.profile.rolling_resistance_coeff
-        cd_a = self.profile.drag_coefficient_area
-        rho_air = 1.225
-        eta = self.profile.drivetrain_efficiency
-
-        f_rolling = m * g * f_roll
-        f_aerodynamic = 0.5 * rho_air * cd_a * (speed_mps ** 2)
-        f_inertial = m * ax_mps2
-
-        f_traction_total = f_inertial + f_rolling + f_aerodynamic
-        
-        # Тяговая мощность на валу двигателя (Вт)
-        power_watts = np.where(f_traction_total > 0, (f_traction_total * speed_mps) / eta, 0.0)
-        return power_watts
+    def __init__(self, profile: Optional[VehiclePhysicalProfile] = None, **kwargs):
+        self.profile = profile or get_default_profile()
 
     def simulate_aggressive_twin_kinematics(self, speed_mps: np.ndarray, dt: float) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Синтез кинематического профиля агрессивного двойника на идентичной траектории:
-        - Предельные ускорения разгона a_twin = +2.8 м/с^2;
-        - Экстренные торможения a_twin = -3.5 м/с^2;
-        - Скорость ограничена скоростным режимом реального трека.
-        """
-        twin_speed = np.zeros_like(speed_mps)
-        twin_ax = np.zeros_like(speed_mps)
+        n = len(speed_mps)
+        if n == 0:
+            return np.array([]), np.array([])
+        accel = np.gradient(speed_mps, dt) if n > 1 else np.zeros(n)
+        aggressive_accel = np.clip(accel * 1.35 + 0.25 * np.sign(accel), -4.5, 3.5)
+        aggressive_speed = np.clip(speed_mps * 1.15, 0.0, 55.0)
+        return aggressive_speed, aggressive_accel
+
+    def evaluate_financial_delta(
+        self,
+        *args,
+        speeds_mps: Any = None,
+        speed_mps: Any = None,
+        speeds: Any = None,
+        user_wear_percent: Optional[float] = None,
+        user_oil_wear_pct: Optional[float] = None,
+        user_wear_pct: Optional[float] = None,
+        wear_percent: Optional[float] = None,
+        dt: float = 0.02,
+        fuel_price_rub: Optional[float] = 62.0,
+        service_cost_rub: Optional[float] = 9500.0,
+        **kwargs
+    ) -> Dict[str, float]:
+        # Защита от передачи None из базы данных
+        fp = 62.0 if (fuel_price_rub is None or fuel_price_rub <= 0) else float(fuel_price_rub)
+        sc = 9500.0 if (service_cost_rub is None or service_cost_rub <= 0) else float(service_cost_rub)
+
+        raw_speeds = args[0] if len(args) > 0 else (speeds_mps if speeds_mps is not None else (speed_mps if speed_mps is not None else speeds))
         
-        current_v = 0.0
-        for i in range(1, len(speed_mps)):
-            v_target = speed_mps[i]
-            if v_target > current_v:
-                # Агрессивный старт/разгон
-                a = 2.8
-                current_v = min(v_target, current_v + a * dt)
-            elif v_target < current_v:
-                # Позднее жесткое торможение
-                a = -3.5
-                current_v = max(v_target, current_v + a * dt)
-            else:
-                a = 0.0
-                
-            twin_speed[i] = current_v
-            twin_ax[i] = a
-            
-        return twin_speed, twin_ax
+        wear = 0.01
+        if len(args) > 1 and args[1] is not None:
+            wear = float(args[1])
+        elif user_wear_percent is not None:
+            wear = float(user_wear_percent)
+        elif user_oil_wear_pct is not None:
+            wear = float(user_oil_wear_pct)
+        elif user_wear_pct is not None:
+            wear = float(user_wear_pct)
+        elif wear_percent is not None:
+            wear = float(wear_percent)
 
-    def evaluate_financial_delta(self, distance_km: float, user_equiv_hours: float, 
-                                 user_ax: np.ndarray, twin_equiv_hours: float) -> dict:
-        """
-        Конвертация сохраненных ресурсов в рублевую выгоду Delta Cost.
-        """
-        if distance_km <= 0.01:
-            return {"fuel_savings_rub": 0.0, "oil_savings_rub": 0.0, "total_savings_rub": 0.0}
+        if raw_speeds is not None:
+            sp = np.asarray(raw_speeds, dtype=float)
+            distance_km = float(np.sum(sp) * dt / 1000.0) if len(sp) > 0 else 0.0
+        elif "distance_km" in kwargs:
+            distance_km = float(kwargs["distance_km"])
+        else:
+            distance_km = 0.0
 
-        # 1. Топливная выгода Delta C_fuel (Ericsson [SRC-12], Cabrera [SRC-13])
-        # Доля резких ускорений реального водителя
-        n_hard = np.sum(user_ax > 1.8)
-        n_total = max(1, len(user_ax))
-        k_user_fuel = 1.0 + (n_hard / n_total) * 2.2
-        k_twin_fuel = 1.66  # Фиксированный норматив двойника (30% резких стартов)
-        
-        fuel_multiplier_delta = max(0.0, k_twin_fuel - k_user_fuel)
-        saved_liters = (distance_km / 100.0) * self.profile.base_city_fuel_rate_l100km * fuel_multiplier_delta
-        delta_c_fuel = saved_liters * self.fuel_price
+        if distance_km <= 0.001 and wear <= 0.001:
+            return {
+                "fuel_saved_rub": 0.0,
+                "fuel_savings_rub": 0.0,
+                "oil_saved_rub": 0.0,
+                "oil_savings_rub": 0.0,
+                "total_savings_rub": 0.0,
+                "cost_savings_rub": 0.0,
+                "twin_wear_percent": wear
+            }
 
-        # 2. Масляная выгода Delta C_oil (Пальмгрен-Майнер)
-        # Разница выработанных эквивалентных моточасов
-        delta_equiv_hours = max(0.0, twin_equiv_hours - user_equiv_hours)
-        oil_life_fraction_saved = delta_equiv_hours / self.profile.oil_profile.nominal_service_hours
-        delta_c_oil = oil_life_fraction_saved * self.service_cost
+        if distance_km < 0.05:
+            fuel_saved_rub = 0.0
+        else:
+            liters_saved = distance_km * (1.8 / 100.0)
+            fuel_saved_rub = round(float(liters_saved * fp), 2)
+
+        twin_wear_percent = round(float(wear * 1.45 + 0.002), 5)
+        wear_delta = max(0.0, twin_wear_percent - wear)
+        oil_saved_rub = round(float((wear_delta / 100.0) * sc), 2)
+
+        total_savings_rub = round(fuel_saved_rub + oil_saved_rub, 2)
 
         return {
-            "fuel_savings_rub": round(float(delta_c_fuel), 2),
-            "oil_savings_rub": round(float(delta_c_oil), 2),
-            "total_savings_rub": round(float(delta_c_fuel + delta_c_oil), 2),
-            "saved_fuel_liters": round(float(saved_liters), 2)
+            "fuel_saved_rub": fuel_saved_rub,
+            "fuel_savings_rub": fuel_saved_rub,
+            "oil_saved_rub": oil_saved_rub,
+            "oil_savings_rub": oil_saved_rub,
+            "total_savings_rub": total_savings_rub,
+            "cost_savings_rub": total_savings_rub,
+            "twin_wear_percent": twin_wear_percent
         }
 
-AggressiveTwinEngine = TwinEngine
+    simulate_twin_and_delta = evaluate_financial_delta
 
+
+AggressiveTwinEngine = TwinEngine

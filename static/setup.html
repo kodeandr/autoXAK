@@ -832,7 +832,22 @@
             const drive = document.getElementById("synth-drive").value;
             const trans = document.getElementById("synth-trans").value;
 
-            const payload = {
+            let carDisplayName = "";
+      const trimSel = document.getElementById("trimSelect");
+      const carSel = document.getElementById("car-selector");
+      const activeSel = (trimSel && !trimSel.disabled && trimSel.value) ? trimSel : carSel;
+      if (activeSel && activeSel.selectedIndex >= 0) {
+          const rawText = activeSel.options[activeSel.selectedIndex].text || "";
+          carDisplayName = rawText.split("(")[0].trim() || rawText.trim();
+      }
+      if (!carDisplayName && typeof CAR_DATABASE !== "undefined" && CAR_DATABASE[selectedTrim]) {
+          carDisplayName = CAR_DATABASE[selectedTrim].name || "";
+      }
+      if (carDisplayName) {
+          localStorage.setItem("autoXAK_car_name", carDisplayName);
+      }
+
+      const payload = {
                 body_type: bodyType,
                 engine_disp_l: disp,
                 is_turbo: true,

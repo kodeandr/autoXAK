@@ -3,6 +3,8 @@
 <head>
     <link rel="manifest" href="/static/manifest.json">
     <link rel="apple-touch-icon" href="/static/icon-192.png">
+    <link rel="icon" href="data:,">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="autoXAK">
@@ -89,7 +91,7 @@
             transform: translateZ(0);
         }
 
-        /* ---------------- УВЕДОМЛЕНИЯ (IN-APP TOAST NOTIFICATION) ---------------- */
+        /* ---------------- УВЕДОМЛЕНИЯ (IN-APP TOAST) ---------------- */
         .inapp-toast {
             position: absolute;
             top: 18px;
@@ -936,17 +938,28 @@
 
         let currentUserId = AutoXAKSession.getUserId();
 
+        // Полный реестр Top-Fleet и алгоритмический гуманизатор
         const CAR_CATALOG = {
             "haval_jolion_15t": "Haval Jolion 1.5T • 4WD",
-            "chery_tiggo_7pro": "Chery Tiggo 7 Pro 1.5T",
-            "geely_coolray_15t": "Geely Coolray 1.5T DCT",
+            "haval_jolion_15t_fwd": "Haval Jolion 1.5T 2WD",
+            "haval_jolion_15t_4wd": "Haval Jolion 1.5T 4WD",
             "skoda_octavia_14tsi": "Skoda Octavia 1.4 TSI",
+            "skoda_octavia_14tsi_dsg": "Skoda Octavia 1.4 TSI DSG",
+            "skoda_octavia_16mpi_mt": "Skoda Octavia 1.6 MPI",
+            "skoda_octavia_20tsi": "Skoda Octavia 2.0 TSI",
+            "skoda_octavia_20tsi_4wd": "Skoda Octavia 2.0 TSI 4WD",
+            "skoda_octavia_20tsi_dsg_4wd": "Skoda Octavia 2.0 TSI 4WD",
+            "geely_coolray_15t": "Geely Coolray 1.5T",
+            "geely_coolray_15t_fwd": "Geely Coolray 1.5T",
+            "chery_tiggo_7pro": "Chery Tiggo 7 Pro 1.5T",
+            "chery_tiggo_7pro_16t_awd": "Chery Tiggo 7 Pro Max 1.6T AWD",
+            "chery_tiggo7_15t": "Chery Tiggo 7 1.5T",
+            "lada_vesta_16_mt": "LADA Vesta 1.6",
+            "lada_vesta_18_cvt": "LADA Vesta 1.8 CVT",
             "custom_sedan": "Седан B/C-класса",
             "custom_suv": "Кроссовер SUV"
         };
-
         let currentCarId = "haval_jolion_15t";
-        let cachedPromoCode = "XAK-OFFER";
 
         let isRecording = false;
         let telemetryBuffer = [];
@@ -964,27 +977,31 @@
         let aggressiveSamplesCount = 0;
 
         let toastTimeoutId = null;
+        let cachedPromoCode = "XAK-PROMO";
 
         function showToast({ title, message, type = 'warning', icon = null, duration = 3500 }) {
             const toast = document.getElementById('inapp-toast');
+            if (!toast) return;
             const titleEl = document.getElementById('toast-title');
             const descEl = document.getElementById('toast-desc');
             const iconEl = document.getElementById('toast-icon');
 
-            if (toastTimeoutId) clearTimeout(toastTimeoutId);
+            if (toastTimeoutId) {
+                clearTimeout(toastTimeoutId);
+            }
 
-            titleEl.innerText = title;
-            descEl.innerText = message;
+            if (titleEl) titleEl.innerText = title;
+            if (descEl) descEl.innerText = message;
 
             toast.className = 'inapp-toast';
             if (type === 'success') {
                 toast.classList.add('toast-success');
-                iconEl.innerText = icon || '✅';
+                if (iconEl) iconEl.innerText = icon || '✅';
             } else if (type === 'error') {
                 toast.classList.add('toast-error');
-                iconEl.innerText = icon || '🛑';
+                if (iconEl) iconEl.innerText = icon || '🛑';
             } else {
-                iconEl.innerText = icon || '📶';
+                if (iconEl) iconEl.innerText = icon || '📶';
             }
 
             toast.classList.add('visible');
@@ -997,7 +1014,7 @@
 
         function dismissToast() {
             const toast = document.getElementById('inapp-toast');
-            toast.classList.remove('visible');
+            if (toast) toast.classList.remove('visible');
             if (toastTimeoutId) {
                 clearTimeout(toastTimeoutId);
                 toastTimeoutId = null;
@@ -1005,9 +1022,11 @@
         }
 
         async function updateSyncBadge() {
+            if (typeof AutoXAKOfflineStore === 'undefined' || !AutoXAKOfflineStore.countPendingTrips) return;
             const count = await AutoXAKOfflineStore.countPendingTrips();
             const badge = document.getElementById('brand-status-badge');
             const text = document.getElementById('brand-status-text');
+            if (!badge || !text) return;
             if (count > 0) {
                 badge.className = "brand-status offline-warn";
                 text.innerText = `Оффлайн: ${count}`;
@@ -1015,6 +1034,75 @@
                 badge.className = "brand-status";
                 text.innerText = "Готов";
             }
+        }
+
+        function formatCarName(rawId) {
+            if (!rawId || typeof rawId !== 'string') return 'Мой автомобиль';
+            if (CAR_CATALOG[rawId]) return CAR_CATALOG[rawId];
+
+            let clean = rawId.replace(/_custom$/i, '').replace(/_trim\d*$/i, '');
+
+            const brandMap = {
+                'skoda': 'Skoda', 'haval': 'Haval', 'geely': 'Geely', 'chery': 'Chery',
+                'changan': 'Changan', 'omoda': 'Omoda', 'exeed': 'EXEED', 'tank': 'TANK',
+                'lada': 'LADA', 'volkswagen': 'Volkswagen', 'vw': 'VW', 'audi': 'Audi',
+                'bmw': 'BMW', 'toyota': 'Toyota', 'kia': 'KIA', 'hyundai': 'Hyundai'
+            };
+
+            const modelMap = {
+                'octavia': 'Octavia', 'jolion': 'Jolion', 'coolray': 'Coolray',
+                'atlas': 'Atlas', 'tiggo': 'Tiggo', 'arrizo': 'Arrizo', 'vesta': 'Vesta',
+                'granta': 'Granta', 'camry': 'Camry', 'rapid': 'Rapid', 'polo': 'Polo',
+                'golf': 'Golf', 'tiguan': 'Tiguan'
+            };
+
+            const tokens = clean.split(/[_-]+/);
+            const formatted = [];
+
+            for (let i = 0; i < tokens.length; i++) {
+                const token = tokens[i].toLowerCase();
+                if (brandMap[token]) {
+                    formatted.push(brandMap[token]);
+                    continue;
+                }
+                if (modelMap[token]) {
+                    formatted.push(modelMap[token]);
+                    continue;
+                }
+
+                const engMatch = token.match(/^(\d)(\d)(tsi|tfsi|tgdi|mpi|tdi|t)?$/);
+                if (engMatch) {
+                    const vol = engMatch[1] + '.' + engMatch[2];
+                    let type = '';
+                    if (engMatch[3]) {
+                        type = engMatch[3].toLowerCase() === 't' ? 'T' : ' ' + engMatch[3].toUpperCase();
+                    }
+                    formatted.push(vol + type);
+                    continue;
+                }
+
+                const proMatch = token.match(/^(\d+)(pro|plus|max)$/);
+                if (proMatch) {
+                    const num = proMatch[1];
+                    const suffix = proMatch[2].charAt(0).toUpperCase() + proMatch[2].slice(1);
+                    formatted.push(num + ' ' + suffix);
+                    continue;
+                }
+
+                if (['4wd', 'awd', 'fwd', 'rwd', 'dsg', 'dct', 'cvt', 'at', 'mt'].includes(token)) {
+                    formatted.push(token.toUpperCase());
+                    continue;
+                }
+
+                if (/^\d+$/.test(token)) {
+                    formatted.push(token);
+                    continue;
+                }
+
+                formatted.push(token.charAt(0).toUpperCase() + token.slice(1));
+            }
+
+            return formatted.join(' ') || rawId;
         }
 
         function updateCarHeader(serverCarId = null) {
@@ -1025,12 +1113,26 @@
                 if (savedProfile) {
                     try {
                         const parsed = JSON.parse(savedProfile);
+                        if (parsed.car_name && parsed.car_name.trim()) {
+                            const badge = document.getElementById('dash-car-name');
+                            if (badge) badge.innerText = parsed.car_name;
+                            if (parsed.car_id) currentCarId = parsed.car_id;
+                            return;
+                        }
                         if (parsed.car_id) currentCarId = parsed.car_id;
                     } catch (_) {}
                 }
+                const savedName = localStorage.getItem("autoXAK_car_name");
+                if (savedName && savedName.trim()) {
+                    const badge = document.getElementById('dash-car-name');
+                    if (badge) badge.innerText = savedName;
+                    return;
+                }
             }
-            const humanName = CAR_CATALOG[currentCarId] || currentCarId;
-            document.getElementById('dash-car-name').innerText = humanName;
+
+            const humanName = CAR_CATALOG[currentCarId] || formatCarName(currentCarId);
+            const badge = document.getElementById('dash-car-name');
+            if (badge) badge.innerText = humanName;
         }
 
         function createUUID() {
@@ -1435,18 +1537,20 @@
         document.getElementById('btn-claim-modal').addEventListener('click', closePostTripModal);
 
         window.addEventListener('online', async () => {
-            await AutoXAKOfflineStore.syncPendingTrips({
-                onTripSynced: () => {
-                    fetchDashboard();
-                    showToast({
-                        title: "Синхронизировано",
-                        message: "Оффлайн-поездки успешно переданы на сервер.",
-                        type: "success",
-                        icon: "✅"
-                    });
-                },
-                onSyncComplete: () => updateSyncBadge()
-            });
+            if (typeof AutoXAKOfflineStore !== 'undefined') {
+                await AutoXAKOfflineStore.syncPendingTrips({
+                    onTripSynced: () => {
+                        fetchDashboard();
+                        showToast({
+                            title: "Синхронизировано",
+                            message: "Оффлайн-поездки успешно переданы на сервер.",
+                            type: "success",
+                            icon: "✅"
+                        });
+                    },
+                    onSyncComplete: () => updateSyncBadge()
+                });
+            }
         });
 
         window.addEventListener('DOMContentLoaded', async () => {
@@ -1456,7 +1560,7 @@
             await updateSyncBadge();
             await fetchDashboard();
 
-            if (navigator.onLine) {
+            if (navigator.onLine && typeof AutoXAKOfflineStore !== 'undefined') {
                 await AutoXAKOfflineStore.syncPendingTrips({
                     onTripSynced: () => fetchDashboard(),
                     onSyncComplete: () => updateSyncBadge()

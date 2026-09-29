@@ -532,7 +532,51 @@ async def process_telemetry_session(payload: TripSessionPayload, db: AsyncSessio
         service_cost_rub=user.service_cost_rub
     )
 
+    if user.total_savings_rub is None:
+
+
+        user.total_savings_rub = 0.0
+
+
+    if getattr(user, 'oil_remaining_percent', None) is None:
+
+
+        user.oil_remaining_percent = 100.0
+
+
+    if getattr(user, 'total_distance_km', None) is None:
+
+
+        user.total_distance_km = 0.0
+
+
+    if getattr(user, 'total_trips', None) is None:
+
+
+        user.total_trips = 0
+
+
     user.total_savings_rub += savings["total_savings_rub"]
+    if getattr(user, 'total_savings_rub', None) is None:
+
+        user.total_savings_rub = 0.0
+
+    if getattr(user, 'current_oil_wear_percent', None) is None:
+
+        user.current_oil_wear_percent = 0.0
+
+    if getattr(user, 'oil_remaining_percent', None) is None:
+
+        user.oil_remaining_percent = 100.0
+
+    if getattr(user, 'total_distance_km', None) is None:
+
+        user.total_distance_km = 0.0
+
+    if getattr(user, 'total_trips', None) is None:
+
+        user.total_trips = 0
+
     user.current_oil_wear_percent = min(100.0, user.current_oil_wear_percent + oil_wear_pct)
 
     actual_id = str(uuid.uuid4())
@@ -618,3 +662,125 @@ async def verify_experiment_run(payload: VerificationPayload, db: AsyncSession =
         dt=0.02
     )
     return report
+
+def parse_iso_datetime(dt_str: Optional[str]) -> Optional[datetime]:
+    """Надежный парсинг ISO-дат с защитой от искажения '+' при URL-декодировании."""
+    if not dt_str:
+        return None
+    clean = dt_str.strip().replace("Z", "+00:00")
+    if " " in clean and ":" in clean.split(" ")[-1]:
+        parts = clean.rsplit(" ", 1)
+        clean = f"{parts[0]}+{parts[1]}"
+    try:
+        dt = datetime.fromisoformat(clean)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt
+    except Exception:
+        return None
+
+
+@app.get("/api/v1/users/{user_id}/trips")
+async def get_user_trips(user_id: str, db: AsyncSession = Depends(get_db)):
+    """Возвращает историю поездок пользователя со статусом 200 даже при пустом списке."""
+    user = await db.get(User, user_id)
+    if not user:
+        user = User(
+            user_id=user_id,
+            total_savings_rub=0.0,
+            current_oil_wear_percent=0.0,
+            oil_remaining_percent=100.0,
+            total_distance_km=0.0,
+            total_trips=0
+        )
+        db.add(user)
+        await db.commit()
+
+    query = select(Trip).where(Trip.user_id == user_id).order_by(Trip.created_at.desc())
+    result = await db.execute(query)
+    trips_list = result.scalars().all()
+
+    return {
+        "user_id": user_id,
+        "total_trips": len(trips_list),
+        "trips": [
+            {
+                "session_id": getattr(t, "session_id", getattr(t, "id", "")),
+                "created_at": t.created_at.isoformat() if t.created_at else None,
+                "duration_seconds": t.duration_seconds,
+                "distance_km": t.distance_km,
+                "total_savings_rub": t.total_savings_rub,
+                "oil_wear_percent": t.oil_wear_percent
+            }
+            for t in trips_list
+        ]
+    }
+
+
+@app.get("/api/v1/users/{user_id}/analytics/period")
+async def get_user_analytics_period(
+    user_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    period: Optional[str] = "week",
+    db: AsyncSession = Depends(get_db)
+):
+    """Аналитический срез за период с фильтрацией по датам и защитой от ZeroDivision."""
+    user = await db.get(User, user_id)
+    if not user:
+        user = User(
+            user_id=user_id,
+            total_savings_rub=0.0,
+            current_oil_wear_percent=0.0,
+            oil_remaining_percent=100.0,
+            total_distance_km=0.0,
+            total_trips=0
+        )
+        db.add(user)
+        await db.commit()
+
+    query = select(Trip).where(Trip.user_id == user_id).order_by(Trip.created_at.desc())
+    result = await db.execute(query)
+    all_trips = result.scalars().all()
+
+    s_dt = parse_iso_datetime(start_date)
+    e_dt = parse_iso_datetime(end_date)
+
+    filtered_trips = []
+    for t in all_trips:
+        if t.created_at is None:
+            continue
+        c_at = t.created_at.replace(tzinfo=timezone.utc) if t.created_at.tzinfo is None else t.created_at
+        if s_dt and c_at < s_dt:
+            continue
+        if e_dt and c_at > e_dt:
+            continue
+        filtered_trips.append(t)
+
+    tot_trips = len(filtered_trips)
+    tot_dist = sum(t.distance_km or 0.0 for t in filtered_trips)
+    tot_dur = sum(t.duration_seconds or 0.0 for t in filtered_trips)
+    tot_sav = sum(t.total_savings_rub or 0.0 for t in filtered_trips)
+    avg_speed = round((tot_dist / (tot_dur / 3600.0)), 1) if tot_dur > 0.0 else 0.0
+
+    return {
+        "user_id": user_id,
+        "summary": {
+            "total_trips": tot_trips,
+            "total_savings_rub": round(tot_sav, 2),
+            "total_distance_km": round(tot_dist, 2),
+            "avg_speed_kmh": avg_speed
+        },
+        "trips": [
+            {
+                "session_id": getattr(t, "session_id", getattr(t, "id", "")),
+                "created_at": t.created_at.isoformat() if t.created_at else None,
+                "duration_seconds": t.duration_seconds,
+                "distance_km": t.distance_km,
+                "total_savings_rub": t.total_savings_rub,
+                "oil_wear_percent": t.oil_wear_percent
+            }
+            for t in filtered_trips
+        ]
+    }
+
