@@ -43,6 +43,9 @@ from app.services.benchmark_engine import BenchmarkEngine, VerificationReport
 
 security_scheme = HTTPBearer(auto_error=False)
 
+
+# --- DTO Авторизации и Handshake ---
+
 class AuthHandshakePayload(BaseModel):
     device_id: str = Field(..., description="Уникальный отпечаток устройства / браузера")
     preferred_car_id: Optional[str] = Field(default="haval_jolion_15t")
@@ -53,7 +56,7 @@ class AuthResponse(BaseModel):
     user_id: str
     car_id: str
     is_new_user: bool
-    
+
 
 async def get_current_user(
     auth: Optional[HTTPAuthorizationCredentials] = Depends(security_scheme),
@@ -61,10 +64,9 @@ async def get_current_user(
 ) -> User:
     """
     Извлекает и валидирует пользователя по Bearer-токену.
-    Если передан fallback (для обратной совместимости в dev-режиме), берет тестового.
+    Если передан fallback (для dev-режима), возвращает тестового пользователя.
     """
     if not auth or not auth.credentials:
-        # Fallback на случай прямого обращения в отладке
         stmt = select(User).where(User.id == "test_user_01")
         res = await db.execute(stmt)
         user = res.scalar_one_or_none()
@@ -85,6 +87,7 @@ async def get_current_user(
         raise HTTPException(status_code=401, detail="Пользователь не найден")
 
     return user
+
 
 # --- Резервный и эталонный профили ТС ---
 
@@ -127,7 +130,24 @@ def resolve_car_profile(car_id: Optional[str]) -> Any:
     return get_default_profile()
 
 
-# --- DTO Схемы Pydantic v2 ---
+# --- Расширенные DTO Схемы Pydantic (Fuel Autonomy & Sensor Fusion) ---
+
+class ExtendedTripCalculationResult(TripCalculationResult):
+    """
+    Расширенная схема ответа сессии.
+    Сохраняет 100% совместимость со старым TripCalculationResult
+    и добавляет продуктовые метрики Fuel Autonomy и дорожных аномалий.
+    """
+    fuel_saved_liters: float = Field(default=0.0, description="Сбереженное топливо, л")
+    fuel_saved_rub: float = Field(default=0.0, description="Сбережения на топливе, ₽")
+    oil_saved_rub: float = Field(default=0.0, description="Сбережения на масле, ₽")
+    range_bonus_km: float = Field(default=0.0, description="Добавленный запас хода, км")
+    autonomy_days_extended: float = Field(default=0.0, description="Продление дней до заправки")
+    smooth_score: int = Field(default=100, description="Индекс плавности вождения 0..100")
+    road_anomalies_count: int = Field(default=0, description="Пройденные лежачие полицейские и ямы")
+    throttle_hunting_detected: bool = Field(default=False, description="Обнаружено рыскание газом")
+    metrics: Optional[Dict[str, Any]] = Field(default=None, description="Полный словарь метрик для PWA")
+
 
 class TripPeriodItem(BaseModel):
     session_id: str
@@ -137,6 +157,10 @@ class TripPeriodItem(BaseModel):
     idle_ratio: float
     oil_wear_percent: float
     total_savings_rub: float
+    fuel_saved_liters: float = 0.0
+    range_bonus_km: float = 0.0
+    smooth_score: int = 100
+    road_anomalies_count: int = 0
 
 
 class TripsPeriodSummaryMetrics(BaseModel):
@@ -147,6 +171,8 @@ class TripsPeriodSummaryMetrics(BaseModel):
     total_oil_wear_percent: float = Field(..., description="Накопленный износ масла, %")
     avg_speed_kmh: float = Field(..., description="Средняя скорость движения, км/ч")
     avg_idle_ratio: float = Field(..., description="Средняя доля пробок / холостого хода")
+    total_fuel_saved_liters: float = Field(default=0.0, description="Всего сбережено топлива, л")
+    total_range_bonus_km: float = Field(default=0.0, description="Всего добавлено запаса хода, км")
 
 
 class PeriodAnalyticsResponse(BaseModel):
@@ -167,6 +193,9 @@ class DashboardResponse(BaseModel):
     ghost_twin_status: str = Field(..., description="Статус сравнения с двойником")
     cpa_recommended: bool = Field(default=False, description="Флаг рекомендации замены масла")
     cpa_offer_text: Optional[str] = Field(default=None, description="Текст партнерского предложения")
+    range_bank_km: float = Field(default=0.0, description="Накопленный банк автономности, км")
+    total_fuel_saved_liters: float = Field(default=0.0, description="Всего сбережено топлива, л")
+    autonomy_days_extended: float = Field(default=0.0, description="Продлено дней до АЗС")
 
 
 class UserProfileUpdatePayload(BaseModel):
@@ -185,7 +214,7 @@ class VerificationPayload(BaseModel):
     obd_ground_truth: Dict[str, List[float]]
 
 
-# --- Инициализация приложения FastAPI ---
+# --- Инициализация FastAPI ---
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -195,13 +224,13 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(
-    title="autoXAK Telemetry Engine",
-    description="Пайплайн цифровой фильтрации, предиктивного расчета износа, LBS 2GIS и персистентности данных",
-    version="1.4.0",
+    title="autoXAK Telemetry & Fuel Autonomy Engine",
+    description="Пайплайн Sensor Fusion, фильтрации дорожных неровностей, топливной автономии и трибологии ДВС",
+    version="1.5.0",
     lifespan=lifespan
 )
 
-# Монтирование статических файлов
+# Монтирование статических ресурсов
 static_candidates = [
     os.path.join(os.path.dirname(__file__), "..", "static"),
     os.path.join(os.path.dirname(__file__), "static"),
@@ -229,7 +258,7 @@ except TypeError:
 gis_service = GISService()
 
 
-# --- Раздача страниц (GET и HEAD) ---
+# --- Раздача страниц ---
 
 def _resolve_static_file(filename: str) -> str:
     search_paths = [
@@ -263,14 +292,14 @@ async def setup_page():
 def health_check():
     return {
         "status": "healthy",
-        "service": "autoXAK Wear & Cost Processor",
-        "version": "1.4.0"
+        "service": "autoXAK Fuel Autonomy & Wear Processor",
+        "version": "1.5.0"
     }
 
 
-# --- Основные эндпоинты ---
+# --- Основной расчетный эндпоинт телеметрии ---
 
-@app.post("/api/v1/telemetry/session", response_model=TripCalculationResult)
+@app.post("/api/v1/telemetry/session", response_model=ExtendedTripCalculationResult)
 async def process_telemetry_session(
     payload: TripSessionPayload, 
     db: AsyncSession = Depends(get_db)
@@ -282,17 +311,32 @@ async def process_telemetry_session(
             detail="Недостаточно точек телеметрии для валидации (минимум 1 секунда / 50 точек)."
         )
 
+    # 1. Извлечение сырых массивов
     raw_ax = np.array([p.ax for p in stream], dtype=np.float64)
     raw_ay = np.array([p.ay for p in stream], dtype=np.float64)
     raw_az = np.array([p.az for p in stream], dtype=np.float64)
     speeds = np.array([p.speed for p in stream], dtype=np.float64)
 
+    # 2. LBS-контекст дорожного графа
     coords = [{"lat": p.lat, "lon": p.lon} for p in stream if p.lat and p.lon]
     road_context = await gis_service.get_route_context(coords)
 
+    # 3. DSP-фильтрация Баттерворта и выделение горизонтального ускорения
     filt_x, filt_y, _ = signal_filter.isolate_linear_acceleration(raw_ax, raw_ay, raw_az)
     horiz_acc = signal_filter.calculate_horizontal_acceleration(filt_x, filt_y)
 
+    dt = 0.02
+    duration_sec = len(stream) * dt
+    distance_meters = np.sum(speeds * dt)
+    distance_km = float(distance_meters / 1000.0)
+
+    # 4. SENSOR FUSION: Z-Shock Veto (Изоляция лежачих полицейских и ям от продольной оси)
+    if hasattr(TwinEngine, "filter_road_anomalies"):
+        clean_ax, detected_bumps = TwinEngine.filter_road_anomalies(horiz_acc, raw_az=raw_az, dt=dt)
+    else:
+        clean_ax, detected_bumps = horiz_acc, 0
+
+    # 5. Получение или создание профиля пользователя в БД
     user_stmt = select(User).where(User.id == payload.user_id)
     result = await db.execute(user_stmt)
     user = result.scalar_one_or_none()
@@ -312,7 +356,6 @@ async def process_telemetry_session(
         user = User(**user_kwargs)
         db.add(user)
 
-    # Применение персонального профиля ТС и тарифов пользователя
     resolved_car_id = payload.car_id or getattr(user, "car_id", "haval_jolion_15t")
     user_fuel_price = getattr(user, "fuel_price_rub", 62.00)
     user_service_cost = getattr(user, "service_cost_rub", 9500.0)
@@ -329,17 +372,13 @@ async def process_telemetry_session(
         trip_twin_engine = TwinEngine(profile)
 
     current_life_pct = max(0.0, 100.0 - user.current_oil_wear_percent)
-    dt = 0.02
-    duration_sec = len(stream) * dt
-    distance_meters = np.sum(speeds * dt)
-    distance_km = float(distance_meters / 1000.0)
 
-    # 1. Расчет износа моторного масла
+    # 6. Расчет износа моторного масла (с очищенным от ударов ускорением clean_ax)
     if hasattr(trip_wear_engine, "evaluate_trip_wear"):
         wear_stats = trip_wear_engine.evaluate_trip_wear(
             dt=dt, 
             speed_mps=speeds, 
-            ax_mps2=horiz_acc, 
+            ax_mps2=clean_ax, 
             current_life_pct=current_life_pct
         )
         equiv_hours = float(wear_stats["equivalent_hours"])
@@ -349,7 +388,7 @@ async def process_telemetry_session(
     else:
         wear_stats = trip_wear_engine.compute_oil_wear(
             speeds_mps=speeds, 
-            horizontal_acc=horiz_acc, 
+            horizontal_acc=clean_ax, 
             traffic_score=getattr(road_context, 'traffic_score', 1.0) if road_context else 1.0,
             dt=dt
         )
@@ -357,7 +396,7 @@ async def process_telemetry_session(
         oil_wear_pct = float(wear_stats.get("oil_wear_percent", 0.0))
         idle_ratio = float(wear_stats.get("idle_ratio", 0.0))
 
-    # 2. Моделирование агрессивного двойника с учетом тарифов пользователя
+    # 7. Моделирование двойника и расчет Fuel Autonomy
     if hasattr(trip_twin_engine, "evaluate_financial_delta") and hasattr(trip_twin_engine, "simulate_aggressive_twin_kinematics"):
         twin_speed, twin_ax = trip_twin_engine.simulate_aggressive_twin_kinematics(speeds, dt=dt)
         twin_wear_stats = trip_wear_engine.evaluate_trip_wear(
@@ -369,65 +408,103 @@ async def process_telemetry_session(
 
         twin_equiv_hours = float(twin_wear_stats.get("equivalent_hours", equiv_hours))
 
-        # Передача индивидуальных тарифов пользователя в расчет дельты
-        try:
-            savings = trip_twin_engine.evaluate_financial_delta(
-                distance_km=distance_km,
-                user_equiv_hours=equiv_hours,
-                user_ax=horiz_acc,
-                twin_equiv_hours=twin_equiv_hours,
-                fuel_price_rub=user_fuel_price,
-                service_cost_rub=user_service_cost
-            )
-        except TypeError:
-            savings = trip_twin_engine.evaluate_financial_delta(
-                distance_km=distance_km,
-                user_equiv_hours=equiv_hours,
-                user_ax=horiz_acc,
-                twin_equiv_hours=twin_equiv_hours
-            )
-
-        fuel_saved_rub = float(savings.get("fuel_savings_rub", 0.0))
-        oil_saved_rub = float(savings.get("oil_savings_rub", 0.0))
-        total_savings_rub = float(savings.get("total_savings_rub", fuel_saved_rub + oil_saved_rub))
+        savings = trip_twin_engine.evaluate_financial_delta(
+            distance_km=distance_km,
+            user_equiv_hours=equiv_hours,
+            user_ax=clean_ax,
+            raw_az=raw_az,
+            speeds_mps=speeds,
+            twin_equiv_hours=twin_equiv_hours,
+            fuel_price_rub=user_fuel_price,
+            service_cost_rub=user_service_cost,
+            dt=dt
+        )
     else:
         savings = trip_twin_engine.simulate_twin_and_delta(
             speeds_mps=speeds,
             user_wear_percent=oil_wear_pct,
             dt=dt
         )
-        fuel_saved_rub = float(savings.get("fuel_saved_rub", 0.0))
-        oil_saved_rub = float(savings.get("oil_saved_rub", 0.0))
-        total_savings_rub = float(savings.get("total_savings_rub", 0.0))
 
+    # 8. Извлечение метрик Fuel Autonomy
+    fuel_saved_rub = float(savings.get("fuel_savings_rub", savings.get("fuel_saved_rub", 0.0)))
+    oil_saved_rub = float(savings.get("oil_savings_rub", savings.get("oil_saved_rub", 0.0)))
+    total_savings_rub = float(savings.get("total_savings_rub", fuel_saved_rub + oil_saved_rub))
+
+    fuel_saved_liters = float(savings.get("fuel_saved_liters", savings.get("saved_fuel_liters", 0.0)))
+    range_bonus_km = float(savings.get("range_bonus_km", 0.0))
+    autonomy_days = float(savings.get("autonomy_days_extended", 0.0))
+    smooth_score = int(savings.get("smooth_score", 100))
+    road_anomalies = int(savings.get("road_anomalies_count", detected_bumps))
+    hunting_detected = bool(savings.get("throttle_hunting_detected", False))
+
+    # 9. Обновление баланса пользователя
     user.total_savings_rub += total_savings_rub
     user.current_oil_wear_percent = min(100.0, user.current_oil_wear_percent + oil_wear_pct)
 
-    actual_id = str(uuid.uuid4())
+    if hasattr(user, "total_fuel_saved_liters"):
+        user.total_fuel_saved_liters = (getattr(user, "total_fuel_saved_liters", 0.0) or 0.0) + fuel_saved_liters
+    if hasattr(user, "range_bank_km"):
+        user.range_bank_km = (getattr(user, "range_bank_km", 0.0) or 0.0) + range_bonus_km
 
-    new_trip = Trip(
-        id=actual_id,
-        user_id=payload.user_id,
-        car_id=resolved_car_id,
-        duration_seconds=round(duration_sec, 2),
-        distance_km=round(distance_km, 2),
-        equivalent_engine_hours=round(equiv_hours, 5),
-        oil_wear_percent=round(oil_wear_pct, 5),
-        idle_ratio=round(idle_ratio, 3),
-        fuel_saved_rub=round(fuel_saved_rub, 2),
-        oil_saved_rub=round(oil_saved_rub, 2),
-        total_savings_rub=round(total_savings_rub, 2)
-    )
+    # 10. Персистентность поездки в БД (с защитой от отсутствия колонок)
+    actual_id = str(uuid.uuid4())
+    trip_kwargs = {
+        "id": actual_id,
+        "user_id": payload.user_id,
+        "car_id": resolved_car_id,
+        "duration_seconds": round(duration_sec, 2),
+        "distance_km": round(distance_km, 2),
+        "equivalent_engine_hours": round(equiv_hours, 5),
+        "oil_wear_percent": round(oil_wear_pct, 5),
+        "idle_ratio": round(idle_ratio, 3),
+        "fuel_saved_rub": round(fuel_saved_rub, 2),
+        "oil_saved_rub": round(oil_saved_rub, 2),
+        "total_savings_rub": round(total_savings_rub, 2)
+    }
+
+    for extra_col, extra_val in [
+        ("fuel_saved_liters", round(fuel_saved_liters, 3)),
+        ("range_bonus_km", round(range_bonus_km, 2)),
+        ("smooth_score", smooth_score),
+        ("road_anomalies_count", road_anomalies)
+    ]:
+        if hasattr(Trip, extra_col):
+            trip_kwargs[extra_col] = extra_val
+
+    new_trip = Trip(**trip_kwargs)
     db.add(new_trip)
     await db.commit()
 
-    return TripCalculationResult(
+    # 11. Формирование богатого ответа
+    metrics_payload = {
+        "fuel_saved_liters": fuel_saved_liters,
+        "fuel_saved_rub": fuel_saved_rub,
+        "oil_saved_rub": oil_saved_rub,
+        "range_bonus_km": range_bonus_km,
+        "autonomy_days_extended": autonomy_days,
+        "smooth_score": smooth_score,
+        "road_anomalies_count": road_anomalies,
+        "throttle_hunting_detected": hunting_detected,
+        "cost_savings_rub": round(total_savings_rub, 2)
+    }
+
+    return ExtendedTripCalculationResult(
         session_id=actual_id,
         duration_seconds=round(duration_sec, 2),
         distance_km=round(distance_km, 2),
         oil_wear_percent=round(oil_wear_pct, 5),
         cost_savings_rub=round(total_savings_rub, 2),
-        status="PROCESSED"
+        status="PROCESSED",
+        fuel_saved_liters=fuel_saved_liters,
+        fuel_saved_rub=fuel_saved_rub,
+        oil_saved_rub=oil_saved_rub,
+        range_bonus_km=range_bonus_km,
+        autonomy_days_extended=autonomy_days,
+        smooth_score=smooth_score,
+        road_anomalies_count=road_anomalies,
+        throttle_hunting_detected=hunting_detected,
+        metrics=metrics_payload
     )
 
 
@@ -444,16 +521,26 @@ async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db)):
     cpa_active = remaining_oil <= 10.0
     cpa_text = "Пора менять масло. Скидка 15% на рекомендованное масло по вашей манере езды" if cpa_active else None
 
+    # Оценка накопленного банка автономии из совокупной экономии
+    fuel_price = getattr(user, "fuel_price_rub", 62.00) or 62.00
+    est_fuel_rub = user.total_savings_rub * 0.72
+    est_saved_liters = round(est_fuel_rub / fuel_price, 2) if fuel_price > 0 else 0.0
+    est_range_km = round((est_saved_liters * 100.0) / 8.5, 1)
+    est_autonomy_days = round(est_saved_liters / 4.2, 1)
+
     return DashboardResponse(
         user_id=user.id,
         car_id=getattr(user, "car_id", "haval_jolion_15t") or "haval_jolion_15t",
-        fuel_price_rub=getattr(user, "fuel_price_rub", 62.00) or 62.00,
+        fuel_price_rub=fuel_price,
         service_cost_rub=getattr(user, "service_cost_rub", 9500.0) or 9500.0,
         month_savings_rub=round(user.total_savings_rub, 2),
         oil_remaining_percent=remaining_oil,
         ghost_twin_status="Лихач-новичок (Средняя сложность)",
         cpa_recommended=cpa_active,
-        cpa_offer_text=cpa_text
+        cpa_offer_text=cpa_text,
+        range_bank_km=est_range_km,
+        total_fuel_saved_liters=est_saved_liters,
+        autonomy_days_extended=est_autonomy_days
     )
 
 
@@ -544,6 +631,10 @@ async def get_period_analytics(
     total_hours = total_secs / 3600.0
     avg_speed = (total_dist / total_hours) if total_hours > 0 else 0.0
 
+    # Оценка накопленной автономии за период
+    period_fuel_liters = round((total_savings * 0.72) / 62.0, 2)
+    period_range_km = round((period_fuel_liters * 100.0) / 8.5, 1)
+
     summary_metrics = TripsPeriodSummaryMetrics(
         total_trips=total_trips,
         total_distance_km=round(total_dist, 2),
@@ -551,7 +642,9 @@ async def get_period_analytics(
         total_savings_rub=round(total_savings, 2),
         total_oil_wear_percent=round(total_wear, 4),
         avg_speed_kmh=round(avg_speed, 1),
-        avg_idle_ratio=round(avg_idle, 3)
+        avg_idle_ratio=round(avg_idle, 3),
+        total_fuel_saved_liters=period_fuel_liters,
+        total_range_bonus_km=period_range_km
     )
 
     trips_stmt = (
@@ -577,7 +670,11 @@ async def get_period_analytics(
             distance_km=round(float(t.distance_km or 0.0), 2),
             idle_ratio=round(float(t.idle_ratio or 0.0), 3),
             oil_wear_percent=round(float(t.oil_wear_percent or 0.0), 4),
-            total_savings_rub=round(float(t.total_savings_rub or 0.0), 2)
+            total_savings_rub=round(float(t.total_savings_rub or 0.0), 2),
+            fuel_saved_liters=getattr(t, "fuel_saved_liters", 0.0) or round((float(t.total_savings_rub or 0.0) * 0.72) / 62.0, 3),
+            range_bonus_km=getattr(t, "range_bonus_km", 0.0) or round(((float(t.total_savings_rub or 0.0) * 0.72) / 62.0) * 100.0 / 8.5, 1),
+            smooth_score=getattr(t, "smooth_score", 100) or 100,
+            road_anomalies_count=getattr(t, "road_anomalies_count", 0) or 0
         )
         for t in trips_rows
     ]
@@ -590,11 +687,10 @@ async def get_period_analytics(
         trips=trip_items
     )
 
+
 @app.post("/api/v1/auth/handshake", response_model=AuthResponse)
 async def auth_handshake(payload: AuthHandshakePayload, db: AsyncSession = Depends(get_db)):
-    """
-    Device-First авторизация: находит существующего пользователя по device_id или создает нового.
-    """
+    """Device-First авторизация: находит существующего пользователя или создает нового."""
     user_id = f"dev_{payload.device_id[:16]}"
     
     stmt = select(User).where(User.id == user_id)
@@ -632,9 +728,7 @@ async def update_user_vehicle_profile(
     payload: UserProfileUpdatePayload,
     db: AsyncSession = Depends(get_db)
 ):
-    """
-    Обновляет привязку автомобиля, экономические тарифы и точку отсчета ресурса моторного масла.
-    """
+    """Обновляет привязку автомобиля, экономические тарифы и счетчик ресурса масла."""
     user_stmt = select(User).where(User.id == user_id)
     res = await db.execute(user_stmt)
     user = res.scalar_one_or_none()
@@ -677,6 +771,7 @@ async def update_user_vehicle_profile(
 
 @app.post("/api/v1/analytics/verify-run", response_model=VerificationReport)
 async def verify_experiment_run(payload: VerificationPayload):
+    """Верификация точности мобильного пайплайна против эталона OBD-II."""
     stream = payload.telemetry_stream
     if not stream or len(stream) < 50:
         raise HTTPException(status_code=422, detail="Недостаточный объем телеметрии.")
@@ -689,14 +784,20 @@ async def verify_experiment_run(payload: VerificationPayload):
     filt_x, filt_y, _ = signal_filter.isolate_linear_acceleration(raw_ax, raw_ay, raw_az)
     horiz_acc = signal_filter.calculate_horizontal_acceleration(filt_x, filt_y)
 
+    # Применяем фильтрацию Z-Shock Veto
+    if hasattr(TwinEngine, "filter_road_anomalies"):
+        clean_horiz_acc, _ = TwinEngine.filter_road_anomalies(horiz_acc, raw_az=raw_az, dt=0.02)
+    else:
+        clean_horiz_acc = horiz_acc
+
     profile = resolve_car_profile(payload.car_id)
     engine_inst = WearEngine(profile=profile)
     
     if hasattr(engine_inst, "evaluate_trip_wear"):
-        wear_stats = engine_inst.evaluate_trip_wear(dt=0.02, speed_mps=speeds, ax_mps2=horiz_acc)
+        wear_stats = engine_inst.evaluate_trip_wear(dt=0.02, speed_mps=speeds, ax_mps2=clean_horiz_acc)
         autoxak_hours = float(wear_stats["equivalent_hours"])
     else:
-        wear_stats = engine_inst.compute_oil_wear(speeds_mps=speeds, horizontal_acc=horiz_acc, dt=0.02)
+        wear_stats = engine_inst.compute_oil_wear(speeds_mps=speeds, horizontal_acc=clean_horiz_acc, dt=0.02)
         autoxak_hours = float(wear_stats.get("equivalent_engine_hours", wear_stats.get("equivalent_hours", 0.0)))
 
     obd = payload.obd_ground_truth

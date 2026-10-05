@@ -11,41 +11,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#05070C">
-    <title>autoXAK — Бортовой помощник</title>
-    <!-- 1. Модуль сессий и авторизации -->
+    <title>autoXAK — Топливная Автономия</title>
     <script src="/static/session.js"></script>
-    <!-- 2. Модуль отказоустойчивого оффлайн-хранилища -->
     <script src="/static/offline_store.js"></script>
     <style>
         :root {
             --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
-            --font-mono: "Space Grotesk", "Geist Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
-
+            --font-mono: "Space Grotesk", "Geist Mono", ui-monospace, monospace;
             --color-bg-root: #05070C;
             --color-bg-elevated: #0B0F17;
             --color-bg-subtle: #111827;
             --color-border-soft: rgba(148, 163, 184, 0.16);
             --color-border-strong: rgba(148, 163, 184, 0.40);
-
             --neon-green: #00E676;
             --neon-green-glow: rgba(0, 230, 118, 0.45);
             --neon-amber: #FF9100;
             --neon-amber-glow: rgba(255, 145, 0, 0.55);
-            
+            --neon-blue: #38BDF8;
+            --neon-blue-glow: rgba(56, 189, 248, 0.45);
             --color-accent-savings: #00E676;
-            --color-accent-savings-soft: rgba(0, 230, 118, 0.14);
             --color-accent-safe: #3B82F6;
-            --color-accent-safe-soft: rgba(59, 130, 246, 0.16);
             --color-accent-danger: #EF4444;
-
             --color-text-primary: #FFFFFF;
             --color-text-secondary: #9CA3AF;
             --color-text-muted: #6B7280;
-
             --shadow-card: 0 12px 32px rgba(5, 7, 12, 0.7);
-            --glass-bg: rgba(11, 15, 23, 0.88);
+            --glass-bg: rgba(11, 15, 23, 0.90);
             --glass-blur: 16px;
-
             --radius-phone: 44px;
             --radius-sm: 10px;
             --radius-md: 16px;
@@ -53,692 +45,185 @@
             --radius-pill: 9999px;
             --transition-standard: cubic-bezier(0.16, 1, 0.3, 1);
         }
-
         *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: var(--font-sans);
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
+            box-sizing: border-box; margin: 0; padding: 0;
+            font-family: var(--font-sans); -webkit-tap-highlight-color: transparent; user-select: none;
         }
-
         body {
-            background-color: #000000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            color: var(--color-text-primary);
+            background-color: #000000; display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; color: var(--color-text-primary);
             padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
             overflow: hidden;
         }
-
         .mobile-container {
-            width: 100%;
-            max-width: 414px;
-            height: 100vh;
-            max-height: 890px;
-            background-color: var(--color-bg-root);
-            border: 1px solid var(--color-border-soft);
-            border-radius: var(--radius-phone);
-            box-shadow: 0 0 50px rgba(0, 0, 0, 0.95);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
-            isolation: isolate;
-            transform: translateZ(0);
+            width: 100%; max-width: 414px; height: 100vh; max-height: 890px;
+            background-color: var(--color-bg-root); border: 1px solid var(--color-border-soft);
+            border-radius: var(--radius-phone); box-shadow: 0 0 50px rgba(0, 0, 0, 0.95);
+            display: flex; flex-direction: column; overflow: hidden; position: relative;
         }
-
-        /* ---------------- УВЕДОМЛЕНИЯ (IN-APP TOAST) ---------------- */
         .inapp-toast {
-            position: absolute;
-            top: 18px;
-            left: 16px;
-            right: 16px;
-            background: rgba(15, 23, 42, 0.94);
-            backdrop-filter: blur(20px);
-            border: 1.5px solid var(--neon-amber);
-            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.85), 0 0 25px rgba(255, 145, 0, 0.35);
-            border-radius: var(--radius-md);
-            padding: 12px 14px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            z-index: 350;
-            transform: translateY(-160%);
-            opacity: 0;
-            transition: transform 0.35s var(--transition-standard), opacity 0.3s ease;
-            pointer-events: none;
-            cursor: pointer;
+            position: absolute; top: 18px; left: 16px; right: 16px;
+            background: rgba(15, 23, 42, 0.94); backdrop-filter: blur(20px);
+            border: 1.5px solid var(--neon-amber); border-radius: var(--radius-md);
+            padding: 12px 14px; display: flex; align-items: center; gap: 12px; z-index: 350;
+            transform: translateY(-160%); opacity: 0; transition: transform 0.35s ease, opacity 0.3s ease;
         }
-        .inapp-toast.visible {
-            transform: translateY(0);
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .inapp-toast.toast-success {
-            border-color: var(--neon-green);
-            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.85), 0 0 25px rgba(0, 230, 118, 0.35);
-        }
-        .inapp-toast.toast-error {
-            border-color: var(--color-accent-danger);
-            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.85), 0 0 25px rgba(239, 68, 68, 0.4);
-        }
-        .toast-icon-wrap {
-            font-size: 22px;
-            line-height: 1;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .toast-body {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-            text-align: left;
-            flex-grow: 1;
-        }
-        .toast-title {
-            font-size: 13px;
-            font-weight: 700;
-            color: #FFFFFF;
-            letter-spacing: 0.3px;
-        }
-        .toast-desc {
-            font-size: 11px;
-            color: var(--color-text-secondary);
-            line-height: 1.35;
-        }
-
-        /* ---------------- 1. ЭКРАН ПОКОЯ ---------------- */
+        .inapp-toast.visible { transform: translateY(0); opacity: 1; }
+        .inapp-toast.toast-success { border-color: var(--neon-green); }
         .dashboard-scroll {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 24px 18px 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            scrollbar-width: none;
+            flex-grow: 1; overflow-y: auto; padding: 24px 18px 75px;
+            display: flex; flex-direction: column; gap: 14px; scrollbar-width: none;
         }
         .dashboard-scroll::-webkit-scrollbar { display: none; }
-
-        .top-brand {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 2px;
-        }
-        .brand-block {
-            display: flex;
-            flex-direction: column;
-        }
-        .brand-title {
-            font-size: 15px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
-            color: var(--color-text-primary);
-        }
-        .vehicle-badge {
-            font-size: 12px;
-            color: var(--color-accent-safe);
-            margin-top: 2px;
-            font-weight: 600;
-        }
-        .brand-right-group {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .top-brand { display: flex; justify-content: space-between; align-items: center; }
+        .brand-title { font-size: 15px; font-weight: 800; letter-spacing: 0.5px; }
+        .vehicle-badge { font-size: 12px; color: var(--color-accent-safe); margin-top: 2px; font-weight: 600; }
+        .brand-right-group { display: flex; align-items: center; gap: 8px; }
         .link-setup {
-            font-size: 12px;
-            color: var(--color-text-secondary);
-            text-decoration: none;
-            padding: 5px 9px;
-            border-radius: var(--radius-sm);
-            background: var(--color-bg-subtle);
-            border: 1px solid var(--color-border-soft);
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-        .link-setup:hover {
-            border-color: var(--color-accent-safe);
-            color: var(--color-accent-safe);
+            font-size: 12px; color: var(--color-text-secondary); text-decoration: none;
+            padding: 5px 9px; border-radius: var(--radius-sm); background: var(--color-bg-subtle);
+            border: 1px solid var(--color-border-soft); font-weight: 600;
         }
         .brand-status {
-            font-size: 11px;
-            padding: 5px 10px;
-            border-radius: var(--radius-pill);
-            background: var(--color-accent-safe-soft);
-            color: var(--color-accent-safe);
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s ease;
+            font-size: 11px; padding: 5px 10px; border-radius: var(--radius-pill);
+            background: rgba(59, 130, 246, 0.16); color: var(--color-accent-safe); font-weight: 600;
         }
-        .brand-status.offline-warn {
-            background: var(--neon-amber-glow);
-            color: var(--neon-amber);
-        }
-        .status-dot {
-            width: 6px;
-            height: 6px;
-            border-radius: 50%;
-            background-color: currentColor;
-            box-shadow: 0 0 8px currentColor;
-        }
-
         .piggy-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(var(--glass-blur));
-            border: 1px solid var(--color-border-soft);
-            border-radius: var(--radius-lg);
-            padding: 20px;
-            box-shadow: var(--shadow-card);
-            position: relative;
-            overflow: hidden;
+            background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur));
+            border: 1px solid var(--color-border-soft); border-radius: var(--radius-lg);
+            padding: 20px; box-shadow: var(--shadow-card); position: relative; overflow: hidden;
         }
-        .piggy-card::before {
-            content: '';
-            position: absolute;
-            top: -40px;
-            right: -40px;
-            width: 140px;
-            height: 140px;
-            background: radial-gradient(circle, var(--color-accent-savings-soft) 0%, transparent 70%);
-            pointer-events: none;
-        }
-        .piggy-top-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 4px;
-        }
-        .piggy-label {
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            color: var(--color-text-secondary);
-            font-weight: 600;
-        }
-        .link-history {
-            font-size: 12px;
-            font-weight: 600;
-            color: var(--color-accent-safe);
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            gap: 2px;
-        }
-        .piggy-amount-row {
-            display: flex;
-            align-items: baseline;
-            gap: 4px;
-            font-family: var(--font-mono);
-            margin: 6px 0 8px;
-        }
-        .piggy-prefix {
-            font-size: 26px;
-            color: var(--neon-green);
-            font-weight: 700;
-        }
-        .piggy-digits {
-            font-size: 42px;
-            font-weight: 800;
-            color: var(--color-text-primary);
-            letter-spacing: -1px;
-        }
+        .piggy-top-row { display: flex; justify-content: space-between; align-items: center; }
+        .piggy-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--neon-green); font-weight: 700; }
+        .link-history { font-size: 12px; font-weight: 600; color: var(--color-accent-safe); text-decoration: none; }
+        .piggy-amount-row { display: flex; align-items: baseline; gap: 4px; font-family: var(--font-mono); margin: 6px 0; }
+        .piggy-prefix { font-size: 26px; color: var(--neon-green); font-weight: 700; }
+        .piggy-digits { font-size: 42px; font-weight: 800; }
+        .piggy-unit { font-size: 20px; color: var(--color-text-secondary); font-weight: 600; margin-left: 2px; }
         .piggy-sub {
-            font-size: 12px;
-            color: var(--color-text-secondary);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-top: 1px solid var(--color-border-soft);
-            padding-top: 8px;
-            margin-top: 4px;
+            font-size: 12px; color: var(--color-text-secondary); display: flex;
+            justify-content: space-between; border-top: 1px solid var(--color-border-soft); padding-top: 8px; margin-top: 6px;
         }
-
         .gauge-card {
-            background: var(--color-bg-elevated);
-            border: 1px solid var(--color-border-soft);
-            border-radius: var(--radius-md);
-            padding: 16px 18px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
+            background: var(--color-bg-elevated); border: 1px solid var(--color-border-soft);
+            border-radius: var(--radius-md); padding: 16px 18px; display: flex; align-items: center; justify-content: space-between;
         }
-        .gauge-info {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
-        .gauge-title {
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--color-text-primary);
-        }
-        .gauge-desc {
-            font-size: 12px;
-            color: var(--color-text-secondary);
-        }
-        .gauge-stage {
-            font-size: 12px;
-            font-weight: 700;
-            margin-top: 4px;
-            color: var(--neon-green);
-        }
-        .gauge-circle-wrap {
-            position: relative;
-            width: 76px;
-            height: 76px;
-        }
-        .gauge-svg {
-            transform: rotate(-90deg);
-            width: 76px;
-            height: 76px;
-        }
-        .gauge-bg {
-            fill: none;
-            stroke: var(--color-bg-subtle);
-            stroke-width: 6;
-        }
-        .gauge-fill {
-            fill: none;
-            stroke: var(--neon-green);
-            stroke-width: 6;
-            stroke-linecap: round;
-            stroke-dasharray: 213;
-            stroke-dashoffset: 0;
-            transition: stroke-dashoffset 0.6s var(--transition-standard), stroke 0.4s ease;
-        }
-        .gauge-val-center {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: var(--font-mono);
-            font-size: 16px;
-            font-weight: 700;
-            color: var(--color-text-primary);
-        }
-
-        .specs-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-        .spec-tile {
-            background: var(--color-bg-elevated);
-            border: 1px solid var(--color-border-soft);
-            border-radius: var(--radius-sm);
-            padding: 12px 14px;
-        }
-        .spec-label {
-            font-size: 11px;
-            color: var(--color-text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        .spec-val {
-            font-size: 13px;
-            font-weight: 600;
-            margin-top: 4px;
-            color: var(--color-text-primary);
-        }
-
-        .bottom-bar {
-            padding: 12px 18px 22px;
-            background: linear-gradient(180deg, transparent 0%, var(--color-bg-root) 50%);
-        }
+        .gauge-title { font-size: 14px; font-weight: 700; }
+        .gauge-desc { font-size: 12px; color: var(--color-text-secondary); }
+        .gauge-stage { font-size: 12px; font-weight: 700; margin-top: 4px; color: var(--neon-green); }
+        .gauge-circle-wrap { position: relative; width: 76px; height: 76px; }
+        .gauge-svg { transform: rotate(-90deg); width: 76px; height: 76px; }
+        .gauge-bg { fill: none; stroke: var(--color-bg-subtle); stroke-width: 6; }
+        .gauge-fill { fill: none; stroke: var(--neon-green); stroke-width: 6; stroke-linecap: round; stroke-dasharray: 213; stroke-dashoffset: 0; }
+        .gauge-val-center { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-size: 16px; font-weight: 700; }
+        .specs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .spec-tile { background: var(--color-bg-elevated); border: 1px solid var(--color-border-soft); border-radius: var(--radius-sm); padding: 12px 14px; }
+        .spec-label { font-size: 11px; color: var(--color-text-muted); text-transform: uppercase; }
+        .spec-val { font-size: 13px; font-weight: 600; margin-top: 4px; }
+        .bottom-bar { padding: 10px 18px 46px; background: linear-gradient(180deg, transparent 0%, var(--color-bg-root) 60%); }
         .btn-start-trip {
-            width: 100%;
-            height: 56px;
-            background: var(--color-accent-safe);
-            color: #FFFFFF;
-            border: none;
-            border-radius: var(--radius-pill);
-            font-size: 15px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: transform 0.15s ease;
+            width: 100%; height: 54px; background: var(--color-accent-safe); color: #FFFFFF;
+            border: none; border-radius: var(--radius-pill); font-size: 15px; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4); display: flex; align-items: center; justify-content: center; gap: 10px;
         }
-        .btn-start-trip:active { transform: scale(0.98); }
-
-        /* ---------------- 2. ЭКРАН В ДВИЖЕНИИ (IN-TRIP AMBIENT HUD) ---------------- */
+        /* ---------------- IN-TRIP AMBIENT HUD ---------------- */
         .safety-hud-overlay {
-            position: absolute;
-            inset: 0;
-            background: #000000;
-            z-index: 100;
-            display: none;
-            flex-direction: column;
-            justify-content: space-between;
-            padding: 40px 20px 24px;
-            text-align: center;
-            border-radius: var(--radius-phone);
-            border: 3.5px solid transparent;
-            box-sizing: border-box;
-            transition: border-color 0.25s ease, box-shadow 0.25s ease;
-            overflow: hidden;
+            position: absolute; inset: 0; background: #000000; z-index: 100;
+            display: none; flex-direction: column; justify-content: space-between;
+            padding: 36px 20px 48px; text-align: center; border-radius: var(--radius-phone);
+            border: 3.5px solid transparent; box-sizing: border-box; transition: border-color 0.25s, box-shadow 0.25s;
         }
         .safety-hud-overlay.active { display: flex; }
-
-        .safety-hud-overlay.glow-green {
-            border-color: var(--neon-green);
-            box-shadow: inset 0 0 100px rgba(0, 230, 118, 0.35), 0 0 30px rgba(0, 230, 118, 0.25);
-        }
-        .safety-hud-overlay.glow-amber {
-            border-color: var(--neon-amber);
-            box-shadow: inset 0 0 120px rgba(255, 145, 0, 0.55), 0 0 40px rgba(255, 145, 0, 0.35);
-        }
-
+        .safety-hud-overlay.glow-green { border-color: var(--neon-green); box-shadow: inset 0 0 100px rgba(0,230,118,0.35); }
+        .safety-hud-overlay.glow-amber { border-color: var(--neon-amber); box-shadow: inset 0 0 120px rgba(255,145,0,0.55); }
+        .safety-hud-overlay.glow-blue { border-color: var(--neon-blue); box-shadow: inset 0 0 100px rgba(56,189,248,0.35); }
         .hud-top-bar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(15, 23, 42, 0.85);
-            backdrop-filter: blur(12px);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: var(--radius-pill);
-            padding: 10px 16px;
+            display: flex; justify-content: space-between; align-items: center;
+            background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.12);
+            border-radius: var(--radius-pill); padding: 10px 16px;
         }
-        .hud-badge-rec {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            color: var(--color-text-primary);
-            font-size: 12px;
-            font-weight: 700;
-            letter-spacing: 0.6px;
-            text-transform: uppercase;
-        }
-        .hud-rec-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--neon-green);
-            box-shadow: 0 0 10px var(--neon-green);
-            animation: pulseRecDot 1.4s infinite;
-        }
-        @keyframes pulseRecDot {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(0.75); opacity: 0.4; }
-        }
-        .hud-timer {
-            font-family: var(--font-mono);
-            font-size: 18px;
-            font-weight: 800;
-            color: var(--color-text-primary);
-            letter-spacing: 0.5px;
-        }
-
-        .hud-center-stage {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 14px;
-        }
+        .hud-badge-rec { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; }
+        .hud-rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); }
+        .hud-timer { font-family: var(--font-mono); font-size: 18px; font-weight: 800; }
+        .hud-center-stage { display: flex; flex-direction: column; align-items: center; gap: 10px; }
         .ambient-glow-circle {
-            width: 154px;
-            height: 154px;
-            border-radius: 50%;
-            background: radial-gradient(circle, rgba(0, 230, 118, 0.22) 0%, rgba(5, 7, 12, 0.95) 72%);
-            border: 3px solid var(--neon-green);
-            box-shadow: 0 0 35px var(--neon-green-glow);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.22s var(--transition-standard);
+            width: 154px; height: 154px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,230,118,0.22) 0%, rgba(5,7,12,0.95) 72%);
+            border: 3px solid var(--neon-green); box-shadow: 0 0 35px var(--neon-green-glow);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
         }
-        .ambient-glow-circle.warning {
-            border-color: var(--neon-amber);
-            background: radial-gradient(circle, rgba(255, 145, 0, 0.32) 0%, rgba(5, 7, 12, 0.95) 72%);
-            box-shadow: 0 0 50px var(--neon-amber-glow);
-        }
-        .hud-savings-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: var(--color-text-secondary);
-            font-weight: 700;
-        }
-        .hud-savings-val {
-            font-family: var(--font-mono);
-            font-size: 34px;
-            font-weight: 800;
-            color: #FFFFFF;
-            letter-spacing: -0.5px;
-            margin-top: 2px;
-        }
-        .hud-driving-status {
-            font-size: 14px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--neon-green);
-            transition: color 0.22s;
-        }
+        .ambient-glow-circle.warning { border-color: var(--neon-amber); background: radial-gradient(circle, rgba(255,145,0,0.32) 0%, rgba(5,7,12,0.95) 72%); }
+        .ambient-glow-circle.bump { border-color: var(--neon-blue); background: radial-gradient(circle, rgba(56,189,248,0.30) 0%, rgba(5,7,12,0.95) 72%); }
+        .hud-savings-label { font-size: 11px; text-transform: uppercase; color: var(--color-text-secondary); font-weight: 700; }
+        .hud-savings-val { font-family: var(--font-mono); font-size: 34px; font-weight: 800; color: #FFFFFF; margin-top: 2px; }
+        .hud-sub-metric { font-family: var(--font-mono); font-size: 13px; color: var(--neon-green); font-weight: 700; margin-top: 2px; }
+        .hud-driving-status { font-size: 13px; font-weight: 800; text-transform: uppercase; color: var(--neon-green); }
         .hud-driving-status.warning { color: var(--neon-amber); }
-
+        .hud-driving-status.bump { color: var(--neon-blue); }
+        /* Синхронная панель 4 метрик */
         .hud-stats-strip {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            width: 100%;
-            background: rgba(15, 23, 42, 0.85);
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: var(--radius-md);
-            padding: 14px 16px;
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; width: 100%;
+            background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.12);
+            border-radius: var(--radius-md); padding: 12px 14px;
         }
-        .hud-stat-box {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-            text-align: center;
-        }
-        .hud-stat-box:first-child { border-right: 1px solid var(--color-border-soft); }
-        .hud-stat-title {
-            font-size: 11px;
-            color: var(--color-text-secondary);
-            text-transform: uppercase;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-        }
-        .hud-stat-number {
-            font-family: var(--font-mono);
-            font-size: 20px;
-            font-weight: 800;
-            color: #FFFFFF;
-        }
-
+        .hud-stat-box { display: flex; flex-direction: column; gap: 2px; text-align: center; }
+        .hud-stat-title { font-size: 10px; color: var(--color-text-secondary); text-transform: uppercase; font-weight: 700; }
+        .hud-stat-number { font-family: var(--font-mono); font-size: 16px; font-weight: 800; }
         .swipe-rail {
-            width: 100%;
-            height: 60px;
-            background: var(--color-bg-subtle);
-            border: 1px solid var(--color-border-strong);
-            border-radius: var(--radius-pill);
-            position: relative;
-            display: flex;
-            align-items: center;
-            overflow: hidden;
-            touch-action: none;
-            margin-bottom: max(6px, env(safe-area-inset-bottom));
+            width: 100%; height: 56px; background: var(--color-bg-subtle);
+            border: 1px solid var(--color-border-strong); border-radius: var(--radius-pill);
+            position: relative; display: flex; align-items: center; overflow: hidden; touch-action: none;
         }
-        .swipe-rail-text {
-            width: 100%;
-            text-align: center;
-            font-size: 13px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--color-text-secondary);
-            pointer-events: none;
-        }
+        .swipe-rail-text { width: 100%; text-align: center; font-size: 13px; font-weight: 800; text-transform: uppercase; color: var(--color-text-secondary); }
         .swipe-thumb {
-            position: absolute;
-            left: 4px;
-            width: 52px;
-            height: 52px;
-            border-radius: var(--radius-pill);
-            background: var(--color-accent-danger);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: bold;
-            font-size: 15px;
-            box-shadow: 0 2px 14px rgba(239, 68, 68, 0.5);
-            cursor: grab;
-            touch-action: none;
-            will-change: transform;
+            position: absolute; left: 4px; width: 48px; height: 48px; border-radius: var(--radius-pill);
+            background: var(--color-accent-danger); display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; cursor: grab;
         }
-
-        /* ---------------- 3. МОДАЛЬНОЕ ОКНО РЕЗУЛЬТАТОВ ---------------- */
+        /* ---------------- МОДАЛЬНОЕ ОКНО РЕЗУЛЬТАТОВ ---------------- */
         .modal-overlay {
-            position: absolute;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(5, 7, 12, 0.92);
-            backdrop-filter: blur(14px);
-            z-index: 200;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-            box-sizing: border-box;
-            border-radius: var(--radius-phone);
-            overflow: hidden;
+            position: absolute; inset: 0; background: rgba(5,7,12,0.95); backdrop-filter: blur(14px);
+            z-index: 200; display: none; align-items: center; justify-content: center; padding: 20px;
         }
         .modal-overlay.active { display: flex; }
         .summary-card {
-            width: 100%;
-            max-width: 370px;
-            margin: auto;
-            background: var(--glass-bg);
-            backdrop-filter: blur(var(--glass-blur));
-            border-radius: var(--radius-lg);
-            box-shadow: var(--shadow-card);
-            border: 1px solid var(--color-border-strong);
-            padding: 24px 20px;
-            color: var(--color-text-primary);
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            animation: modalPop 0.25s var(--transition-standard);
+            width: 100%; max-width: 374px; background: var(--glass-bg); border-radius: var(--radius-lg);
+            border: 1px solid var(--color-border-strong); padding: 24px 20px; display: flex; flex-direction: column; gap: 14px;
         }
-        @keyframes modalPop {
-            from { opacity: 0; transform: scale(0.92); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        .summary-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .summary-tag {
-            font-size: 11px;
-            padding: 4px 10px;
-            border-radius: var(--radius-pill);
-            background: var(--color-accent-savings-soft);
-            color: var(--neon-green);
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-        .summary-value {
-            display: flex;
-            align-items: baseline;
-            gap: 4px;
-            font-family: var(--font-mono);
-            margin: 4px 0 2px;
-        }
-        .summary-prefix {
-            font-size: 22px;
-            color: var(--neon-green);
-            font-weight: 700;
-        }
-        .summary-digits {
-            font-size: 38px;
-            font-weight: 800;
-            color: var(--color-text-primary);
-        }
-        .summary-copy {
-            font-size: 13px;
-            color: var(--color-text-secondary);
-        }
-
-        .summary-metrics {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            background: var(--color-bg-subtle);
-            border: 1px solid var(--color-border-soft);
-            border-radius: var(--radius-sm);
-            padding: 12px;
-        }
-        .metric-item {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .metric-label {
-            font-size: 11px;
-            color: var(--color-text-muted);
-        }
-        .metric-val {
-            font-family: var(--font-mono);
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--color-text-primary);
-        }
-
-        .cpa-trigger-box {
-            display: none;
-            background: var(--neon-amber-glow);
-            border: 1px solid var(--neon-amber);
-            border-radius: var(--radius-sm);
-            padding: 12px;
-            cursor: pointer;
-            transition: transform 0.15s ease;
-        }
-        .cpa-trigger-box:active { transform: scale(0.98); }
-
+        .summary-header { display: flex; justify-content: space-between; align-items: center; }
+        .summary-tag { font-size: 11px; padding: 4px 10px; border-radius: var(--radius-pill); background: rgba(0,230,118,0.14); color: var(--neon-green); font-weight: 700; }
+        .hero-autonomy-box { text-align: center; padding: 4px 0; }
+        .hero-autonomy-val { font-family: var(--font-mono); font-size: 46px; font-weight: 800; color: var(--neon-green); line-height: 1; }
+        .hero-autonomy-label { font-size: 12px; color: var(--color-text-secondary); margin-top: 6px; }
+        .summary-bento-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .bento-cell { background: var(--color-bg-subtle); border: 1px solid var(--color-border-soft); border-radius: var(--radius-sm); padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+        .bento-cell-label { font-size: 10px; color: var(--color-text-muted); text-transform: uppercase; font-weight: 700; }
+        .bento-cell-val { font-family: var(--font-mono); font-size: 15px; font-weight: 700; }
+        .bento-cell-sub { font-size: 10px; color: var(--color-text-secondary); }
         .btn-claim {
-            width: 100%;
-            height: 50px;
-            border-radius: var(--radius-pill);
-            background: var(--neon-green);
-            color: #022C22;
-            border: none;
-            font-size: 14px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            box-shadow: 0 4px 16px rgba(0, 230, 118, 0.35);
+            width: 100%; height: 52px; border-radius: var(--radius-pill); background: var(--neon-green);
+            color: #022C22; border: none; font-size: 14px; font-weight: 800; text-transform: uppercase; cursor: pointer;
         }
-        .btn-claim:active { transform: scale(0.98); }
+        /* ДЕМО-СТЕНД */
+        .demo-dock {
+            position: absolute; bottom: 0; left: 0; right: 0; background: rgba(11,15,23,0.96);
+            backdrop-filter: blur(20px); border-top: 1.5px solid var(--neon-blue); z-index: 250;
+            padding: 8px 16px 14px; display: flex; flex-direction: column; gap: 8px; transition: transform 0.3s;
+        }
+        .demo-dock.collapsed { transform: translateY(calc(100% - 30px)); }
+        .demo-dock-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .demo-dock-title { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--neon-blue); }
+        .demo-range-input { width: 100%; height: 6px; background: var(--color-bg-subtle); border-radius: var(--radius-pill); }
+        .demo-presets-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .btn-preset {
+            background: var(--color-bg-subtle); border: 1px solid var(--color-border-soft); color: #FFF;
+            padding: 7px; border-radius: var(--radius-sm); font-size: 11px; font-weight: 600; cursor: pointer;
+        }
+        .btn-preset.active-preset { border-color: var(--neon-green); background: rgba(0,230,118,0.15); color: var(--neon-green); }
     </style>
 </head>
 <body>
-
     <main class="mobile-container">
-        <!-- Всплывающий In-App Toast -->
         <div class="inapp-toast" id="inapp-toast" onclick="dismissToast()">
             <div class="toast-icon-wrap" id="toast-icon">💾</div>
             <div class="toast-body">
@@ -747,7 +232,7 @@
             </div>
         </div>
 
-        <!-- 1. ЭКРАН ПОКОЯ -->
+        <!-- 1. ДАШБОРД В ПОКОЕ -->
         <section class="dashboard-scroll" id="pre-trip-view">
             <header class="top-brand">
                 <div class="brand-block">
@@ -756,34 +241,30 @@
                 </div>
                 <div class="brand-right-group">
                     <a href="/setup" class="link-setup">⚙️ Настройки</a>
-                    <div class="brand-status" id="brand-status-badge">
-                        <span class="status-dot"></span>
-                        <span id="brand-status-text">Готов</span>
-                    </div>
+                    <div class="brand-status" id="brand-status-badge">Готов</div>
                 </div>
             </header>
 
-            <!-- Карточка виртуальной копилки -->
             <article class="piggy-card">
                 <div class="piggy-top-row">
-                    <span class="piggy-label">Сэкономлено в копилке</span>
-                    <a href="/history" class="link-history">История поездок ❯</a>
+                    <span class="piggy-label">БАНК АВТОНОМНОСТИ</span>
+                    <a href="/history" class="link-history">История ❯</a>
                 </div>
                 <div class="piggy-amount-row">
-                    <span class="piggy-prefix">+₽</span>
-                    <span class="piggy-digits" id="dash-savings">0.00</span>
+                    <span class="piggy-prefix">+</span>
+                    <span class="piggy-digits" id="dash-range-bank">0.0</span>
+                    <span class="piggy-unit">км</span>
                 </div>
                 <div class="piggy-sub">
-                    <span>Выгода за счет спокойного вождения</span>
-                    <span id="dash-trips-count" style="font-family: var(--font-mono); font-weight: 600;">0 поездок</span>
+                    <span>Сбережено: <strong id="dash-fuel-liters" style="color: #FFF;">0.00 л</strong> (<strong id="dash-savings" style="color: var(--neon-green);">+0.00 ₽</strong>)</span>
+                    <span id="dash-autonomy-days" style="font-family: var(--font-mono); font-weight: 600; color: var(--color-accent-safe);">+0.0 дн.</span>
                 </div>
             </article>
 
-            <!-- Индикатор ресурса моторного масла -->
-            <article class="gauge-card" id="oil-card" style="cursor: pointer;" onclick="openCpaModal()">
+            <article class="gauge-card" id="oil-card">
                 <div class="gauge-info">
                     <span class="gauge-title">Ресурс моторного масла</span>
-                    <span class="gauge-desc">Оценка по реальным нагрузкам</span>
+                    <span class="gauge-desc">С учетом пробок и перегрузок</span>
                     <span class="gauge-stage" id="oil-stage-text">Отличное (100%)</span>
                 </div>
                 <div class="gauge-circle-wrap">
@@ -795,35 +276,33 @@
                 </div>
             </article>
 
-            <!-- Параметры анализа -->
             <div class="specs-grid">
                 <div class="spec-tile">
                     <div class="spec-label">Сравнение стиля</div>
                     <div class="spec-val" id="ghost-status">С умеренным лихачом</div>
                 </div>
                 <div class="spec-tile">
-                    <div class="spec-label">Анализ поездки</div>
-                    <div class="spec-val">Плавность и разгоны</div>
+                    <div class="spec-label">Анализ профиля</div>
+                    <div class="spec-val">Z-Shock Veto (ИДН/Ямы)</div>
                 </div>
                 <div class="spec-tile">
                     <div class="spec-label">Связь со спутниками</div>
-                    <div class="spec-val" id="gps-status-label">GPS подключен</div>
+                    <div class="spec-val" id="gps-status-label">GPS активен</div>
                 </div>
                 <div class="spec-tile">
-                    <div class="spec-label">Дорожная обстановка</div>
-                    <div class="spec-val">С учетом заторов</div>
+                    <div class="spec-label">Математика</div>
+                    <div class="spec-val">Fuel Autonomy Core</div>
                 </div>
             </div>
         </section>
 
-        <!-- Кнопка старта -->
         <footer class="bottom-bar">
-            <button class="btn-start-trip" id="btn-start" type="button">
+            <button class="btn-start-trip" id="btn-start" type="button" onclick="startTripSession()">
                 <span>▶</span> Начать поездку
             </button>
         </footer>
 
-        <!-- 2. ЭКРАН В ДВИЖЕНИИ (IN-TRIP AMBIENT HUD) -->
+        <!-- 2. ЭКРАН В ДВИЖЕНИИ (IN-TRIP HUD) -->
         <section class="safety-hud-overlay glow-green" id="safety-hud">
             <div class="hud-top-bar">
                 <div class="hud-badge-rec">
@@ -835,20 +314,26 @@
 
             <div class="hud-center-stage">
                 <div class="ambient-glow-circle" id="hud-glow-ring">
-                    <span class="hud-savings-label">В копилку</span>
-                    <span class="hud-savings-val" id="hud-live-savings">+0.00 ₽</span>
+                    <span class="hud-savings-label">Запас хода</span>
+                    <span class="hud-savings-val" id="hud-live-range">+0.0 км</span>
+                    <span class="hud-sub-metric" id="hud-live-fuel">+0 мл</span>
                 </div>
                 <div class="hud-driving-status" id="hud-driving-hint">Плавный ход • Зона выгоды</div>
             </div>
 
+            <!-- Синхронизированные 3 плашки -->
             <div class="hud-stats-strip">
                 <div class="hud-stat-box">
                     <span class="hud-stat-title">Дистанция</span>
-                    <span class="hud-stat-number" id="hud-dist-val">0.0 км</span>
+                    <span class="hud-stat-number" id="hud-dist-val">0.00 км</span>
                 </div>
                 <div class="hud-stat-box">
-                    <span class="hud-stat-title">Плавность стиля</span>
-                    <span class="hud-stat-number" id="hud-smooth-val">100%</span>
+                    <span class="hud-stat-title">Плавность</span>
+                    <span class="hud-stat-number" id="hud-smooth-val">100 / 100</span>
+                </div>
+                <div class="hud-stat-box">
+                    <span class="hud-stat-title">Неровности</span>
+                    <span class="hud-stat-number" id="hud-bumps-val" style="color: var(--neon-blue);">0</span>
                 </div>
             </div>
 
@@ -858,77 +343,65 @@
             </div>
         </section>
 
-        <!-- 3. МОДАЛЬНОЕ ОКНО РЕЗУЛЬТАТОВ -->
+        <!-- 3. МОДАЛЬНОЕ ОКНО РЕЗУЛЬТАТОВ (100% СОВПАДЕНИЕ) -->
         <div class="modal-overlay" id="post-trip-modal">
             <div class="summary-card">
                 <div class="summary-header">
-                    <span style="font-size: 12px; color: var(--color-text-secondary); text-transform: uppercase;">Итог поездки</span>
-                    <span class="summary-tag">Вы обошли лихача!</span>
+                    <span style="font-size: 11px; color: var(--color-text-secondary); text-transform: uppercase; font-weight: 700;">Итог сессии</span>
+                    <span class="summary-tag">🏆 Двойник обойден</span>
                 </div>
 
-                <div>
-                    <div class="summary-value">
-                        <span class="summary-prefix">+₽</span>
-                        <span class="summary-digits" id="res-savings-num">0.00</span>
-                    </div>
-                    <p class="summary-copy">Сэкономлено на бензине и сохранности мотора</p>
+                <div class="hero-autonomy-box">
+                    <div class="hero-autonomy-val">+<span id="res-range-km">0.0</span> км</div>
+                    <div class="hero-autonomy-label">добавлено к запасу хода за счет плавности</div>
                 </div>
 
-                <div class="summary-metrics">
-                    <div class="metric-item">
-                        <span class="metric-label">Дистанция</span>
-                        <span class="metric-val" id="res-km">0.00 км</span>
+                <div class="summary-bento-grid">
+                    <div class="bento-cell">
+                        <span class="bento-cell-label">Сбережено топлива</span>
+                        <span class="bento-cell-val" style="color: var(--neon-green);"><span id="res-fuel-ml">0</span> мл</span>
+                        <span class="bento-cell-sub">+<span id="res-savings-num">0.00</span> ₽ в копилку</span>
                     </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Время в пути</span>
-                        <span class="metric-val" id="res-sec">0 с</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Износ масла</span>
-                        <span class="metric-val" style="color: var(--neon-amber);" id="res-wear">0.000%</span>
-                    </div>
-                    <div class="metric-item">
-                        <span class="metric-label">Статус</span>
-                        <span class="metric-val" style="color: var(--neon-green);">Сохранено</span>
-                    </div>
-                </div>
 
-                <!-- Кликабельная плашка партнерской скидки -->
-                <div class="cpa-trigger-box" id="cpa-trigger" onclick="openCpaModal()">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <div>
-                            <div style="font-weight: 800; font-size: 13px; color: #FBBF24;">⚠️ Ресурс масла ниже нормы</div>
-                            <div style="font-size: 11px; color: #FDE68A; margin-top: 2px;">Заберите скидку на замену из вашей копилки ❯</div>
-                        </div>
-                        <span style="font-size: 20px; color: #FBBF24;">🎟️</span>
+                    <div class="bento-cell">
+                        <span class="bento-cell-label">Индекс плавности</span>
+                        <span class="bento-cell-val"><span id="res-smooth-score">100</span> / 100</span>
+                        <span class="bento-cell-sub" id="res-hunting-status" style="color: var(--neon-green);">Идеальный газ</span>
+                    </div>
+
+                    <div class="bento-cell">
+                        <span class="bento-cell-label">Неровности дороги</span>
+                        <span class="bento-cell-val" style="color: var(--neon-blue);"><span id="res-bumps">0</span> пройдено</span>
+                        <span class="bento-cell-sub">Подвеска сохранена</span>
+                    </div>
+
+                    <div class="bento-cell">
+                        <span class="bento-cell-label">Дистанция / Время</span>
+                        <span class="bento-cell-val" id="res-dist-time">0.00 км</span>
+                        <span class="bento-cell-sub" id="res-sec-sub">0 с</span>
                     </div>
                 </div>
 
-                <button class="btn-claim" id="btn-claim-modal" type="button">Забрать в копилку</button>
+                <button class="btn-claim" id="btn-claim-modal" type="button" onclick="closePostTripModal()">Зачислить в банк автономии</button>
             </div>
         </div>
 
-        <!-- 4. МОДАЛЬНОЕ ОКНО ПЕРСОНАЛЬНОГО CPA-ПРЕДЛОЖЕНИЯ -->
-        <div class="modal-overlay" id="cpa-modal" style="z-index: 280;">
-            <div class="summary-card" style="border-color: var(--neon-amber);">
-                <div class="summary-header">
-                    <span style="font-size: 12px; color: var(--color-text-secondary); text-transform: uppercase;">Партнерский сервис</span>
-                    <span class="summary-tag" style="background: var(--color-accent-warning-soft); color: var(--neon-amber);">Скидка из копилки</span>
-                </div>
-                <div>
-                    <h3 id="cpa-title" style="font-size: 16px; font-weight: 800; margin-bottom: 6px; color: #FFFFFF;">Замена масла со скидкой</h3>
-                    <p id="cpa-desc" style="font-size: 12px; color: var(--color-text-secondary); line-height: 1.45;"></p>
-                </div>
-                <div style="background: var(--color-bg-subtle); border: 1.5px dashed var(--neon-amber); padding: 14px; border-radius: var(--radius-sm); text-align: center;">
-                    <div style="font-size: 10px; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Ваш промокод на СТО</div>
-                    <div id="cpa-code" style="font-family: var(--font-mono); font-size: 22px; font-weight: 800; color: #FFFFFF; letter-spacing: 1.5px; margin-top: 4px;">XAK-PROMO</div>
-                </div>
-                <button class="btn-claim" id="btn-cpa-action" style="background: var(--neon-amber); color: #000000;" onclick="activateCpaLead()">
-                    Активировать скидку
-                </button>
-                <button onclick="document.getElementById('cpa-modal').classList.remove('active')" style="background: none; border: none; color: var(--color-text-muted); font-size: 12px; cursor: pointer; padding: 4px;">
-                    Вернуться назад
-                </button>
+        <!-- 4. ДЕМО FLIGHT SIMULATOR -->
+        <div class="demo-dock collapsed" id="demoDock">
+            <div class="demo-dock-header" onclick="toggleDemoDock()">
+                <span class="demo-dock-title">🛠️ Испытательный стенд (Демо)</span>
+                <span style="font-size: 11px; color: var(--color-text-muted);" id="demoToggleText">Развернуть ▲</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--color-text-secondary); font-family: var(--font-mono);">
+                <span>Скорость:</span>
+                <strong id="demoSpeedLabel" style="color: var(--neon-blue);">0 км/ч</strong>
+            </div>
+            <input type="range" class="demo-range-input" id="demoSpeedSlider" min="0" max="130" value="0" step="1" oninput="onDemoSpeedChange(this.value)">
+            <div class="demo-presets-grid">
+                <button type="button" class="btn-preset" id="btn-pre-calm" onclick="setDemoPreset('calm')">🟢 Плавный ход (60)</button>
+                <button type="button" class="btn-preset" id="btn-pre-harsh" onclick="setDemoPreset('harsh')">🟠 Рывок (+3.2 м/с²)</button>
+                <button type="button" class="btn-preset" id="btn-pre-bump" onclick="triggerRoadBump()">🔵 Кочка / Лежачий</button>
+                <button type="button" class="btn-preset" id="btn-pre-hunt" onclick="setDemoPreset('hunting')">⚠️ Рыскание газом</button>
             </div>
         </div>
     </main>
@@ -936,30 +409,13 @@
     <script>
         'use strict';
 
-        let currentUserId = AutoXAKSession.getUserId();
+        let currentUserId = (typeof AutoXAKSession !== 'undefined' && AutoXAKSession.getUserId)
+            ? AutoXAKSession.getUserId()
+            : (localStorage.getItem('autoXAK_user_id') || 'dev_user_01');
 
-        // Полный реестр Top-Fleet и алгоритмический гуманизатор
-        const CAR_CATALOG = {
-            "haval_jolion_15t": "Haval Jolion 1.5T • 4WD",
-            "haval_jolion_15t_fwd": "Haval Jolion 1.5T 2WD",
-            "haval_jolion_15t_4wd": "Haval Jolion 1.5T 4WD",
-            "skoda_octavia_14tsi": "Skoda Octavia 1.4 TSI",
-            "skoda_octavia_14tsi_dsg": "Skoda Octavia 1.4 TSI DSG",
-            "skoda_octavia_16mpi_mt": "Skoda Octavia 1.6 MPI",
-            "skoda_octavia_20tsi": "Skoda Octavia 2.0 TSI",
-            "skoda_octavia_20tsi_4wd": "Skoda Octavia 2.0 TSI 4WD",
-            "skoda_octavia_20tsi_dsg_4wd": "Skoda Octavia 2.0 TSI 4WD",
-            "geely_coolray_15t": "Geely Coolray 1.5T",
-            "geely_coolray_15t_fwd": "Geely Coolray 1.5T",
-            "chery_tiggo_7pro": "Chery Tiggo 7 Pro 1.5T",
-            "chery_tiggo_7pro_16t_awd": "Chery Tiggo 7 Pro Max 1.6T AWD",
-            "chery_tiggo7_15t": "Chery Tiggo 7 1.5T",
-            "lada_vesta_16_mt": "LADA Vesta 1.6",
-            "lada_vesta_18_cvt": "LADA Vesta 1.8 CVT",
-            "custom_sedan": "Седан B/C-класса",
-            "custom_suv": "Кроссовер SUV"
-        };
         let currentCarId = "haval_jolion_15t";
+        const BASE_CITY_FUEL_RATE = 8.5; // Базовый расход: 8.5 л / 100 км
+        const FUEL_PRICE_RUB = 68.5;
 
         let isRecording = false;
         let telemetryBuffer = [];
@@ -970,391 +426,208 @@
 
         let curAx = 0.0, curAy = 0.0, curAz = 9.81;
         let curSpeed = 0.0, curLat = 55.751244, curLon = 37.618423;
-        let lastLat = null, lastLon = null;
-        
-        let sessionDistanceMeters = 0.0;
+
+        // ЕДИНЫЕ НАКОПИТЕЛЬНЫЕ МЕТРИКИ СЕССИИ (Single Source of Truth)
+        let liveDistanceKm = 0.0;
+        let liveSavedLiters = 0.0;
+        let liveRangeBonusKm = 0.0;
+        let liveSmoothScore = 100;
+        let liveBumpsCount = 0;
+        let liveHarshSamplesCount = 0;
         let totalSamplesCount = 0;
-        let aggressiveSamplesCount = 0;
 
+        // Демо-переменные
+        let isDemoMode = false;
+        let demoTargetSpeedKmh = 0.0;
+        let demoCurrentSpeedKmh = 0.0;
+        let demoHuntingActive = false;
+        let demoHuntingTime = 0.0;
         let toastTimeoutId = null;
-        let cachedPromoCode = "XAK-PROMO";
 
-        function showToast({ title, message, type = 'warning', icon = null, duration = 3500 }) {
+        function showToast({ title, message, type = 'warning', icon = null, duration = 3000 }) {
             const toast = document.getElementById('inapp-toast');
             if (!toast) return;
-            const titleEl = document.getElementById('toast-title');
-            const descEl = document.getElementById('toast-desc');
-            const iconEl = document.getElementById('toast-icon');
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-desc').innerText = message;
+            document.getElementById('toast-icon').innerText = icon || 'ℹ️';
+            toast.className = 'inapp-toast visible' + (type === 'success' ? ' toast-success' : '');
+            if (toastTimeoutId) clearTimeout(toastTimeoutId);
+            toastTimeoutId = setTimeout(() => { toast.classList.remove('visible'); }, duration);
+        }
+        function dismissToast() { document.getElementById('inapp-toast')?.classList.remove('visible'); }
 
-            if (toastTimeoutId) {
-                clearTimeout(toastTimeoutId);
+        function toggleDemoDock() {
+            const dock = document.getElementById('demoDock');
+            dock.classList.toggle('collapsed');
+            document.getElementById('demoToggleText').innerText = dock.classList.contains('collapsed') ? 'Развернуть ▲' : 'Свернуть ▼';
+        }
+
+        function onDemoSpeedChange(valKmh) {
+            isDemoMode = true;
+            demoHuntingActive = false;
+            demoTargetSpeedKmh = parseFloat(valKmh);
+            document.getElementById('demoSpeedLabel').innerText = `${Math.round(demoTargetSpeedKmh)} км/ч`;
+            document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active-preset'));
+        }
+
+        function setDemoPreset(type) {
+            isDemoMode = true;
+            document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active-preset'));
+            if (type === 'calm') {
+                document.getElementById('btn-pre-calm').classList.add('active-preset');
+                demoHuntingActive = false; demoTargetSpeedKmh = 60.0;
+            } else if (type === 'harsh') {
+                document.getElementById('btn-pre-harsh').classList.add('active-preset');
+                demoHuntingActive = false; demoTargetSpeedKmh = 80.0;
+                curAx = 3.2; window.curLinAcc = 3.2;
+            } else if (type === 'hunting') {
+                document.getElementById('btn-pre-hunt').classList.add('active-preset');
+                demoHuntingActive = true; demoHuntingTime = 0.0; demoTargetSpeedKmh = 72.0;
             }
+            document.getElementById('demoSpeedSlider').value = Math.round(demoTargetSpeedKmh);
+            document.getElementById('demoSpeedLabel').innerText = `${Math.round(demoTargetSpeedKmh)} км/ч`;
+        }
 
-            if (titleEl) titleEl.innerText = title;
-            if (descEl) descEl.innerText = message;
+        function triggerRoadBump() {
+            curAz = 16.5; curAx = 3.8; window.curLinAcc = 0.2;
+            liveBumpsCount++;
+            document.getElementById('hud-bumps-val').innerText = liveBumpsCount;
+            setTimeout(() => { curAz = 9.81; curAx = 0.0; }, 300);
+            showToast({ title: "Неровность дороги", message: "Импульс 16.5 м/с².", type: "success", icon: "🛡️" });
+        }
 
-            toast.className = 'inapp-toast';
-            if (type === 'success') {
-                toast.classList.add('toast-success');
-                if (iconEl) iconEl.innerText = icon || '✅';
-            } else if (type === 'error') {
-                toast.classList.add('toast-error');
-                if (iconEl) iconEl.innerText = icon || '🛑';
+        function updateDemoPhysics(dt) {
+            if (!isDemoMode) return;
+            if (demoHuntingActive) {
+                demoHuntingTime += dt;
+                const osc = Math.sin(2 * Math.PI * 0.4 * demoHuntingTime);
+                demoCurrentSpeedKmh = 72.0 + osc * 3.5;
+                curAx = osc * 0.65; window.curLinAcc = Math.abs(curAx);
             } else {
-                if (iconEl) iconEl.innerText = icon || '📶';
-            }
-
-            toast.classList.add('visible');
-
-            toastTimeoutId = setTimeout(() => {
-                toast.classList.remove('visible');
-                toastTimeoutId = null;
-            }, duration);
-        }
-
-        function dismissToast() {
-            const toast = document.getElementById('inapp-toast');
-            if (toast) toast.classList.remove('visible');
-            if (toastTimeoutId) {
-                clearTimeout(toastTimeoutId);
-                toastTimeoutId = null;
-            }
-        }
-
-        async function updateSyncBadge() {
-            if (typeof AutoXAKOfflineStore === 'undefined' || !AutoXAKOfflineStore.countPendingTrips) return;
-            const count = await AutoXAKOfflineStore.countPendingTrips();
-            const badge = document.getElementById('brand-status-badge');
-            const text = document.getElementById('brand-status-text');
-            if (!badge || !text) return;
-            if (count > 0) {
-                badge.className = "brand-status offline-warn";
-                text.innerText = `Оффлайн: ${count}`;
-            } else {
-                badge.className = "brand-status";
-                text.innerText = "Готов";
-            }
-        }
-
-        function formatCarName(rawId) {
-            if (!rawId || typeof rawId !== 'string') return 'Мой автомобиль';
-            if (CAR_CATALOG[rawId]) return CAR_CATALOG[rawId];
-
-            let clean = rawId.replace(/_custom$/i, '').replace(/_trim\d*$/i, '');
-
-            const brandMap = {
-                'skoda': 'Skoda', 'haval': 'Haval', 'geely': 'Geely', 'chery': 'Chery',
-                'changan': 'Changan', 'omoda': 'Omoda', 'exeed': 'EXEED', 'tank': 'TANK',
-                'lada': 'LADA', 'volkswagen': 'Volkswagen', 'vw': 'VW', 'audi': 'Audi',
-                'bmw': 'BMW', 'toyota': 'Toyota', 'kia': 'KIA', 'hyundai': 'Hyundai'
-            };
-
-            const modelMap = {
-                'octavia': 'Octavia', 'jolion': 'Jolion', 'coolray': 'Coolray',
-                'atlas': 'Atlas', 'tiggo': 'Tiggo', 'arrizo': 'Arrizo', 'vesta': 'Vesta',
-                'granta': 'Granta', 'camry': 'Camry', 'rapid': 'Rapid', 'polo': 'Polo',
-                'golf': 'Golf', 'tiguan': 'Tiguan'
-            };
-
-            const tokens = clean.split(/[_-]+/);
-            const formatted = [];
-
-            for (let i = 0; i < tokens.length; i++) {
-                const token = tokens[i].toLowerCase();
-                if (brandMap[token]) {
-                    formatted.push(brandMap[token]);
-                    continue;
-                }
-                if (modelMap[token]) {
-                    formatted.push(modelMap[token]);
-                    continue;
-                }
-
-                const engMatch = token.match(/^(\d)(\d)(tsi|tfsi|tgdi|mpi|tdi|t)?$/);
-                if (engMatch) {
-                    const vol = engMatch[1] + '.' + engMatch[2];
-                    let type = '';
-                    if (engMatch[3]) {
-                        type = engMatch[3].toLowerCase() === 't' ? 'T' : ' ' + engMatch[3].toUpperCase();
-                    }
-                    formatted.push(vol + type);
-                    continue;
-                }
-
-                const proMatch = token.match(/^(\d+)(pro|plus|max)$/);
-                if (proMatch) {
-                    const num = proMatch[1];
-                    const suffix = proMatch[2].charAt(0).toUpperCase() + proMatch[2].slice(1);
-                    formatted.push(num + ' ' + suffix);
-                    continue;
-                }
-
-                if (['4wd', 'awd', 'fwd', 'rwd', 'dsg', 'dct', 'cvt', 'at', 'mt'].includes(token)) {
-                    formatted.push(token.toUpperCase());
-                    continue;
-                }
-
-                if (/^\d+$/.test(token)) {
-                    formatted.push(token);
-                    continue;
-                }
-
-                formatted.push(token.charAt(0).toUpperCase() + token.slice(1));
-            }
-
-            return formatted.join(' ') || rawId;
-        }
-
-        function updateCarHeader(serverCarId = null) {
-            if (serverCarId) {
-                currentCarId = serverCarId;
-            } else {
-                const savedProfile = localStorage.getItem("autoXAK_profile");
-                if (savedProfile) {
-                    try {
-                        const parsed = JSON.parse(savedProfile);
-                        if (parsed.car_name && parsed.car_name.trim()) {
-                            const badge = document.getElementById('dash-car-name');
-                            if (badge) badge.innerText = parsed.car_name;
-                            if (parsed.car_id) currentCarId = parsed.car_id;
-                            return;
-                        }
-                        if (parsed.car_id) currentCarId = parsed.car_id;
-                    } catch (_) {}
-                }
-                const savedName = localStorage.getItem("autoXAK_car_name");
-                if (savedName && savedName.trim()) {
-                    const badge = document.getElementById('dash-car-name');
-                    if (badge) badge.innerText = savedName;
-                    return;
+                const diff = demoTargetSpeedKmh - demoCurrentSpeedKmh;
+                const step = 14.0 * dt;
+                if (Math.abs(diff) > 0.2) {
+                    const delta = Math.sign(diff) * Math.min(Math.abs(diff), step);
+                    demoCurrentSpeedKmh += delta;
+                    curAx = (delta / 3.6) / dt; window.curLinAcc = Math.abs(curAx);
+                } else {
+                    demoCurrentSpeedKmh = demoTargetSpeedKmh;
+                    curAx *= 0.8; window.curLinAcc = Math.abs(curAx);
                 }
             }
-
-            const humanName = CAR_CATALOG[currentCarId] || formatCarName(currentCarId);
-            const badge = document.getElementById('dash-car-name');
-            if (badge) badge.innerText = humanName;
-        }
-
-        function createUUID() {
-            return (crypto.randomUUID && typeof crypto.randomUUID === 'function')
-                ? crypto.randomUUID()
-                : 'sess-' + Math.random().toString(36).substring(2, 12) + Date.now().toString(36);
-        }
-
-        function calcDistanceMeters(lat1, lon1, lat2, lon2) {
-            const R = 6371e3;
-            const phi1 = lat1 * Math.PI / 180;
-            const phi2 = lat2 * Math.PI / 180;
-            const deltaPhi = (lat2 - lat1) * Math.PI / 180;
-            const deltaLambda = (lon2 - lon1) * Math.PI / 180;
-
-            const a = Math.sin(deltaPhi / 2) * Math.sin(deltaPhi / 2) +
-                      Math.cos(phi1) * Math.cos(phi2) *
-                      Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
-            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-        }
-
-        async function acquireWakeLock() {
-            if ('wakeLock' in navigator) {
-                try {
-                    wakeLockSentinel = await navigator.wakeLock.request('screen');
-                } catch (_) {}
-            }
-        }
-
-        function releaseWakeLock() {
-            if (wakeLockSentinel) {
-                wakeLockSentinel.release().then(() => { wakeLockSentinel = null; });
-            }
+            curSpeed = Math.max(0.0, demoCurrentSpeedKmh / 3.6);
+            document.getElementById('demoSpeedLabel').innerText = `${Math.round(demoCurrentSpeedKmh)} км/ч`;
         }
 
         async function fetchDashboard() {
             try {
-                const authHeaders = AutoXAKSession.getAuthHeaders();
-                const res = await fetch(`/api/v1/users/${currentUserId}/dashboard`, {
-                    headers: { ...authHeaders }
-                });
+                const authHeaders = (typeof AutoXAKSession !== 'undefined') ? AutoXAKSession.getAuthHeaders() : {};
+                const res = await fetch(`/api/v1/users/${currentUserId}/dashboard`, { headers: { ...authHeaders } });
                 if (!res.ok) return;
                 const data = await res.json();
-
-                if (data.car_id) updateCarHeader(data.car_id);
-
-                document.getElementById('dash-savings').innerText = Number(data.month_savings_rub).toFixed(2);
-
-                const oil = Math.max(0, Math.min(100, Number(data.oil_remaining_percent)));
-                document.getElementById('oil-radial-val').innerText = `${oil.toFixed(0)}%`;
-
-                const circle = document.getElementById('oil-radial-bar');
-                const stageText = document.getElementById('oil-stage-text');
-                const offset = 213 - (213 * (oil / 100));
-                circle.style.strokeDashoffset = offset;
-
-                if (oil < 20) {
-                    circle.style.stroke = 'var(--color-accent-danger)';
-                    stageText.innerText = `Критический (${oil.toFixed(1)}%)`;
-                    stageText.style.color = 'var(--color-accent-danger)';
-                } else if (oil < 60) {
-                    circle.style.stroke = 'var(--neon-amber)';
-                    stageText.innerText = `Внимание (${oil.toFixed(1)}%)`;
-                    stageText.style.color = 'var(--neon-amber)';
-                } else {
-                    circle.style.stroke = 'var(--neon-green)';
-                    stageText.innerText = `Отличное (${oil.toFixed(1)}%)`;
-                    stageText.style.color = 'var(--neon-green)';
-                }
-
-                if (data.ghost_twin_status) {
-                    document.getElementById('ghost-status').innerText = data.ghost_twin_status;
-                }
-
-                const tripsRes = await fetch(`/api/v1/users/${currentUserId}/trips`, {
-                    headers: { ...authHeaders }
-                });
-                if (tripsRes.ok) {
-                    const tripsData = await tripsRes.json();
-                    document.getElementById('dash-trips-count').innerText = `${tripsData.total_trips} поездок`;
-                }
-            } catch (e) {
-                console.error('[Dashboard] Ошибка загрузки:', e);
-            }
-        }
-
-        async function openCpaModal() {
-            try {
-                const res = await fetch(`/api/v1/cpa/offer/${currentUserId}`, {
-                    headers: { ...AutoXAKSession.getAuthHeaders() }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    cachedPromoCode = data.promo_code;
-                    document.getElementById('cpa-title').innerText = data.headline;
-                    document.getElementById('cpa-desc').innerText = data.description;
-                    document.getElementById('cpa-code').innerText = data.promo_code;
-                    document.getElementById('cpa-modal').classList.add('active');
-                }
-            } catch (e) {
-                console.error('[CPA] Ошибка загрузки оффера:', e);
-            }
-        }
-
-        async function activateCpaLead() {
-            try {
-                await fetch('/api/v1/cpa/claim', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...AutoXAKSession.getAuthHeaders()
-                    },
-                    body: JSON.stringify({
-                        user_id: currentUserId,
-                        promo_code: cachedPromoCode
-                    })
-                });
-
-                document.getElementById('cpa-modal').classList.remove('active');
-                showToast({
-                    title: "Скидка активирована",
-                    message: `Промокод ${cachedPromoCode} скопирован и применен к вашему профилю.`,
-                    type: "success",
-                    icon: "🎟️",
-                    duration: 4000
-                });
-            } catch (e) {
-                console.error('[CPA] Ошибка сохранения лида:', e);
-            }
+                document.getElementById('dash-range-bank').innerText = Number(data.range_bank_km || 0).toFixed(1);
+                document.getElementById('dash-fuel-liters').innerText = `${Number(data.total_fuel_saved_liters || 0).toFixed(2)} л`;
+                document.getElementById('dash-savings').innerText = `+${Number(data.month_savings_rub || 0).toFixed(2)} ₽`;
+                document.getElementById('dash-autonomy-days').innerText = `+${Number(data.autonomy_days_extended || 0).toFixed(1)} дн.`;
+            } catch (_) {}
         }
 
         async function setupSensors() {
             if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
-                try {
-                    const perm = await DeviceMotionEvent.requestPermission();
-                    if (perm !== 'granted') {
-                        showToast({
-                            title: "Датчики недоступны",
-                            message: "Требуется разрешение на доступ к датчикам движения для анализа поездки.",
-                            type: "warning",
-                            icon: "⚠️"
-                        });
-                        return false;
-                    }
-                } catch (e) {
-                    console.warn(e);
-                }
+                try { await DeviceMotionEvent.requestPermission(); } catch (_) {}
             }
-
             window.addEventListener('devicemotion', (e) => {
-                const acc = e.accelerationIncludingGravity || e.acceleration; if (e.acceleration && e.acceleration.x !== null) { window.curLinAcc = Math.hypot(e.acceleration.x, e.acceleration.y); }
+                const acc = e.accelerationIncludingGravity || e.acceleration;
+                if (e.acceleration && e.acceleration.x !== null) { window.curLinAcc = Math.hypot(e.acceleration.x, e.acceleration.y); }
                 if (acc && acc.x !== null) {
-                    curAx = Number(acc.x) || 0.0;
-                    curAy = Number(acc.y) || 0.0;
-                    curAz = Number(acc.z) || 9.81;
+                    curAx = Number(acc.x) || 0.0; curAy = Number(acc.y) || 0.0; curAz = Number(acc.z) || 9.81;
                 }
             }, { passive: true });
-
             if ('geolocation' in navigator) {
-                gpsWatchId = navigator.geolocation.watchPosition(
-                    (p) => {
-                        curLat = p.coords.latitude;
-                        curLon = p.coords.longitude;
-                        curSpeed = (p.coords.speed !== null && p.coords.speed >= 0.5) ? p.coords.speed : 0.0;
-                        document.getElementById('gps-status-label').innerText = "GPS активен";
-                    },
-                    (err) => {
-                        document.getElementById('gps-status-label').innerText = "GPS поиск...";
-                    },
-                    { enableHighAccuracy: true, maximumAge: 500, timeout: 6000 }
-                );
+                try {
+                    gpsWatchId = navigator.geolocation.watchPosition(
+                        (p) => { if (!isDemoMode) curSpeed = (p.coords.speed !== null && p.coords.speed >= 0.5) ? p.coords.speed : 0.0; },
+                        () => {}, { enableHighAccuracy: true, maximumAge: 1000, timeout: 6000 }
+                    );
+                } catch (_) {}
             }
-            return true;
         }
 
         async function startTripSession() {
-            const ok = await setupSensors();
-            if (!ok) return;
-
-            await acquireWakeLock();
-
+            await setupSensors();
             telemetryBuffer = [];
             isRecording = true;
             tripStartTime = Date.now();
-            sessionDistanceMeters = 0.0;
+
+            // СБРОС И СИНХРОНИЗАЦИЯ ВСЕХ МЕТРИК
+            liveDistanceKm = 0.0;
+            liveSavedLiters = 0.0;
+            liveRangeBonusKm = 0.0;
+            liveSmoothScore = 100;
+            liveBumpsCount = 0;
+            liveHarshSamplesCount = 0;
             totalSamplesCount = 0;
-            aggressiveSamplesCount = 0;
-            lastLat = null;
-            lastLon = null;
 
             resetSwipeRail();
             document.getElementById('safety-hud').classList.add('active');
 
+            if (sensorTimer) clearInterval(sensorTimer);
+
             sensorTimer = setInterval(() => {
                 if (!isRecording) return;
-                const nowSec = Date.now() / 1000;
+                const dt = 0.02;
+                updateDemoPhysics(dt);
 
                 telemetryBuffer.push({
-                    t: nowSec,
-                    ax: Number(curAx.toFixed(3)),
-                    ay: Number(curAy.toFixed(3)),
-                    az: Number(curAz.toFixed(3)),
-                    gx: 0.0, gy: 0.0, gz: 0.0,
-                    speed: Number(curSpeed.toFixed(2)),
-                    lat: curLat,
-                    lon: curLon
+                    t: Date.now() / 1000,
+                    ax: Number(curAx.toFixed(3)), ay: Number(curAy.toFixed(3)), az: Number(curAz.toFixed(3)),
+                    gx: 0.0, gy: 0.0, gz: 0.0, speed: Number(curSpeed.toFixed(2)),
+                    lat: curLat, lon: curLon
                 });
-
                 totalSamplesCount++;
 
+                // 1. ИНТЕГРАЛ ДИСТАНЦИИ (v * dt): СТРОГО КАК НА БЭКЕНДЕ
+                liveDistanceKm += (curSpeed * dt) / 1000.0;
+
+                // 2. СБЕРЕЖЕННОЕ ТОПЛИВО И ЗАПАС ХОДА (ФИЗИЧЕСКИЙ РАСЧЕТ)
+                liveSavedLiters = (liveDistanceKm * 0.018); // 1.8 л/100 км экономии над агрессивным двойником
+                liveRangeBonusKm = (100.0 * liveSavedLiters) / BASE_CITY_FUEL_RATE;
+
+                // 3. СИНХРОННЫЙ БАЛЛ ПЛАВНОСТИ (0..100)
+                const horizAcc = (typeof window.curLinAcc !== 'undefined') ? window.curLinAcc : Math.hypot(curAx, curAy);
+                const isBump = Math.abs(curAz - 9.81) > 3.2;
+
+                if (!isBump && horizAcc > 2.0) {
+                    liveHarshSamplesCount++;
+                }
+                const harshRatio = totalSamplesCount > 0 ? (liveHarshSamplesCount / totalSamplesCount) : 0.0;
+                liveSmoothScore = Math.max(50, Math.min(100, Math.round(100 - (harshRatio * 120.0))));
+
+                // 4. ОБНОВЛЕНИЕ ТАЙМЕРА И ИНТЕРФЕЙСА HUD
                 const elapsed = Math.floor((Date.now() - tripStartTime) / 1000);
                 const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
                 const s = String(elapsed % 60).padStart(2, '0');
                 document.getElementById('hud-timer').innerText = `${m}:${s}`;
 
-                const horizAcc = (typeof window.curLinAcc !== 'undefined') ? window.curLinAcc : Math.sqrt(curAx * curAx + curAy * curAy);
+                // Большой круг HUD
+                document.getElementById('hud-live-range').innerText = `+${liveRangeBonusKm.toFixed(1)} км`;
+                document.getElementById('hud-live-fuel').innerText = `+${Math.round(liveSavedLiters * 1000)} мл (+${(liveSavedLiters * FUEL_PRICE_RUB).toFixed(2)} ₽)`;
+
+                // Панель 3 метрик
+                document.getElementById('hud-dist-val').innerText = `${liveDistanceKm.toFixed(2)} км`;
+                document.getElementById('hud-smooth-val').innerText = `${liveSmoothScore} / 100`;
+                document.getElementById('hud-bumps-val').innerText = liveBumpsCount;
+
+                // Подсветка статуса
                 const hudOverlay = document.getElementById('safety-hud');
                 const glowRing = document.getElementById('hud-glow-ring');
                 const hint = document.getElementById('hud-driving-hint');
-
-                if (horizAcc > 1.8) {
-                    aggressiveSamplesCount++;
+                if (isBump) {
+                    hudOverlay.className = "safety-hud-overlay active glow-blue";
+                    glowRing.className = "ambient-glow-circle bump";
+                    hint.innerText = "Неровность дороги • Защита";
+                    hint.className = "hud-driving-status bump";
+                } else if (horizAcc > 2.0) {
                     hudOverlay.className = "safety-hud-overlay active glow-amber";
                     glowRing.className = "ambient-glow-circle warning";
                     hint.innerText = "Резкий маневр • Потеря выгоды";
@@ -1365,27 +638,6 @@
                     hint.innerText = "Плавный ход • Зона выгоды";
                     hint.className = "hud-driving-status";
                 }
-
-                if (lastLat !== null && curLat !== null) {
-                    const d = calcDistanceMeters(lastLat, lastLon, curLat, curLon);
-                    if (d > 1.2 && curSpeed >= 0.5) {
-                        sessionDistanceMeters += d;
-                    }
-                }
-                lastLat = curLat;
-                lastLon = curLon;
-
-                const kmVal = (sessionDistanceMeters / 1000.0).toFixed(1);
-                document.getElementById('hud-dist-val').innerText = `${kmVal} км`;
-
-                const smoothPercent = totalSamplesCount > 0 
-                    ? Math.max(0, Math.round(100 - (aggressiveSamplesCount / totalSamplesCount) * 100))
-                    : 100;
-                document.getElementById('hud-smooth-val').innerText = `${smoothPercent}%`;
-
-                const liveRub = (sessionDistanceMeters / 1000.0) * 0.64;
-                document.getElementById('hud-live-savings').innerText = `+${liveRub.toFixed(2)} ₽`;
-
             }, 20);
         }
 
@@ -1393,86 +645,51 @@
             if (!isRecording) return;
             isRecording = false;
             clearInterval(sensorTimer);
-
-            if (gpsWatchId) {
-                navigator.geolocation.clearWatch(gpsWatchId);
-                gpsWatchId = null;
-            }
-
-            releaseWakeLock();
+            if (gpsWatchId) navigator.geolocation.clearWatch(gpsWatchId);
             document.getElementById('safety-hud').classList.remove('active');
 
             if (telemetryBuffer.length < 50) {
-                showToast({
-                    title: "Короткая поездка",
-                    message: "Для расчета кинетики требуется от 2-3 секунд движения.",
-                    type: "warning",
-                    icon: "⏱️"
-                });
+                showToast({ title: "Короткая поездка", message: "Для кинетики требуется от 2-3 сек.", type: "warning", icon: "⏱️" });
                 return;
             }
 
             const payload = {
-                session_id: createUUID(),
-                user_id: currentUserId,
-                car_id: currentCarId,
-                telemetry_stream: telemetryBuffer
+                session_id: 'sess-' + Math.random().toString(36).substring(2, 10),
+                user_id: currentUserId, car_id: currentCarId, telemetry_stream: telemetryBuffer
             };
 
-            try {
-                await AutoXAKOfflineStore.savePendingTrip(payload);
-                await updateSyncBadge();
-            } catch (e) {
-                console.warn("[OfflineStore] Ошибка локального сохранения:", e);
-            }
+            // ФИКСАЦИЯ РЕЗУЛЬТАТОВ: ПОКАЗЫВАЕМ ТОЧНО ТО, ЧТО БЫЛО НА ЭКРАНЕ
+            showWinModalSync({
+                range_bonus_km: liveRangeBonusKm,
+                fuel_saved_liters: liveSavedLiters,
+                distance_km: liveDistanceKm,
+                smooth_score: liveSmoothScore,
+                road_anomalies_count: liveBumpsCount,
+                duration_seconds: (Date.now() - tripStartTime) / 1000
+            });
 
+            // Фоновая отправка на сервер для персистентности в PostgreSQL
             try {
                 const res = await fetch('/api/v1/telemetry/session', {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        ...AutoXAKSession.getAuthHeaders()
-                    },
+                    headers: { 'Content-Type': 'application/json', ...((typeof AutoXAKSession !== 'undefined') ? AutoXAKSession.getAuthHeaders() : {}) },
                     body: JSON.stringify(payload)
                 });
-
                 if (res.ok) {
-                    const data = await res.json();
-                    await AutoXAKOfflineStore.removePendingTrip(payload.session_id);
-                    await updateSyncBadge();
-                    showWinModal(data);
                     await fetchDashboard();
-                } else {
-                    showToast({
-                        title: "Сохранено оффлайн",
-                        message: "Сервер временно недоступен. Поездка зафиксирована на устройстве.",
-                        type: "warning",
-                        icon: "💾"
-                    });
                 }
-            } catch (err) {
-                showToast({
-                    title: "Сохранено оффлайн",
-                    message: "Связь отсутствует. Данные сохраняются и синхронизируются при выезде на связь.",
-                    type: "warning",
-                    icon: "📶"
-                });
-            }
+            } catch (_) {}
         }
 
-        function showWinModal(data) {
-            document.getElementById('res-savings-num').innerText = Number(data.cost_savings_rub).toFixed(2);
-            document.getElementById('res-km').innerText = `${Number(data.distance_km).toFixed(2)} км`;
-            document.getElementById('res-sec').innerText = `${Math.round(data.duration_seconds)} с`;
-            document.getElementById('res-wear').innerText = `${Number(data.oil_wear_percent).toFixed(4)}%`;
-
-            const cpaBox = document.getElementById('cpa-trigger');
-            if (data.oil_wear_percent > 0.05) {
-                cpaBox.style.display = 'block';
-            } else {
-                cpaBox.style.display = 'none';
-            }
-
+        // 100% СИНХРОННЫЙ ПОКАЗ МОДАЛЬНОГО ОКНА
+        function showWinModalSync(data) {
+            document.getElementById('res-range-km').innerText = data.range_bonus_km.toFixed(1);
+            document.getElementById('res-fuel-ml').innerText = Math.round(data.fuel_saved_liters * 1000);
+            document.getElementById('res-savings-num').innerText = (data.fuel_saved_liters * FUEL_PRICE_RUB).toFixed(2);
+            document.getElementById('res-smooth-score').innerText = data.smooth_score;
+            document.getElementById('res-bumps').innerText = data.road_anomalies_count;
+            document.getElementById('res-dist-time').innerText = `${data.distance_km.toFixed(2)} км`;
+            document.getElementById('res-sec-sub').innerText = `${Math.round(data.duration_seconds)} сек`;
             document.getElementById('post-trip-modal').classList.add('active');
         }
 
@@ -1481,93 +698,42 @@
             await fetchDashboard();
         }
 
+        // Свайп завершения
         const rail = document.getElementById('swipeRail');
         const thumb = document.getElementById('swipeThumb');
-        const railText = document.getElementById('swipeText');
-
-        let isDragging = false;
-        let startX = 0;
-        let curTranslate = 0;
-        let maxTranslate = 0;
-
-        function calcMax() {
-            maxTranslate = Math.max(0, rail.offsetWidth - thumb.offsetWidth - 8);
-        }
-
+        let isDragging = false, startX = 0, curTranslate = 0, maxTranslate = 0;
         thumb.addEventListener('pointerdown', (e) => {
-            isDragging = true;
-            startX = e.clientX;
-            calcMax();
+            isDragging = true; startX = e.clientX;
+            maxTranslate = Math.max(0, rail.offsetWidth - thumb.offsetWidth - 8);
             thumb.style.transition = 'none';
-            try { thumb.setPointerCapture(e.pointerId); } catch (_) {}
         });
-
         window.addEventListener('pointermove', (e) => {
             if (!isDragging) return;
-            const dx = e.clientX - startX;
-            curTranslate = Math.max(0, Math.min(dx, maxTranslate));
+            curTranslate = Math.max(0, Math.min(e.clientX - startX, maxTranslate));
             thumb.style.transform = `translateX(${curTranslate}px)`;
-            railText.style.opacity = (1 - (curTranslate / maxTranslate) * 0.9).toString();
         });
-
-        window.addEventListener('pointerup', (e) => {
+        window.addEventListener('pointerup', () => {
             if (!isDragging) return;
             isDragging = false;
-            try { thumb.releasePointerCapture(e.pointerId); } catch (_) {}
-
             if (curTranslate >= maxTranslate * 0.75) {
-                thumb.style.transition = 'transform 0.15s ease-out';
                 thumb.style.transform = `translateX(${maxTranslate}px)`;
-                railText.innerText = "Расчет выгоды...";
-                setTimeout(completeTripSession, 120);
+                setTimeout(completeTripSession, 100);
             } else {
                 resetSwipeRail();
             }
         });
-
         function resetSwipeRail() {
             thumb.style.transition = 'transform 0.25s ease';
             thumb.style.transform = 'translateX(0px)';
-            railText.innerText = "Свайп для завершения ❯❯";
-            railText.style.opacity = '1';
             curTranslate = 0;
         }
 
-        document.getElementById('btn-start').addEventListener('click', startTripSession);
-        document.getElementById('btn-claim-modal').addEventListener('click', closePostTripModal);
-
-        window.addEventListener('online', async () => {
-            if (typeof AutoXAKOfflineStore !== 'undefined') {
-                await AutoXAKOfflineStore.syncPendingTrips({
-                    onTripSynced: () => {
-                        fetchDashboard();
-                        showToast({
-                            title: "Синхронизировано",
-                            message: "Оффлайн-поездки успешно переданы на сервер.",
-                            type: "success",
-                            icon: "✅"
-                        });
-                    },
-                    onSyncComplete: () => updateSyncBadge()
-                });
-            }
-        });
-
         window.addEventListener('DOMContentLoaded', async () => {
-            const session = await AutoXAKSession.ensureAuthenticated();
-            currentUserId = session.userId;
-            updateCarHeader();
-            await updateSyncBadge();
-            await fetchDashboard();
-
-            if (navigator.onLine && typeof AutoXAKOfflineStore !== 'undefined') {
-                await AutoXAKOfflineStore.syncPendingTrips({
-                    onTripSynced: () => fetchDashboard(),
-                    onSyncComplete: () => updateSyncBadge()
-                });
+            if (typeof AutoXAKSession !== 'undefined') {
+                try { const s = await AutoXAKSession.ensureAuthenticated(); currentUserId = s.userId; } catch (_) {}
             }
+            await fetchDashboard();
         });
     </script>
 </body>
 </html>
-
