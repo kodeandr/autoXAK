@@ -1,5 +1,9 @@
 ﻿import os
+import sys
 import json
+import asyncio
+import argparse
+import asyncpg
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -47,34 +51,55 @@ def parse_car_scanner_file(csv_path: str) -> pd.DataFrame:
         "speed": df_wide[target_speed_pid].to_numpy() if target_speed_pid else np.zeros(len(df_wide))
     })
 
-def evaluate_session_against_obd(csv_path: str, db_trip: dict, output_dir: str = "reports"):
+async def fetch_trip_from_db(session_id: str = None) -> dict:
+    conn = await asyncpg.connect("postgresql://autoXAK_user:autoXAK_pass@postgres:5432/autoXAK_db")
+    try:
+        if session_id:
+            row = await conn.fetchrow("""
+                SELECT id::text, user_id, duration_seconds, distance_km, 
+                       oil_wear_percent, idle_ratio, total_savings_rub, created_at
+                FROM trips WHERE id::text = $1
+            """, session_id)
+        else:
+            row = await conn.fetchrow("""
+                SELECT id::text, user_id, duration_seconds, distance_km, 
+                       oil_wear_percent, idle_ratio, total_savings_rub, created_at
+                FROM trips 
+                WHERE duration_seconds > 10.0
+                ORDER BY created_at DESC LIMIT 1
+            """)
+        return dict(row) if row else None
+    finally:
+        await conn.close()
+
+def evaluate_session(csv_path: str, db_trip: dict, output_dir: str = "reports"):
     os.makedirs(output_dir, exist_ok=True)
     df = parse_car_scanner_file(csv_path)
     
-    target_duration = db_trip["duration_seconds"]
+    target_duration = float(db_trip["duration_seconds"])
+    total_obd_duration = float(df["time"].max() - df["time"].min())
     
-    # Выделяем временной срез завершённой сессии
-    df_slice = df.tail(int(min(len(df), target_duration * 10))).copy()
+    # Берем временной срез поездки
+    n_samples = int(min(len(df), max(200, target_duration * 10)))
+    df_slice = df.tail(n_samples).copy()
+    
     total_time = np.linspace(0, target_duration, len(df_slice))
     dt = target_duration / max(1, len(df_slice))
     
     rpm_vals = df_slice["rpm"].to_numpy()
     speed_vals = df_slice["speed"].to_numpy()
     
-    # 1. Аппаратный эталон CAN OBD-II (RPM интеграл)
+    # 1. Аппаратный эталон CAN OBD-II (интеграл RPM)
     rpm_weights = np.where(rpm_vals > 0, rpm_vals / 800.0, 0.0)
     rpm_weights[rpm_vals > 3000.0] *= 1.3
     obd_cum_hours = np.cumsum(rpm_weights * dt) / 3600.0
     final_obd_hours = float(obd_cum_hours[-1])
     
-    # 2. Калиброванная безаппаратная модель autoXAK (с учетом городского спокойного темпа)
-    # На холостых (пробка/светофор v < 1.5 км/ч): базовый холостой ход (1.0x)
-    # В движении при спокойной езде: базовые обороты 1100-1300 об/мин (1.0 + v_mps / 35.0)
-    v_mps = speed_vals / 3.6
-    acc_mps2 = np.gradient(v_mps, dt)
-    k_idle = np.where(v_mps < 0.5, 1.05, 1.0 + (v_mps / 30.0) * 0.45 + np.maximum(0, acc_mps2) * 0.25)
-    autoxak_cum_hours = np.cumsum(k_idle * dt) / 3600.0
-    final_autoxak_hours = float(autoxak_cum_hours[-1])
+    # 2. Модель autoXAK (расчет по износу из базы данных)
+    # Ресурс: 250 ч. Hours = (oil_wear_percent / 100) * 250
+    wear_pct = float(db_trip["oil_wear_percent"])
+    final_autoxak_hours = (wear_pct / 100.0) * 250.0
+    autoxak_cum_hours = np.linspace(0, final_autoxak_hours, len(df_slice))
     
     # 3. Метрики расхождения
     mape = float(abs(final_obd_hours - final_autoxak_hours) / (final_obd_hours + 1e-6) * 100.0)
@@ -84,8 +109,12 @@ def evaluate_session_against_obd(csv_path: str, db_trip: dict, output_dir: str =
     
     report = {
         "session_id": db_trip["id"],
+        "user_id": db_trip.get("user_id"),
+        "created_at": str(db_trip.get("created_at")),
         "duration_seconds": target_duration,
-        "distance_km": db_trip["distance_km"],
+        "distance_km": float(db_trip["distance_km"]),
+        "oil_wear_percent": wear_pct,
+        "total_savings_rub": float(db_trip.get("total_savings_rub", 0.0)),
         "metrics": {
             "obd_ground_truth_hours": round(final_obd_hours, 5),
             "autoxak_model_hours": round(final_autoxak_hours, 5),
@@ -94,29 +123,24 @@ def evaluate_session_against_obd(csv_path: str, db_trip: dict, output_dir: str =
             "mape_percent": round(mape, 2),
             "pearson_correlation": round(pearson_r, 4),
             "hypothesis_confirmed": is_confirmed
-        },
-        "conclusion": (
-            f"Гипотеза H1 ПОДТВЕРЖДЕНА: расхождение модели и CAN-шины составляет {mape:.2f}% (критерий <= 10%)."
-            if is_confirmed else
-            f"Гипотеза H1 требует калибровки: текущая ошибка {mape:.2f}%."
-        )
+        }
     }
     
     out_json = os.path.join(output_dir, "validation_report.json")
     with open(out_json, "w", encoding="utf-8") as f:
         json.dump(report, f, indent=2, ensure_ascii=False)
         
-    # Построение чистового графика для диссертации (Vertical Layout)
+    # График (Vertical Subplots для диплома)
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 7), sharex=True, dpi=300)
     
     ax1.plot(total_time, speed_vals, color="#1f77b4", lw=1.8, label="Скорость CAN OBD-II (км/ч)")
     ax1.set_ylabel("Скорость, км/ч", fontsize=11)
     ax1.grid(True, linestyle=":", alpha=0.6)
     ax1.legend(loc="upper right")
-    ax1.set_title(f"Сходимость заезда {db_trip['id'][:8]} (Длительность: {target_duration} с, Дистанция: {db_trip['distance_km']} км)", fontweight="bold")
+    ax1.set_title(f"Сходимость заезда {db_trip['id'][:8]} (Длительность: {target_duration:.1f} с, Дистанция: {db_trip['distance_km']} км)", fontweight="bold")
     
     ax2.plot(total_time, obd_cum_hours * 60, color="#d62728", lw=2.2, label=f"CAN Ground Truth: {final_obd_hours*60:.2f} мин")
-    ax2.plot(total_time, autoxak_cum_hours * 60, color="#2ca02c", linestyle="--", lw=2.0, label=f"autoXAK Model: {final_autoxak_hours*60:.2f} мин (MAPE: {mape:.2f}%)")
+    ax2.plot(total_time, autoxak_cum_hours * 60, color="#2ca02c", linestyle="--", lw=2.0, label=f"autoXAK (БД): {final_autoxak_hours*60:.2f} мин (MAPE: {mape:.2f}%)")
     ax2.set_xlabel("Время сессии, с", fontsize=11)
     ax2.set_ylabel("Моточасы, мин", fontsize=11)
     ax2.grid(True, linestyle=":", alpha=0.6)
@@ -127,26 +151,33 @@ def evaluate_session_against_obd(csv_path: str, db_trip: dict, output_dir: str =
     plt.savefig(out_png)
     plt.close()
     
-    print("\n==================== РЕЗУЛЬТАТ ПОСЛЕ КАЛИБРОВКИ ====================")
-    print(f"Сессия:                 {db_trip['id']}")
-    print(f"Длительность:           {target_duration} сек ({round(target_duration/60, 1)} мин)")
+    print("\n==================== РЕЗУЛЬТАТ ВЕРИФИКАЦИИ ====================")
+    print(f"Сессия из БД:           {db_trip['id']}")
+    print(f"Пользователь:           {db_trip.get('user_id')}")
+    print(f"Время записи:           {db_trip.get('created_at')}")
+    print(f"Длительность:           {target_duration:.1f} сек ({target_duration/60:.2f} мин)")
     print(f"Дистанция:              {db_trip['distance_km']} км")
+    print(f"Износ масла (БД):       {wear_pct}%")
     print(f"Моточасы CAN OBD-II:    {final_obd_hours*60:.2f} мин")
-    print(f"Моточасы autoXAK:       {final_autoxak_hours*60:.2f} мин")
+    print(f"Моточасы autoXAK (БД):  {final_autoxak_hours*60:.2f} мин")
     print(f"Погрешность MAPE:       {mape:.2f}% (Порог гипотезы H1: <= 10%)")
     print(f"Корреляция Пирсона:     {pearson_r:.4f}")
-    print(f"Статус гипотезы H1:     {'[ПОДТВЕРЖДЕНА]' if is_confirmed else '[НЕ ПОДТВЕРЖДЕНА]'}")
+    status_str = "[ПОДТВЕРЖДЕНА]" if is_confirmed else "[НЕ ПОДТВЕРЖДЕНА]"
+    print(f"Статус гипотезы H1:     {status_str}")
     print(f"Отчет сохранен в:       {out_json}")
     print(f"График сохранен в:      {out_png}")
-    print("====================================================================\n")
+    print("===============================================================\n")
 
 if __name__ == "__main__":
-    db_data = {
-        "id": "55e927c7-a442-4bc2-a13e-ab282f96e553",
-        "duration_seconds": 401.78,
-        "distance_km": 2.23,
-        "oil_wear_percent": 0.0813,
-        "idle_ratio": 0.405,
-        "total_savings_rub": 4.63
-    }
-    evaluate_session_against_obd("data/car_scanner_track.csv", db_data, "reports")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--csv", default="data/car_scanner_track.csv")
+    parser.add_argument("--session", default=None, help="UUID сессии из БД")
+    parser.add_argument("--out", default="reports")
+    args = parser.parse_args()
+    
+    trip = asyncio.run(fetch_trip_from_db(args.session))
+    if not trip:
+        print("[!] Ошибка: в базе данных не найдены подходящие поездки.")
+        sys.exit(1)
+        
+    evaluate_session(args.csv, trip, args.out)

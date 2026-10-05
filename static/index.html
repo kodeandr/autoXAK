@@ -1283,7 +1283,7 @@
             }
 
             window.addEventListener('devicemotion', (e) => {
-                const acc = e.accelerationIncludingGravity || e.acceleration;
+                const acc = e.accelerationIncludingGravity || e.acceleration; if (e.acceleration && e.acceleration.x !== null) { window.curLinAcc = Math.hypot(e.acceleration.x, e.acceleration.y); }
                 if (acc && acc.x !== null) {
                     curAx = Number(acc.x) || 0.0;
                     curAy = Number(acc.y) || 0.0;
@@ -1348,7 +1348,7 @@
                 const s = String(elapsed % 60).padStart(2, '0');
                 document.getElementById('hud-timer').innerText = `${m}:${s}`;
 
-                const horizAcc = Math.sqrt(curAx * curAx + curAy * curAy);
+                const horizAcc = (typeof window.curLinAcc !== 'undefined') ? window.curLinAcc : Math.sqrt(curAx * curAx + curAy * curAy);
                 const hudOverlay = document.getElementById('safety-hud');
                 const glowRing = document.getElementById('hud-glow-ring');
                 const hint = document.getElementById('hud-driving-hint');
@@ -1570,3 +1570,4 @@
     </script>
 </body>
 </html>
+

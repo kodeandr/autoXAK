@@ -12,7 +12,8 @@ services:
       - DATABASE_URL=postgresql+asyncpg://autoXAK_user:autoXAK_pass@postgres:5432/autoXAK_db
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - DGIS_USE_MOCK=true
+      - DGIS_API_KEY=1069d305-b706-4819-840a-b8a191fda6c8
+      - DGIS_USE_MOCK=false
     depends_on:
       postgres:
         condition: service_healthy
