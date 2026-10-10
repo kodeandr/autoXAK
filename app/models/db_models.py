@@ -28,7 +28,11 @@ class FuelRegionalPrice(Base):
     price_dt = Column(Float, nullable=False)
 
     availability_status = Column(String(30), default="NORMAL")
-    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+    updated_at = Column(
+        DateTime(timezone=True), 
+        default=lambda: datetime.now(timezone.utc), 
+        onupdate=lambda: datetime.now(timezone.utc)
+    )
 
     __table_args__ = (
         Index("ix_fuel_region_brand", "region_code", "brand", unique=True),
@@ -86,32 +90,53 @@ class VehicleTrim(Base):
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(String(64), primary_key=True)
+    # Идентификатор пользователя (dev_... для гостя или uuid для явной регистрации)
+    id = Column(String(64), primary_key=True, index=True)
+    name = Column(String(100), nullable=True)                 # Имя коллеги (напр. "Андрей")
+    email = Column(String(128), unique=True, nullable=True)   # Опционально для входа по паролю
+    hashed_password = Column(String(256), nullable=True)
+
+    # Профиль автомобиля и экономические параметры
     car_id = Column(String(100), default="haval_jolion_15t_4wd")
     fuel_price_rub = Column(Float, default=72.40)
     service_cost_rub = Column(Float, default=9500.0)
+
+    # Накопительный банк сбережений (Fuel Autonomy)
     total_savings_rub = Column(Float, default=0.0)
+    total_fuel_saved_liters = Column(Float, default=0.0)     # Новое: всего сэкономлено литров
+    range_bank_km = Column(Float, default=0.0)               # Новое: накопленный банк запаса хода
     current_oil_wear_percent = Column(Float, default=0.0)
+
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     trips = relationship("Trip", back_populates="user", cascade="all, delete-orphan")
+    leads = relationship("CPALead", back_populates="user", cascade="all, delete-orphan")
 
 
 class Trip(Base):
     __tablename__ = "trips"
 
     id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(64), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(String(64), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     car_id = Column(String(100), nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
     duration_seconds = Column(Float, nullable=False)
     distance_km = Column(Float, nullable=False)
     equivalent_engine_hours = Column(Float, nullable=False)
     oil_wear_percent = Column(Float, nullable=False)
     idle_ratio = Column(Float, default=0.0)
+
+    # Экономические показатели
     fuel_saved_rub = Column(Float, default=0.0)
     oil_saved_rub = Column(Float, default=0.0)
     total_savings_rub = Column(Float, default=0.0)
+
+    # Новые метрики HUD и дорожного профиля
+    fuel_saved_liters = Column(Float, default=0.0)           # Сбереженные литры
+    range_bonus_km = Column(Float, default=0.0)              # Добавленный запас хода, км
+    smooth_score = Column(Integer, default=100)              # Индекс плавности (0..100)
+    road_anomalies_count = Column(Integer, default=0)        # Сглаженные лежачие и ямы
 
     user = relationship("User", back_populates="trips")
 
@@ -124,12 +149,14 @@ class CPALead(Base):
     __tablename__ = "cpa_leads"
 
     id = Column(String(64), primary_key=True, default=lambda: str(uuid.uuid4()))
-    user_id = Column(String(64), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(String(64), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     car_id = Column(String(100), nullable=False)
     partner_id = Column(String(64), nullable=False)
     promo_code = Column(String(64), nullable=False)
     discount_rub = Column(Float, default=500.0)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+
+    user = relationship("User", back_populates="leads")
 
     @property
     def session_id(self) -> str:
@@ -143,5 +170,3 @@ class CPALead(Base):
         if "session_id" in kwargs and "id" not in kwargs:
             kwargs["id"] = kwargs.pop("session_id")
         super().__init__(**kwargs)
-
-

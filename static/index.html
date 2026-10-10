@@ -126,7 +126,7 @@
             border: none; border-radius: var(--radius-pill); font-size: 15px; font-weight: 700; cursor: pointer;
             box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4); display: flex; align-items: center; justify-content: center; gap: 10px;
         }
-        /* ---------------- IN-TRIP AMBIENT HUD ---------------- */
+        /* ---------------- IN-TRIP HUD ---------------- */
         .safety-hud-overlay {
             position: absolute; inset: 0; background: #000000; z-index: 100;
             display: none; flex-direction: column; justify-content: space-between;
@@ -160,7 +160,6 @@
         .hud-driving-status { font-size: 13px; font-weight: 800; text-transform: uppercase; color: var(--neon-green); }
         .hud-driving-status.warning { color: var(--neon-amber); }
         .hud-driving-status.bump { color: var(--neon-blue); }
-        /* Синхронная панель 4 метрик */
         .hud-stats-strip {
             display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; width: 100%;
             background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255,255,255,0.12);
@@ -237,7 +236,7 @@
             <header class="top-brand">
                 <div class="brand-block">
                     <span class="brand-title">autoXAK</span>
-                    <span class="vehicle-badge" id="dash-car-name">Haval Jolion 1.5T • 4WD</span>
+                    <span class="vehicle-badge" id="dash-car-name">Мой автомобиль</span>
                 </div>
                 <div class="brand-right-group">
                     <a href="/setup" class="link-setup">⚙️ Настройки</a>
@@ -278,20 +277,20 @@
 
             <div class="specs-grid">
                 <div class="spec-tile">
-                    <div class="spec-label">Сравнение стиля</div>
-                    <div class="spec-val" id="ghost-status">С умеренным лихачом</div>
+                    <div class="spec-label">Модель сравнения</div>
+                    <div class="spec-val" id="ghost-status">Динамичный темп</div>
                 </div>
                 <div class="spec-tile">
-                    <div class="spec-label">Анализ профиля</div>
-                    <div class="spec-val">Z-Shock Veto (ИДН/Ямы)</div>
+                    <div class="spec-label">Дорожный рельеф</div>
+                    <div class="spec-val">Фильтр ям и кочек</div>
                 </div>
                 <div class="spec-tile">
-                    <div class="spec-label">Связь со спутниками</div>
-                    <div class="spec-val" id="gps-status-label">GPS активен</div>
+                    <div class="spec-label">Навигация</div>
+                    <div class="spec-val" id="gps-status-label">GPS подключен</div>
                 </div>
                 <div class="spec-tile">
-                    <div class="spec-label">Математика</div>
-                    <div class="spec-val">Fuel Autonomy Core</div>
+                    <div class="spec-label">Расход и топливо</div>
+                    <div class="spec-val">Оценка запаса хода</div>
                 </div>
             </div>
         </section>
@@ -321,7 +320,6 @@
                 <div class="hud-driving-status" id="hud-driving-hint">Плавный ход • Зона выгоды</div>
             </div>
 
-            <!-- Синхронизированные 3 плашки -->
             <div class="hud-stats-strip">
                 <div class="hud-stat-box">
                     <span class="hud-stat-title">Дистанция</span>
@@ -343,12 +341,12 @@
             </div>
         </section>
 
-        <!-- 3. МОДАЛЬНОЕ ОКНО РЕЗУЛЬТАТОВ (100% СОВПАДЕНИЕ) -->
+        <!-- 3. МОДАЛЬНОЕ ОКНО РЕЗУЛЬТАТОВ -->
         <div class="modal-overlay" id="post-trip-modal">
             <div class="summary-card">
                 <div class="summary-header">
                     <span style="font-size: 11px; color: var(--color-text-secondary); text-transform: uppercase; font-weight: 700;">Итог сессии</span>
-                    <span class="summary-tag">🏆 Двойник обойден</span>
+                    <span class="summary-tag">🏆 Эталон превзойден</span>
                 </div>
 
                 <div class="hero-autonomy-box">
@@ -414,8 +412,80 @@
             : (localStorage.getItem('autoXAK_user_id') || 'dev_user_01');
 
         let currentCarId = "haval_jolion_15t";
-        const BASE_CITY_FUEL_RATE = 8.5; // Базовый расход: 8.5 л / 100 км
-        const FUEL_PRICE_RUB = 68.5;
+        let baseCityFuelRate = 8.5;
+        let currentFuelPrice = 62.0;
+
+        // Справочник отображаемых названий автомобилей
+        const CAR_CATALOG = {
+            "haval_jolion_15t": "Haval Jolion 1.5T • 4WD",
+            "haval_jolion_15t_fwd": "Haval Jolion 1.5T 2WD",
+            "haval_jolion_15t_4wd": "Haval Jolion 1.5T 4WD",
+            "skoda_octavia_14tsi": "Skoda Octavia 1.4 TSI",
+            "skoda_octavia_14tsi_dsg": "Skoda Octavia 1.4 TSI DSG",
+            "skoda_octavia_16mpi_mt": "Skoda Octavia 1.6 MPI",
+            "skoda_octavia_20tsi": "Skoda Octavia 2.0 TSI",
+            "skoda_octavia_20tsi_dsg_4wd": "Skoda Octavia 2.0 TSI 4WD",
+            "geely_coolray_15t": "Geely Coolray 1.5T",
+            "geely_coolray_15t_fwd": "Geely Coolray 1.5T",
+            "chery_tiggo_7pro": "Chery Tiggo 7 Pro 1.5T",
+            "chery_tiggo_7pro_16t_awd": "Chery Tiggo 7 Pro Max 1.6T AWD",
+            "lada_vesta_16_mt": "LADA Vesta 1.6",
+            "lada_vesta_18_cvt": "LADA Vesta 1.8 CVT",
+            "audi_q3_20tfsi_180_culb": "Audi Q3 2.0 TFSI quattro",
+            "custom_sedan": "Седан B/C-класса",
+            "custom_suv": "Кроссовер SUV"
+        };
+
+        function formatCarName(rawId) {
+            if (!rawId || typeof rawId !== 'string') return 'Мой автомобиль';
+            if (CAR_CATALOG[rawId]) return CAR_CATALOG[rawId];
+
+            let clean = rawId.replace(/_custom$/i, '').replace(/_trim\d*$/i, '');
+            const brandMap = {
+                'skoda': 'Skoda', 'haval': 'Haval', 'geely': 'Geely', 'chery': 'Chery',
+                'lada': 'LADA', 'volkswagen': 'Volkswagen', 'vw': 'VW', 'audi': 'Audi',
+                'bmw': 'BMW', 'toyota': 'Toyota', 'kia': 'KIA', 'hyundai': 'Hyundai'
+            };
+            const tokens = clean.split(/[_-]+/);
+            const formatted = [];
+            for (let t of tokens) {
+                const low = t.toLowerCase();
+                if (brandMap[low]) { formatted.push(brandMap[low]); continue; }
+                if (['4wd', 'awd', 'fwd', 'rwd', 'dsg', 'dct', 'cvt'].includes(low)) { formatted.push(low.toUpperCase()); continue; }
+                formatted.push(t.charAt(0).toUpperCase() + t.slice(1));
+            }
+            return formatted.join(' ') || rawId;
+        }
+
+        function updateCarHeader(serverCarId = null) {
+            if (serverCarId) {
+                currentCarId = serverCarId;
+            } else {
+                const savedProfile = localStorage.getItem("autoXAK_profile");
+                if (savedProfile) {
+                    try {
+                        const p = JSON.parse(savedProfile);
+                        if (p.car_name && p.car_name.trim()) {
+                            const badge = document.getElementById('dash-car-name');
+                            if (badge) badge.innerText = p.car_name;
+                            if (p.car_id) currentCarId = p.car_id;
+                            return;
+                        }
+                        if (p.car_id) currentCarId = p.car_id;
+                    } catch (_) {}
+                }
+                const savedName = localStorage.getItem("autoXAK_car_name");
+                if (savedName && savedName.trim()) {
+                    const badge = document.getElementById('dash-car-name');
+                    if (badge) badge.innerText = savedName;
+                    return;
+                }
+            }
+
+            const humanName = CAR_CATALOG[currentCarId] || formatCarName(currentCarId);
+            const badge = document.getElementById('dash-car-name');
+            if (badge) badge.innerText = humanName;
+        }
 
         let isRecording = false;
         let telemetryBuffer = [];
@@ -427,7 +497,7 @@
         let curAx = 0.0, curAy = 0.0, curAz = 9.81;
         let curSpeed = 0.0, curLat = 55.751244, curLon = 37.618423;
 
-        // ЕДИНЫЕ НАКОПИТЕЛЬНЫЕ МЕТРИКИ СЕССИИ (Single Source of Truth)
+        // Единый источник правды метрик сессии
         let liveDistanceKm = 0.0;
         let liveSavedLiters = 0.0;
         let liveRangeBonusKm = 0.0;
@@ -436,7 +506,7 @@
         let liveHarshSamplesCount = 0;
         let totalSamplesCount = 0;
 
-        // Демо-переменные
+        // Переменные демонстрационного стенда
         let isDemoMode = false;
         let demoTargetSpeedKmh = 0.0;
         let demoCurrentSpeedKmh = 0.0;
@@ -493,7 +563,7 @@
             liveBumpsCount++;
             document.getElementById('hud-bumps-val').innerText = liveBumpsCount;
             setTimeout(() => { curAz = 9.81; curAx = 0.0; }, 300);
-            showToast({ title: "Неровность дороги", message: "Импульс 16.5 м/с².", type: "success", icon: "🛡️" });
+            showToast({ title: "Неровность дороги", message: "Импульс 16.5 м/с² изолирован.", type: "success", icon: "🛡️" });
         }
 
         function updateDemoPhysics(dt) {
@@ -525,11 +595,49 @@
                 const res = await fetch(`/api/v1/users/${currentUserId}/dashboard`, { headers: { ...authHeaders } });
                 if (!res.ok) return;
                 const data = await res.json();
+
+                if (data.car_id) updateCarHeader(data.car_id);
+                if (data.fuel_price_rub) {
+                    currentFuelPrice = Number(data.fuel_price_rub);
+                }
+
                 document.getElementById('dash-range-bank').innerText = Number(data.range_bank_km || 0).toFixed(1);
                 document.getElementById('dash-fuel-liters').innerText = `${Number(data.total_fuel_saved_liters || 0).toFixed(2)} л`;
                 document.getElementById('dash-savings').innerText = `+${Number(data.month_savings_rub || 0).toFixed(2)} ₽`;
                 document.getElementById('dash-autonomy-days').innerText = `+${Number(data.autonomy_days_extended || 0).toFixed(1)} дн.`;
+
+                const oil = Math.max(0, Math.min(100, Number(data.oil_remaining_percent !== undefined ? data.oil_remaining_percent : 100)));
+                const radialVal = document.getElementById('oil-radial-val');
+                const circle = document.getElementById('oil-radial-bar');
+                const stageText = document.getElementById('oil-stage-text');
+
+                if (radialVal) radialVal.innerText = `${oil.toFixed(0)}%`;
+                if (circle) circle.style.strokeDashoffset = 213 - (213 * (oil / 100));
+                if (stageText) {
+                    if (oil < 20) {
+                        stageText.innerText = `Критический (${oil.toFixed(1)}%)`;
+                        stageText.style.color = 'var(--color-accent-danger)';
+                    } else if (oil < 60) {
+                        stageText.innerText = `Внимание (${oil.toFixed(1)}%)`;
+                        stageText.style.color = 'var(--neon-amber)';
+                    } else {
+                        stageText.innerText = `Отличное (${oil.toFixed(1)}%)`;
+                        stageText.style.color = 'var(--neon-green)';
+                    }
+                }
             } catch (_) {}
+        }
+
+        async function acquireWakeLock() {
+            if ('wakeLock' in navigator) {
+                try { wakeLockSentinel = await navigator.wakeLock.request('screen'); } catch (_) {}
+            }
+        }
+
+        function releaseWakeLock() {
+            if (wakeLockSentinel) {
+                wakeLockSentinel.release().then(() => { wakeLockSentinel = null; });
+            }
         }
 
         async function setupSensors() {
@@ -546,7 +654,13 @@
             if ('geolocation' in navigator) {
                 try {
                     gpsWatchId = navigator.geolocation.watchPosition(
-                        (p) => { if (!isDemoMode) curSpeed = (p.coords.speed !== null && p.coords.speed >= 0.5) ? p.coords.speed : 0.0; },
+                        (p) => { 
+                            if (!isDemoMode) curSpeed = (p.coords.speed !== null && p.coords.speed >= 0.5) ? p.coords.speed : 0.0;
+                            curLat = p.coords.latitude;
+                            curLon = p.coords.longitude;
+                            const gpsLabel = document.getElementById('gps-status-label');
+                            if (gpsLabel) gpsLabel.innerText = "GPS активен";
+                        },
                         () => {}, { enableHighAccuracy: true, maximumAge: 1000, timeout: 6000 }
                     );
                 } catch (_) {}
@@ -555,11 +669,12 @@
 
         async function startTripSession() {
             await setupSensors();
+            await acquireWakeLock();
+
             telemetryBuffer = [];
             isRecording = true;
             tripStartTime = Date.now();
 
-            // СБРОС И СИНХРОНИЗАЦИЯ ВСЕХ МЕТРИК
             liveDistanceKm = 0.0;
             liveSavedLiters = 0.0;
             liveRangeBonusKm = 0.0;
@@ -586,14 +701,14 @@
                 });
                 totalSamplesCount++;
 
-                // 1. ИНТЕГРАЛ ДИСТАНЦИИ (v * dt): СТРОГО КАК НА БЭКЕНДЕ
+                // 1. Дистанция
                 liveDistanceKm += (curSpeed * dt) / 1000.0;
 
-                // 2. СБЕРЕЖЕННОЕ ТОПЛИВО И ЗАПАС ХОДА (ФИЗИЧЕСКИЙ РАСЧЕТ)
-                liveSavedLiters = (liveDistanceKm * 0.018); // 1.8 л/100 км экономии над агрессивным двойником
-                liveRangeBonusKm = (100.0 * liveSavedLiters) / BASE_CITY_FUEL_RATE;
+                // 2. Сбережения топлива и запас хода
+                liveSavedLiters = (liveDistanceKm * 0.018);
+                liveRangeBonusKm = (100.0 * liveSavedLiters) / baseCityFuelRate;
 
-                // 3. СИНХРОННЫЙ БАЛЛ ПЛАВНОСТИ (0..100)
+                // 3. Расчет плавности
                 const horizAcc = (typeof window.curLinAcc !== 'undefined') ? window.curLinAcc : Math.hypot(curAx, curAy);
                 const isBump = Math.abs(curAz - 9.81) > 3.2;
 
@@ -603,22 +718,19 @@
                 const harshRatio = totalSamplesCount > 0 ? (liveHarshSamplesCount / totalSamplesCount) : 0.0;
                 liveSmoothScore = Math.max(50, Math.min(100, Math.round(100 - (harshRatio * 120.0))));
 
-                // 4. ОБНОВЛЕНИЕ ТАЙМЕРА И ИНТЕРФЕЙСА HUD
+                // 4. Обновление интерфейса
                 const elapsed = Math.floor((Date.now() - tripStartTime) / 1000);
                 const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
                 const s = String(elapsed % 60).padStart(2, '0');
                 document.getElementById('hud-timer').innerText = `${m}:${s}`;
 
-                // Большой круг HUD
                 document.getElementById('hud-live-range').innerText = `+${liveRangeBonusKm.toFixed(1)} км`;
-                document.getElementById('hud-live-fuel').innerText = `+${Math.round(liveSavedLiters * 1000)} мл (+${(liveSavedLiters * FUEL_PRICE_RUB).toFixed(2)} ₽)`;
+                document.getElementById('hud-live-fuel').innerText = `+${Math.round(liveSavedLiters * 1000)} мл (+${(liveSavedLiters * currentFuelPrice).toFixed(2)} ₽)`;
 
-                // Панель 3 метрик
                 document.getElementById('hud-dist-val').innerText = `${liveDistanceKm.toFixed(2)} км`;
                 document.getElementById('hud-smooth-val').innerText = `${liveSmoothScore} / 100`;
                 document.getElementById('hud-bumps-val').innerText = liveBumpsCount;
 
-                // Подсветка статуса
                 const hudOverlay = document.getElementById('safety-hud');
                 const glowRing = document.getElementById('hud-glow-ring');
                 const hint = document.getElementById('hud-driving-hint');
@@ -646,6 +758,7 @@
             isRecording = false;
             clearInterval(sensorTimer);
             if (gpsWatchId) navigator.geolocation.clearWatch(gpsWatchId);
+            releaseWakeLock();
             document.getElementById('safety-hud').classList.remove('active');
 
             if (telemetryBuffer.length < 50) {
@@ -658,7 +771,6 @@
                 user_id: currentUserId, car_id: currentCarId, telemetry_stream: telemetryBuffer
             };
 
-            // ФИКСАЦИЯ РЕЗУЛЬТАТОВ: ПОКАЗЫВАЕМ ТОЧНО ТО, ЧТО БЫЛО НА ЭКРАНЕ
             showWinModalSync({
                 range_bonus_km: liveRangeBonusKm,
                 fuel_saved_liters: liveSavedLiters,
@@ -668,7 +780,6 @@
                 duration_seconds: (Date.now() - tripStartTime) / 1000
             });
 
-            // Фоновая отправка на сервер для персистентности в PostgreSQL
             try {
                 const res = await fetch('/api/v1/telemetry/session', {
                     method: 'POST',
@@ -681,11 +792,10 @@
             } catch (_) {}
         }
 
-        // 100% СИНХРОННЫЙ ПОКАЗ МОДАЛЬНОГО ОКНА
         function showWinModalSync(data) {
             document.getElementById('res-range-km').innerText = data.range_bonus_km.toFixed(1);
             document.getElementById('res-fuel-ml').innerText = Math.round(data.fuel_saved_liters * 1000);
-            document.getElementById('res-savings-num').innerText = (data.fuel_saved_liters * FUEL_PRICE_RUB).toFixed(2);
+            document.getElementById('res-savings-num').innerText = (data.fuel_saved_liters * currentFuelPrice).toFixed(2);
             document.getElementById('res-smooth-score').innerText = data.smooth_score;
             document.getElementById('res-bumps').innerText = data.road_anomalies_count;
             document.getElementById('res-dist-time').innerText = `${data.distance_km.toFixed(2)} км`;
@@ -698,7 +808,6 @@
             await fetchDashboard();
         }
 
-        // Свайп завершения
         const rail = document.getElementById('swipeRail');
         const thumb = document.getElementById('swipeThumb');
         let isDragging = false, startX = 0, curTranslate = 0, maxTranslate = 0;
@@ -732,6 +841,7 @@
             if (typeof AutoXAKSession !== 'undefined') {
                 try { const s = await AutoXAKSession.ensureAuthenticated(); currentUserId = s.userId; } catch (_) {}
             }
+            updateCarHeader();
             await fetchDashboard();
         });
     </script>
