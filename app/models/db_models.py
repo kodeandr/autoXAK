@@ -5,6 +5,7 @@ from sqlalchemy import (
     String, 
     Float, 
     Integer, 
+    Boolean,
     DateTime, 
     ForeignKey, 
     Index
@@ -90,27 +91,41 @@ class VehicleTrim(Base):
 class User(Base):
     __tablename__ = "users"
 
-    # Идентификатор пользователя (dev_... для гостя или uuid для явной регистрации)
     id = Column(String(64), primary_key=True, index=True)
-    name = Column(String(100), nullable=True)                 # Имя коллеги (напр. "Андрей")
-    email = Column(String(128), unique=True, nullable=True)   # Опционально для входа по паролю
+    is_guest = Column(Boolean, default=True, nullable=False)
+    name = Column(String(100), nullable=True)
+    email = Column(String(128), unique=True, nullable=True)
     hashed_password = Column(String(256), nullable=True)
 
-    # Профиль автомобиля и экономические параметры
     car_id = Column(String(100), default="haval_jolion_15t_4wd")
     fuel_price_rub = Column(Float, default=72.40)
     service_cost_rub = Column(Float, default=9500.0)
 
-    # Накопительный банк сбережений (Fuel Autonomy)
-    total_savings_rub = Column(Float, default=0.0)
-    total_fuel_saved_liters = Column(Float, default=0.0)     # Новое: всего сэкономлено литров
-    range_bank_km = Column(Float, default=0.0)               # Новое: накопленный банк запаса хода
-    current_oil_wear_percent = Column(Float, default=0.0)
+    # Накопительная виртуальная копилка и общая статистика
+    total_savings_rub = Column(Float, default=0.0, nullable=False)
+    total_fuel_saved_liters = Column(Float, default=0.0, nullable=False)
+    range_bank_km = Column(Float, default=0.0, nullable=False)
+    total_distance_km = Column(Float, default=0.0, nullable=False)
+    total_trips = Column(Integer, default=0, nullable=False)
+    current_oil_wear_percent = Column(Float, default=0.0, nullable=False)
 
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     trips = relationship("Trip", back_populates="user", cascade="all, delete-orphan")
     leads = relationship("CPALead", back_populates="user", cascade="all, delete-orphan")
+
+    @property
+    def user_id(self) -> str:
+        return self.id
+
+    @user_id.setter
+    def user_id(self, val: str) -> None:
+        self.id = val
+
+    def __init__(self, **kwargs):
+        if "user_id" in kwargs and "id" not in kwargs:
+            kwargs["id"] = kwargs.pop("user_id")
+        super().__init__(**kwargs)
 
 
 class Trip(Base):
@@ -121,28 +136,46 @@ class Trip(Base):
     car_id = Column(String(100), nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
+    # Базовые параметры движения
     duration_seconds = Column(Float, nullable=False)
     distance_km = Column(Float, nullable=False)
-    equivalent_engine_hours = Column(Float, nullable=False)
-    oil_wear_percent = Column(Float, nullable=False)
+    equivalent_engine_hours = Column(Float, default=0.0, nullable=False)
+    oil_wear_percent = Column(Float, default=0.0, nullable=False)
     idle_ratio = Column(Float, default=0.0)
 
-    # Экономические показатели
+    # Финансовые показатели и топливо
     fuel_saved_rub = Column(Float, default=0.0)
     oil_saved_rub = Column(Float, default=0.0)
     total_savings_rub = Column(Float, default=0.0)
+    fuel_saved_liters = Column(Float, default=0.0)
+    range_bonus_km = Column(Float, default=0.0)
 
-    # Новые метрики HUD и дорожного профиля
-    fuel_saved_liters = Column(Float, default=0.0)           # Сбереженные литры
-    range_bonus_km = Column(Float, default=0.0)              # Добавленный запас хода, км
-    smooth_score = Column(Integer, default=100)              # Индекс плавности (0..100)
-    road_anomalies_count = Column(Integer, default=0)        # Сглаженные лежачие и ямы
+    # Аналитика стиля вождения (Связка «стиль -> рубли» по пункту 7 Зои)
+    smooth_score = Column(Integer, default=100)
+    harsh_accel_count = Column(Integer, default=0)
+    harsh_brake_count = Column(Integer, default=0)
+    road_anomalies_count = Column(Integer, default=0)
+    rush_cost_rub = Column(Float, default=0.0)
+    traffic_jam_seconds = Column(Float, default=0.0)
 
     user = relationship("User", back_populates="trips")
 
     __table_args__ = (
         Index("ix_trips_user_created", "user_id", "created_at"),
     )
+
+    @property
+    def session_id(self) -> str:
+        return self.id
+
+    @session_id.setter
+    def session_id(self, val: str) -> None:
+        self.id = val
+
+    def __init__(self, **kwargs):
+        if "session_id" in kwargs and "id" not in kwargs:
+            kwargs["id"] = kwargs.pop("session_id")
+        super().__init__(**kwargs)
 
 
 class CPALead(Base):
@@ -157,16 +190,3 @@ class CPALead(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="leads")
-
-    @property
-    def session_id(self) -> str:
-        return self.id
-
-    @session_id.setter
-    def session_id(self, val: str) -> None:
-        self.id = val
-
-    def __init__(self, **kwargs):
-        if "session_id" in kwargs and "id" not in kwargs:
-            kwargs["id"] = kwargs.pop("session_id")
-        super().__init__(**kwargs)

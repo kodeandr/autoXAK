@@ -1696,3 +1696,638 @@ AttributeError: 'SignalFilter' object has no attribute 'calculate_horizontal_acc
 2026-10-12 18:29:14 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [c8069730] FINISH GET /setup Status=200 (2.21ms)
 2026-10-12 18:29:14 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [df1311b3] START GET /history
 2026-10-12 18:29:14 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [df1311b3] FINISH GET /history Status=200 (2.72ms)
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [1bdeb75f] START GET /setup
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [1bdeb75f] FINISH GET /setup Status=200 (4.29ms)
+2026-10-12 18:29:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54850 - "GET /setup HTTP/1.1" 200
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [b52c8f65] START GET /static/session.js
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [b52c8f65] FINISH GET /static/session.js Status=200 (5.85ms)
+2026-10-12 18:29:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54850 - "GET /static/session.js HTTP/1.1" 200
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [e3e341a6] START GET /static/manifest.json
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [bcc2103c] START GET /static/manifest.json
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [bcc2103c] FINISH GET /static/manifest.json Status=200 (5.18ms)
+2026-10-12 18:29:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54894 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [e3e341a6] FINISH GET /static/manifest.json Status=200 (9.49ms)
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [0e1506b0] START GET /.well-known/appspecific/com.chrome.devtools.json
+2026-10-12 18:29:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54892 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [0e1506b0] FINISH GET /.well-known/appspecific/com.chrome.devtools.json Status=404 (2.30ms)
+2026-10-12 18:29:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54850 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [0a2cf424] START GET /api/v1/vehicles/catalog
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [070925fa] START GET /static/sw.js
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [0a2cf424] FINISH GET /api/v1/vehicles/catalog Status=200 (15.87ms)
+2026-10-12 18:29:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54920 - "GET /api/v1/vehicles/catalog HTTP/1.1" 200
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [070925fa] FINISH GET /static/sw.js Status=200 (6.67ms)
+2026-10-12 18:29:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54924 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [58d17b96] START GET /api/v1/users/dev_4a96eeee705840dc/dashboard
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [58d17b96] FINISH GET /api/v1/users/dev_4a96eeee705840dc/dashboard Status=200 (4.55ms)
+2026-10-12 18:29:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54920 - "GET /api/v1/users/dev_4a96eeee705840dc/dashboard HTTP/1.1" 200
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [f462af4c] START GET /static/icon-192.png
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [f462af4c] FINISH GET /static/icon-192.png Status=200 (4.74ms)
+2026-10-12 18:29:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54924 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [4c41bf28] START GET /api/v1/users/dev_4a96eeee705840dc/dashboard
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [4c41bf28] FINISH GET /api/v1/users/dev_4a96eeee705840dc/dashboard Status=200 (2.53ms)
+2026-10-12 18:29:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54920 - "GET /api/v1/users/dev_4a96eeee705840dc/dashboard HTTP/1.1" 200
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [d5c11bf7] START GET /api/v1/fuel/current-price
+2026-10-12 18:29:50 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [d5c11bf7] FINISH GET /api/v1/fuel/current-price Status=200 (3.79ms)
+2026-10-12 18:29:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54920 - "GET /api/v1/fuel/current-price?region_code=77&brand=rosneft&fuel_grade=ai95 HTTP/1.1" 200
+2026-10-12 18:29:54 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [d6d2f6e4] START GET /api/v1/fuel/current-price
+2026-10-12 18:29:54 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [d6d2f6e4] FINISH GET /api/v1/fuel/current-price Status=200 (2.60ms)
+2026-10-12 18:29:54 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54920 - "GET /api/v1/fuel/current-price?region_code=77&brand=rosneft&fuel_grade=ai95 HTTP/1.1" 200
+2026-10-12 18:29:56 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [9ef1beeb] START POST /api/v1/users/dev_4a96eeee705840dc/profile
+2026-10-12 18:29:56 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [9ef1beeb] FINISH POST /api/v1/users/dev_4a96eeee705840dc/profile Status=200 (7.20ms)
+2026-10-12 18:29:56 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54920 - "POST /api/v1/users/dev_4a96eeee705840dc/profile HTTP/1.1" 200
+2026-10-12 18:29:56 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [2a6cc46e] START GET /
+2026-10-12 18:29:56 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [2a6cc46e] FINISH GET / Status=200 (4.35ms)
+2026-10-12 18:29:56 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54920 - "GET / HTTP/1.1" 200
+2026-10-12 18:29:56 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [d584ee26] START GET /static/session.js
+2026-10-12 18:29:56 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [d584ee26] FINISH GET /static/session.js Status=200 (5.50ms)
+2026-10-12 18:29:56 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54920 - "GET /static/session.js HTTP/1.1" 200
+2026-10-12 18:29:56 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [bd31041f] START GET /static/offline_store.js
+2026-10-12 18:29:56 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [8f206abc] START GET /static/manifest.json
+2026-10-12 18:29:56 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [bd31041f] FINISH GET /static/offline_store.js Status=200 (6.59ms)
+2026-10-12 18:29:56 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54920 - "GET /static/offline_store.js HTTP/1.1" 200
+2026-10-12 18:29:56 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [49c9c58b] START GET /.well-known/appspecific/com.chrome.devtools.json
+2026-10-12 18:29:56 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [49c9c58b] FINISH GET /.well-known/appspecific/com.chrome.devtools.json Status=404 (0.91ms)
+2026-10-12 18:29:56 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54958 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404
+2026-10-12 18:29:56 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [8f206abc] FINISH GET /static/manifest.json Status=200 (6.32ms)
+2026-10-12 18:29:56 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54972 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:29:56 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [3cedc85c] START GET /api/v1/users/dev_4a96eeee705840dc/dashboard
+2026-10-12 18:29:56 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [3cedc85c] FINISH GET /api/v1/users/dev_4a96eeee705840dc/dashboard Status=200 (3.27ms)
+2026-10-12 18:29:56 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54920 - "GET /api/v1/users/dev_4a96eeee705840dc/dashboard HTTP/1.1" 200
+2026-10-12 18:29:56 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [a0188b98] START GET /static/icon-192.png
+2026-10-12 18:29:56 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [a0188b98] FINISH GET /static/icon-192.png Status=200 (6.65ms)
+2026-10-12 18:29:56 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:55002 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 18:29:58 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [6ab685d2] START GET /static/manifest.json
+2026-10-12 18:29:58 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [6ab685d2] FINISH GET /static/manifest.json Status=200 (3.55ms)
+2026-10-12 18:29:58 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54972 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:38:58 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [f5632547] START GET /
+2026-10-12 18:38:58 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [f5632547] FINISH GET / Status=200 (3.48ms)
+2026-10-12 18:38:58 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42534 - "GET / HTTP/1.1" 200
+2026-10-12 18:38:58 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [1701a215] START GET /static/session.js
+2026-10-12 18:38:58 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [1701a215] FINISH GET /static/session.js Status=200 (6.41ms)
+2026-10-12 18:38:58 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42534 - "GET /static/session.js HTTP/1.1" 200
+2026-10-12 18:38:58 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [d0ce40cd] START GET /static/offline_store.js
+2026-10-12 18:38:58 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [f7ba8bdf] START GET /static/manifest.json
+2026-10-12 18:38:58 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [d0ce40cd] FINISH GET /static/offline_store.js Status=200 (5.23ms)
+2026-10-12 18:38:58 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42564 - "GET /static/offline_store.js HTTP/1.1" 200
+2026-10-12 18:38:58 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [f7ba8bdf] FINISH GET /static/manifest.json Status=200 (4.12ms)
+2026-10-12 18:38:58 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42580 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:38:58 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [88d5752a] START GET /api/v1/users/dev_dc231419f3be416d/dashboard
+2026-10-12 18:38:58 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [4270bd19] START GET /static/sw.js
+2026-10-12 18:38:58 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [88d5752a] FINISH GET /api/v1/users/dev_dc231419f3be416d/dashboard Status=200 (4.70ms)
+2026-10-12 18:38:58 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42564 - "GET /api/v1/users/dev_dc231419f3be416d/dashboard HTTP/1.1" 200
+2026-10-12 18:38:58 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [ca3910e7] START GET /static/icon-192.png
+2026-10-12 18:38:58 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [4270bd19] FINISH GET /static/sw.js Status=200 (6.70ms)
+2026-10-12 18:38:58 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42534 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-12 18:38:58 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [ca3910e7] FINISH GET /static/icon-192.png Status=200 (5.83ms)
+2026-10-12 18:38:58 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42564 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 18:40:04 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [ff9d2d1b] START POST /api/v1/telemetry/session
+2026-10-12 18:40:04 | INFO     | [autoxak] main.py:462 (process_telemetry_session) -> Получена сессия sess-o3aw69s8 (user=dev_dc231419f3be416d, точек=1045)
+2026-10-12 18:40:05 | INFO     | [autoxak] main.py:649 (process_telemetry_session) -> Сессия сохранена (a01437c6-7ac8-4e23-990a-2990a361bb95): 0.42 км, +0.1 км запаса хода, +0.01 л топлива
+2026-10-12 18:40:05 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [ff9d2d1b] FINISH POST /api/v1/telemetry/session Status=200 (272.87ms)
+2026-10-12 18:40:05 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:36074 - "POST /api/v1/telemetry/session HTTP/1.1" 200
+2026-10-12 18:40:05 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [e53e45c7] START GET /api/v1/users/dev_dc231419f3be416d/dashboard
+2026-10-12 18:40:05 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [e53e45c7] FINISH GET /api/v1/users/dev_dc231419f3be416d/dashboard Status=200 (1.83ms)
+2026-10-12 18:40:05 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:36094 - "GET /api/v1/users/dev_dc231419f3be416d/dashboard HTTP/1.1" 200
+2026-10-12 18:40:05 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [8b7eece1] START GET /api/v1/users/dev_dc231419f3be416d/dashboard
+2026-10-12 18:40:05 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [8b7eece1] FINISH GET /api/v1/users/dev_dc231419f3be416d/dashboard Status=200 (2.16ms)
+2026-10-12 18:40:05 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:36094 - "GET /api/v1/users/dev_dc231419f3be416d/dashboard HTTP/1.1" 200
+2026-10-12 19:00:13 | INFO     | [uvicorn.error] server.py:253 (shutdown) -> Shutting down
+2026-10-12 19:00:14 | INFO     | [uvicorn.error] on.py:67 (shutdown) -> Waiting for application shutdown.
+2026-10-12 19:00:14 | INFO     | [uvicorn.error] on.py:76 (shutdown) -> Application shutdown complete.
+2026-10-12 19:00:14 | INFO     | [uvicorn.error] server.py:87 (serve) -> Finished server process [8]
+2026-10-12 19:00:15 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [117]
+2026-10-12 19:00:15 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 19:00:15 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 19:01:11 | INFO     | [uvicorn.error] server.py:253 (shutdown) -> Shutting down
+2026-10-12 19:01:11 | INFO     | [uvicorn.error] on.py:67 (shutdown) -> Waiting for application shutdown.
+2026-10-12 19:01:11 | INFO     | [uvicorn.error] on.py:76 (shutdown) -> Application shutdown complete.
+2026-10-12 19:01:11 | INFO     | [uvicorn.error] server.py:87 (serve) -> Finished server process [117]
+2026-10-12 19:01:12 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [167]
+2026-10-12 19:01:12 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 19:01:12 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 19:01:23 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-12 19:01:23 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 19:01:23 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [955b736d] START GET /health
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [955b736d] FINISH GET /health Status=200 (1.63ms)
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [38ec87cd] START POST /api/v1/telemetry/session
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:462 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:649 (process_telemetry_session) -> Сессия сохранена (2de19d1b-1917-407f-acc0-ab3fe6c50f46): 0.57 км, +0.1 км запаса хода, +0.01 л топлива
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [38ec87cd] FINISH POST /api/v1/telemetry/session Status=200 (46.11ms)
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [f27ff5bc] START POST /api/v1/telemetry/session
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:462 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:649 (process_telemetry_session) -> Сессия сохранена (3ceb5cf5-6aa4-43f8-838e-187664b07ef9): 0.57 км, +0.1 км запаса хода, +0.01 л топлива
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [f27ff5bc] FINISH POST /api/v1/telemetry/session Status=200 (14.22ms)
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [ca841ca4] START GET /api/v1/users/test_user_coverage/dashboard
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [ca841ca4] FINISH GET /api/v1/users/test_user_coverage/dashboard Status=200 (1.56ms)
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [b3633fcf] START POST /api/v1/telemetry/session
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:462 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:649 (process_telemetry_session) -> Сессия сохранена (c97b21de-e227-4912-a86c-7e6ca9c47329): 0.57 км, +0.1 км запаса хода, +0.01 л топлива
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [b3633fcf] FINISH POST /api/v1/telemetry/session Status=200 (13.91ms)
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [b36f6e87] START GET /api/v1/users/test_user_coverage/trips
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [b36f6e87] FINISH GET /api/v1/users/test_user_coverage/trips Status=200 (4.84ms)
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [704d6d87] START POST /api/v1/telemetry/session
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:462 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:649 (process_telemetry_session) -> Сессия сохранена (91620a4e-b182-4962-9420-9e8e2a40049b): 0.57 км, +0.1 км запаса хода, +0.01 л топлива
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [704d6d87] FINISH POST /api/v1/telemetry/session Status=200 (41.28ms)
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [7271d09c] START GET /api/v1/users/test_user_coverage/analytics/period
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [7271d09c] FINISH GET /api/v1/users/test_user_coverage/analytics/period Status=200 (5.99ms)
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [e928adae] START GET /api/v1/users/test_user_coverage/analytics/period
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [e928adae] FINISH GET /api/v1/users/test_user_coverage/analytics/period Status=200 (2.73ms)
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [1cec9506] START GET /
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [1cec9506] FINISH GET / Status=200 (4.65ms)
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [dcff5c40] START GET /setup
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [dcff5c40] FINISH GET /setup Status=200 (2.75ms)
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [11b08db2] START GET /history
+2026-10-12 19:01:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [11b08db2] FINISH GET /history Status=200 (3.08ms)
+2026-10-12 19:25:56 | INFO     | [uvicorn.error] server.py:253 (shutdown) -> Shutting down
+2026-10-12 19:25:56 | INFO     | [uvicorn.error] on.py:67 (shutdown) -> Waiting for application shutdown.
+2026-10-12 19:25:56 | INFO     | [uvicorn.error] on.py:76 (shutdown) -> Application shutdown complete.
+2026-10-12 19:25:56 | INFO     | [uvicorn.error] server.py:87 (serve) -> Finished server process [8]
+2026-10-12 19:25:57 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [114]
+2026-10-12 19:25:57 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 19:25:57 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 19:27:15 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-12 19:27:15 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 19:27:15 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 19:28:10 | INFO     | [uvicorn.error] server.py:253 (shutdown) -> Shutting down
+2026-10-12 19:28:10 | INFO     | [uvicorn.error] on.py:67 (shutdown) -> Waiting for application shutdown.
+2026-10-12 19:28:10 | INFO     | [uvicorn.error] on.py:76 (shutdown) -> Application shutdown complete.
+2026-10-12 19:28:10 | INFO     | [uvicorn.error] server.py:87 (serve) -> Finished server process [8]
+2026-10-12 19:28:11 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [58]
+2026-10-12 19:28:11 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 19:28:11 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 19:29:53 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-12 19:29:53 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 19:29:53 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 19:30:50 | INFO     | [uvicorn.error] server.py:253 (shutdown) -> Shutting down
+2026-10-12 19:30:50 | INFO     | [uvicorn.error] on.py:67 (shutdown) -> Waiting for application shutdown.
+2026-10-12 19:30:50 | INFO     | [uvicorn.error] on.py:76 (shutdown) -> Application shutdown complete.
+2026-10-12 19:30:50 | INFO     | [uvicorn.error] server.py:87 (serve) -> Finished server process [8]
+2026-10-12 19:30:51 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [111]
+2026-10-12 19:30:51 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 19:30:51 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 19:32:12 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-12 19:32:12 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 19:32:12 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 19:34:01 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [4132f510] START POST /api/v1/auth/guest
+2026-10-12 19:34:01 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [4132f510] FINISH POST /api/v1/auth/guest Status=200 (15.88ms)
+2026-10-12 19:34:01 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:58714 - "POST /api/v1/auth/guest HTTP/1.1" 200
+2026-10-12 19:45:11 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [b05be454] START GET /
+2026-10-12 19:45:11 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [b05be454] FINISH GET / Status=200 (5.69ms)
+2026-10-12 19:45:11 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:38450 - "GET / HTTP/1.1" 200
+2026-10-12 19:45:11 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [dfcd0b01] START GET /static/offline_store.js
+2026-10-12 19:45:11 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [dfcd0b01] FINISH GET /static/offline_store.js Status=200 (7.31ms)
+2026-10-12 19:45:11 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:38450 - "GET /static/offline_store.js HTTP/1.1" 200
+2026-10-12 19:45:11 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [f0e78aff] START GET /static/manifest.json
+2026-10-12 19:45:11 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [f0e78aff] FINISH GET /static/manifest.json Status=200 (4.71ms)
+2026-10-12 19:45:11 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:38466 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 19:45:12 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [1f481ff6] START GET /api/v1/auth/me
+2026-10-12 19:45:12 | ERROR    | [autoxak] main.py:331 (log_requests_middleware) -> [1f481ff6] UNHANDLED ERROR in GET /api/v1/auth/me (5.33ms): 1 validation error for AuthResponse
+name
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.6/v/string_type
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 159, in call_next
+    message = await recv_stream.receive()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/anyio/streams/memory.py", line 133, in receive
+    raise EndOfStream from None
+anyio.EndOfStream
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 320, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/api/auth.py", line 168, in get_current_user_info
+    return AuthResponse(
+           ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/pydantic/main.py", line 171, in __init__
+    self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for AuthResponse
+name
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.6/v/string_type
+
+2026-10-12 19:45:12 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:38450 - "GET /api/v1/auth/me?user_id=dev_dc231419f3be416d HTTP/1.1" 500
+2026-10-12 19:45:12 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [16e36e1d] START GET /static/icon-192.png
+2026-10-12 19:45:12 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [c10f7ebf] START GET /api/v1/users/dev_dc231419f3be416d/dashboard
+2026-10-12 19:45:12 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [c10f7ebf] FINISH GET /api/v1/users/dev_dc231419f3be416d/dashboard Status=200 (2.86ms)
+2026-10-12 19:45:12 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:38492 - "GET /api/v1/users/dev_dc231419f3be416d/dashboard HTTP/1.1" 200
+2026-10-12 19:45:12 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [16e36e1d] FINISH GET /static/icon-192.png Status=200 (6.80ms)
+2026-10-12 19:45:12 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:38450 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [86386d52] START GET /setup
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [86386d52] FINISH GET /setup Status=200 (3.07ms)
+2026-10-12 19:45:24 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45124 - "GET /setup HTTP/1.1" 200
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [76eb6f26] START GET /static/session.js
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [76eb6f26] FINISH GET /static/session.js Status=200 (5.00ms)
+2026-10-12 19:45:24 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45124 - "GET /static/session.js HTTP/1.1" 200
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [67a3c340] START GET /static/manifest.json
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [64d795dc] START GET /api/v1/vehicles/catalog
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [67a3c340] FINISH GET /static/manifest.json Status=200 (6.68ms)
+2026-10-12 19:45:24 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45150 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [64d795dc] FINISH GET /api/v1/vehicles/catalog Status=200 (7.13ms)
+2026-10-12 19:45:24 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45124 - "GET /api/v1/vehicles/catalog HTTP/1.1" 200
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [f4046320] START GET /static/sw.js
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [ba808bce] START GET /favicon.ico
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [d57f3ac7] START GET /api/v1/users/dev_dc231419f3be416d/dashboard
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [ba808bce] FINISH GET /favicon.ico Status=404 (1.93ms)
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [f4046320] FINISH GET /static/sw.js Status=200 (7.84ms)
+2026-10-12 19:45:24 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45184 - "GET /favicon.ico HTTP/1.1" 404
+2026-10-12 19:45:24 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45124 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [d57f3ac7] FINISH GET /api/v1/users/dev_dc231419f3be416d/dashboard Status=200 (4.84ms)
+2026-10-12 19:45:24 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45198 - "GET /api/v1/users/dev_dc231419f3be416d/dashboard HTTP/1.1" 200
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [0daad81d] START GET /static/icon-192.png
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [0daad81d] FINISH GET /static/icon-192.png Status=200 (4.21ms)
+2026-10-12 19:45:24 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45208 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [5a3d5c29] START GET /api/v1/users/dev_dc231419f3be416d/dashboard
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [c7087c33] START GET /api/v1/fuel/current-price
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [5a3d5c29] FINISH GET /api/v1/users/dev_dc231419f3be416d/dashboard Status=200 (3.88ms)
+2026-10-12 19:45:24 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45184 - "GET /api/v1/users/dev_dc231419f3be416d/dashboard HTTP/1.1" 200
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [c7087c33] FINISH GET /api/v1/fuel/current-price Status=200 (23.02ms)
+2026-10-12 19:45:24 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45198 - "GET /api/v1/fuel/current-price?region_code=77&brand=rosneft&fuel_grade=ai95 HTTP/1.1" 200
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [a24509a6] START GET /api/v1/fuel/current-price
+2026-10-12 19:45:24 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [a24509a6] FINISH GET /api/v1/fuel/current-price Status=200 (2.76ms)
+2026-10-12 19:45:24 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45184 - "GET /api/v1/fuel/current-price?region_code=77&brand=rosneft&fuel_grade=ai95 HTTP/1.1" 200
+2026-10-12 19:45:26 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [aed34657] START GET /
+2026-10-12 19:45:26 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [aed34657] FINISH GET / Status=200 (3.74ms)
+2026-10-12 19:45:26 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45184 - "GET / HTTP/1.1" 200
+2026-10-12 19:45:26 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [627da814] START GET /api/v1/auth/me
+2026-10-12 19:45:26 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [c4344015] START GET /static/manifest.json
+2026-10-12 19:45:26 | ERROR    | [autoxak] main.py:331 (log_requests_middleware) -> [627da814] UNHANDLED ERROR in GET /api/v1/auth/me (3.87ms): 1 validation error for AuthResponse
+name
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.6/v/string_type
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 159, in call_next
+    message = await recv_stream.receive()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/anyio/streams/memory.py", line 133, in receive
+    raise EndOfStream from None
+anyio.EndOfStream
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 320, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/api/auth.py", line 168, in get_current_user_info
+    return AuthResponse(
+           ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/pydantic/main.py", line 171, in __init__
+    self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for AuthResponse
+name
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.6/v/string_type
+
+2026-10-12 19:45:26 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45184 - "GET /api/v1/auth/me?user_id=dev_dc231419f3be416d HTTP/1.1" 500
+2026-10-12 19:45:26 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [c4344015] FINISH GET /static/manifest.json Status=200 (5.46ms)
+2026-10-12 19:45:26 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45150 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 19:45:26 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [98963236] START GET /api/v1/users/dev_dc231419f3be416d/dashboard
+2026-10-12 19:45:26 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [98963236] FINISH GET /api/v1/users/dev_dc231419f3be416d/dashboard Status=200 (3.16ms)
+2026-10-12 19:45:26 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45198 - "GET /api/v1/users/dev_dc231419f3be416d/dashboard HTTP/1.1" 200
+2026-10-12 19:45:26 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [982c256c] START GET /static/icon-192.png
+2026-10-12 19:45:26 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [982c256c] FINISH GET /static/icon-192.png Status=200 (4.20ms)
+2026-10-12 19:45:26 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45198 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 19:56:17 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [2cf8e52b] START GET /
+2026-10-12 19:56:17 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [2cf8e52b] FINISH GET / Status=200 (3.08ms)
+2026-10-12 19:56:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49262 - "GET / HTTP/1.1" 200
+2026-10-12 19:56:17 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [05585468] START GET /api/v1/auth/me
+2026-10-12 19:56:17 | ERROR    | [autoxak] main.py:331 (log_requests_middleware) -> [05585468] UNHANDLED ERROR in GET /api/v1/auth/me (2.72ms): 1 validation error for AuthResponse
+name
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.6/v/string_type
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 159, in call_next
+    message = await recv_stream.receive()
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/anyio/streams/memory.py", line 133, in receive
+    raise EndOfStream from None
+anyio.EndOfStream
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 320, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/api/auth.py", line 168, in get_current_user_info
+    return AuthResponse(
+           ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/pydantic/main.py", line 171, in __init__
+    self.__pydantic_validator__.validate_python(data, self_instance=self)
+pydantic_core._pydantic_core.ValidationError: 1 validation error for AuthResponse
+name
+  Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    For further information visit https://errors.pydantic.dev/2.6/v/string_type
+
+2026-10-12 19:56:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49262 - "GET /api/v1/auth/me?user_id=dev_dc231419f3be416d HTTP/1.1" 500
+2026-10-12 19:56:17 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [1abf3a46] START GET /static/manifest.json
+2026-10-12 19:56:17 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [6f625f5d] START GET /api/v1/users/dev_dc231419f3be416d/dashboard
+2026-10-12 19:56:17 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [6f625f5d] FINISH GET /api/v1/users/dev_dc231419f3be416d/dashboard Status=200 (2.30ms)
+2026-10-12 19:56:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49302 - "GET /api/v1/users/dev_dc231419f3be416d/dashboard HTTP/1.1" 200
+2026-10-12 19:56:17 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [1abf3a46] FINISH GET /static/manifest.json Status=200 (5.44ms)
+2026-10-12 19:56:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49298 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 19:56:17 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [50808174] START GET /static/icon-192.png
+2026-10-12 19:56:17 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [50808174] FINISH GET /static/icon-192.png Status=200 (3.67ms)
+2026-10-12 19:56:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49262 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 19:56:31 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [69c62d98] START POST /api/v1/auth/guest
+2026-10-12 19:56:31 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [69c62d98] FINISH POST /api/v1/auth/guest Status=200 (4.03ms)
+2026-10-12 19:56:31 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41622 - "POST /api/v1/auth/guest HTTP/1.1" 200
+2026-10-12 19:56:31 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [55d8787d] START GET /api/v1/users/guest_880492014db7/dashboard
+2026-10-12 19:56:31 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [55d8787d] FINISH GET /api/v1/users/guest_880492014db7/dashboard Status=200 (2.46ms)
+2026-10-12 19:56:31 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41622 - "GET /api/v1/users/guest_880492014db7/dashboard HTTP/1.1" 200
+2026-10-12 20:02:01 | INFO     | [uvicorn.error] server.py:253 (shutdown) -> Shutting down
+2026-10-12 20:02:02 | INFO     | [uvicorn.error] on.py:67 (shutdown) -> Waiting for application shutdown.
+2026-10-12 20:02:02 | INFO     | [uvicorn.error] on.py:76 (shutdown) -> Application shutdown complete.
+2026-10-12 20:02:02 | INFO     | [uvicorn.error] server.py:87 (serve) -> Finished server process [8]
+2026-10-12 20:05:06 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-12 20:05:06 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 20:05:06 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 20:07:25 | INFO     | [uvicorn.error] server.py:253 (shutdown) -> Shutting down
+2026-10-12 20:07:25 | INFO     | [uvicorn.error] on.py:67 (shutdown) -> Waiting for application shutdown.
+2026-10-12 20:07:25 | INFO     | [uvicorn.error] on.py:76 (shutdown) -> Application shutdown complete.
+2026-10-12 20:07:25 | INFO     | [uvicorn.error] server.py:87 (serve) -> Finished server process [8]
+2026-10-12 20:07:26 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [58]
+2026-10-12 20:07:26 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 20:07:26 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 20:07:34 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-12 20:07:34 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 20:07:34 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 20:08:21 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [fc0a2a59] START POST /api/v1/users/test_user_01/profile
+2026-10-12 20:08:21 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [fc0a2a59] FINISH POST /api/v1/users/test_user_01/profile Status=422 (1.23ms)
+2026-10-12 20:08:21 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:59952 - "POST /api/v1/users/test_user_01/profile HTTP/1.1" 422
+2026-10-12 20:08:30 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [0633884e] START POST /api/v1/users/test_user_01/profile
+2026-10-12 20:08:30 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [0633884e] FINISH POST /api/v1/users/test_user_01/profile Status=422 (1.02ms)
+2026-10-12 20:08:30 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:46694 - "POST /api/v1/users/test_user_01/profile HTTP/1.1" 422
+2026-10-12 20:09:50 | INFO     | [uvicorn.error] server.py:253 (shutdown) -> Shutting down
+2026-10-12 20:09:50 | INFO     | [uvicorn.error] on.py:67 (shutdown) -> Waiting for application shutdown.
+2026-10-12 20:09:50 | INFO     | [uvicorn.error] on.py:76 (shutdown) -> Application shutdown complete.
+2026-10-12 20:09:50 | INFO     | [uvicorn.error] server.py:87 (serve) -> Finished server process [8]
+2026-10-12 20:09:51 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [58]
+2026-10-12 20:09:51 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 20:09:51 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 20:10:07 | INFO     | [autoxak] main.py:317 (log_requests_middleware) -> [e3bf36dc] START POST /api/v1/users/test_user_01/profile
+2026-10-12 20:10:07 | INFO     | [autoxak] main.py:322 (log_requests_middleware) -> [e3bf36dc] FINISH POST /api/v1/users/test_user_01/profile Status=200 (15.47ms)
+2026-10-12 20:10:07 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:52738 - "POST /api/v1/users/test_user_01/profile HTTP/1.1" 200
+2026-10-12 20:11:58 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-12 20:11:58 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 20:11:58 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 20:14:37 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-12 20:14:37 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 20:14:37 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [3ad19598] START GET /health
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [3ad19598] FINISH GET /health Status=200 (1.34ms)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [7910b2e3] START POST /api/v1/telemetry/session
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:504 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:706 (process_telemetry_session) -> Сессия c29c9d0b-4307-4dc7-969b-909c4322026f сохранена: 0.57 км, +0.72 ₽ (потери на резких: -0.00 ₽)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [7910b2e3] FINISH POST /api/v1/telemetry/session Status=200 (54.39ms)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [ff3bcae8] START POST /api/v1/telemetry/session
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:504 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:706 (process_telemetry_session) -> Сессия 3004dcc1-2f1b-4010-9e33-c936f2ae0015 сохранена: 0.57 км, +0.72 ₽ (потери на резких: -0.00 ₽)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [ff3bcae8] FINISH POST /api/v1/telemetry/session Status=200 (15.05ms)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [6d90bb38] START GET /api/v1/users/test_user_coverage/dashboard
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [6d90bb38] FINISH GET /api/v1/users/test_user_coverage/dashboard Status=200 (2.03ms)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [729e94e5] START POST /api/v1/telemetry/session
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:504 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:706 (process_telemetry_session) -> Сессия 48bb2bc1-879b-40e4-87f4-cb3c891bc17b сохранена: 0.57 км, +0.72 ₽ (потери на резких: -0.00 ₽)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [729e94e5] FINISH POST /api/v1/telemetry/session Status=200 (14.19ms)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [928229a2] START GET /api/v1/users/test_user_coverage/trips
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [928229a2] FINISH GET /api/v1/users/test_user_coverage/trips Status=200 (5.98ms)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [41b877b4] START POST /api/v1/telemetry/session
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:504 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:706 (process_telemetry_session) -> Сессия fdb4ec30-40f6-4457-80b9-ac952318f29f сохранена: 0.57 км, +0.72 ₽ (потери на резких: -0.00 ₽)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [41b877b4] FINISH POST /api/v1/telemetry/session Status=200 (46.09ms)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [830ad8c0] START GET /api/v1/users/test_user_coverage/analytics/period
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [830ad8c0] FINISH GET /api/v1/users/test_user_coverage/analytics/period Status=200 (6.61ms)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [5c4208f7] START GET /api/v1/users/test_user_coverage/analytics/period
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [5c4208f7] FINISH GET /api/v1/users/test_user_coverage/analytics/period Status=200 (3.26ms)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [35f62eac] START GET /
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [35f62eac] FINISH GET / Status=200 (4.99ms)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [7c19f596] START GET /setup
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [7c19f596] FINISH GET /setup Status=200 (2.57ms)
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [ee2b3fce] START GET /history
+2026-10-12 20:14:44 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [ee2b3fce] FINISH GET /history Status=200 (2.89ms)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [2fb087e0] START GET /health
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [2fb087e0] FINISH GET /health Status=200 (2.92ms)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [26478d4f] START POST /api/v1/telemetry/session
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:504 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:706 (process_telemetry_session) -> Сессия b8d9c91a-a630-4380-98a3-19a402a51c9e сохранена: 0.57 км, +0.72 ₽ (потери на резких: -0.00 ₽)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [26478d4f] FINISH POST /api/v1/telemetry/session Status=200 (74.11ms)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [f01962f7] START POST /api/v1/telemetry/session
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:504 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:706 (process_telemetry_session) -> Сессия c6749835-9d9b-475a-a81b-a66aa241237a сохранена: 0.57 км, +0.72 ₽ (потери на резких: -0.00 ₽)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [f01962f7] FINISH POST /api/v1/telemetry/session Status=200 (19.53ms)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [31dd55c1] START GET /api/v1/users/test_user_coverage/dashboard
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [31dd55c1] FINISH GET /api/v1/users/test_user_coverage/dashboard Status=200 (2.40ms)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [ab5a9a61] START POST /api/v1/telemetry/session
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:504 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:706 (process_telemetry_session) -> Сессия 8c288050-2d2f-4b10-b75c-90ce850bb1f1 сохранена: 0.57 км, +0.72 ₽ (потери на резких: -0.00 ₽)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [ab5a9a61] FINISH POST /api/v1/telemetry/session Status=200 (48.99ms)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [27284efe] START GET /api/v1/users/test_user_coverage/trips
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [27284efe] FINISH GET /api/v1/users/test_user_coverage/trips Status=200 (6.68ms)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [90b98bc0] START POST /api/v1/telemetry/session
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:504 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:706 (process_telemetry_session) -> Сессия 89131802-341b-431c-ad53-3ea8a3ca9f9d сохранена: 0.57 км, +0.72 ₽ (потери на резких: -0.00 ₽)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [90b98bc0] FINISH POST /api/v1/telemetry/session Status=200 (19.41ms)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [5c941b18] START GET /api/v1/users/test_user_coverage/analytics/period
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [5c941b18] FINISH GET /api/v1/users/test_user_coverage/analytics/period Status=200 (9.41ms)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [dfc4b0fc] START GET /api/v1/users/test_user_coverage/analytics/period
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [dfc4b0fc] FINISH GET /api/v1/users/test_user_coverage/analytics/period Status=200 (4.57ms)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [61ed57cd] START GET /
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [61ed57cd] FINISH GET / Status=200 (5.36ms)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [3cdbbb00] START GET /setup
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [3cdbbb00] FINISH GET /setup Status=200 (3.03ms)
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [7c4a8ad3] START GET /history
+2026-10-12 20:14:52 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [7c4a8ad3] FINISH GET /history Status=200 (3.05ms)
+2026-10-12 20:14:55 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [9e8a4371] START GET /
+2026-10-12 20:14:55 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [9e8a4371] FINISH GET / Status=200 (5.22ms)
+2026-10-12 20:14:55 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39218 - "GET / HTTP/1.1" 200
+2026-10-12 20:14:55 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [44da232a] START GET /api/v1/auth/me
+2026-10-12 20:14:55 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [44da232a] FINISH GET /api/v1/auth/me Status=200 (12.74ms)
+2026-10-12 20:14:55 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39218 - "GET /api/v1/auth/me?user_id=guest_880492014db7 HTTP/1.1" 200
+2026-10-12 20:14:55 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [6625197c] START GET /static/manifest.json
+2026-10-12 20:14:55 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [6625197c] FINISH GET /static/manifest.json Status=200 (4.07ms)
+2026-10-12 20:14:55 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39236 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 20:14:55 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [30ae5ec2] START GET /api/v1/users/guest_880492014db7/dashboard
+2026-10-12 20:14:55 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [30ae5ec2] FINISH GET /api/v1/users/guest_880492014db7/dashboard Status=200 (3.73ms)
+2026-10-12 20:14:55 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39218 - "GET /api/v1/users/guest_880492014db7/dashboard HTTP/1.1" 200
+2026-10-12 20:14:55 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [c726ad4a] START GET /static/icon-192.png
+2026-10-12 20:14:55 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [c726ad4a] FINISH GET /static/icon-192.png Status=200 (3.29ms)
+2026-10-12 20:14:55 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39248 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 20:14:57 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [101c3fa4] START GET /setup
+2026-10-12 20:14:57 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [101c3fa4] FINISH GET /setup Status=200 (3.56ms)
+2026-10-12 20:14:57 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39218 - "GET /setup HTTP/1.1" 200
+2026-10-12 20:14:57 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [35764d49] START GET /api/v1/vehicles/catalog
+2026-10-12 20:14:57 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [35764d49] FINISH GET /api/v1/vehicles/catalog Status=200 (5.49ms)
+2026-10-12 20:14:57 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39218 - "GET /api/v1/vehicles/catalog HTTP/1.1" 200
+2026-10-12 20:14:57 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [ede129c4] START GET /static/manifest.json
+2026-10-12 20:14:57 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [01669ca2] START GET /api/v1/users/guest_880492014db7/dashboard
+2026-10-12 20:14:57 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [01669ca2] FINISH GET /api/v1/users/guest_880492014db7/dashboard Status=200 (2.48ms)
+2026-10-12 20:14:57 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39218 - "GET /api/v1/users/guest_880492014db7/dashboard HTTP/1.1" 200
+2026-10-12 20:14:57 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [ede129c4] FINISH GET /static/manifest.json Status=200 (6.54ms)
+2026-10-12 20:14:57 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39236 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 20:14:57 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8d87f870] START GET /static/icon-192.png
+2026-10-12 20:14:57 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8d87f870] FINISH GET /static/icon-192.png Status=200 (4.15ms)
+2026-10-12 20:14:57 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39248 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 20:14:59 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [90f92ec1] START GET /
+2026-10-12 20:14:59 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [90f92ec1] FINISH GET / Status=200 (4.03ms)
+2026-10-12 20:14:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39218 - "GET / HTTP/1.1" 200
+2026-10-12 20:14:59 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [5d5020f6] START GET /api/v1/auth/me
+2026-10-12 20:14:59 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [ae7f3f04] START GET /static/manifest.json
+2026-10-12 20:14:59 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [5d5020f6] FINISH GET /api/v1/auth/me Status=200 (3.44ms)
+2026-10-12 20:14:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39218 - "GET /api/v1/auth/me?user_id=guest_880492014db7 HTTP/1.1" 200
+2026-10-12 20:14:59 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [ae7f3f04] FINISH GET /static/manifest.json Status=200 (5.14ms)
+2026-10-12 20:14:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39236 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 20:14:59 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [f3f49489] START GET /static/icon-192.png
+2026-10-12 20:14:59 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [f3f49489] FINISH GET /static/icon-192.png Status=200 (4.17ms)
+2026-10-12 20:14:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39248 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 20:14:59 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8e3b3e9d] START GET /api/v1/users/guest_880492014db7/dashboard
+2026-10-12 20:14:59 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8e3b3e9d] FINISH GET /api/v1/users/guest_880492014db7/dashboard Status=200 (2.27ms)
+2026-10-12 20:14:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39218 - "GET /api/v1/users/guest_880492014db7/dashboard HTTP/1.1" 200
+2026-10-12 20:26:19 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [c830e46f] START POST /api/v1/telemetry/session
+2026-10-12 20:26:19 | INFO     | [autoxak] main.py:504 (process_telemetry_session) -> Получена сессия sess-fo9v86h2 (user=guest_880492014db7, точек=4048)
+2026-10-12 20:26:19 | INFO     | [autoxak] main.py:706 (process_telemetry_session) -> Сессия 3d8cee72-f162-44f2-83b5-fb573158bd12 сохранена: 1.64 км, +2.75 ₽ (потери на резких: -0.00 ₽)
+2026-10-12 20:26:19 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [c830e46f] FINISH POST /api/v1/telemetry/session Status=200 (366.52ms)
+2026-10-12 20:26:19 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49512 - "POST /api/v1/telemetry/session HTTP/1.1" 200
+2026-10-12 20:26:19 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8a6f3808] START GET /api/v1/users/guest_880492014db7/dashboard
+2026-10-12 20:26:19 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8a6f3808] FINISH GET /api/v1/users/guest_880492014db7/dashboard Status=200 (2.59ms)
+2026-10-12 20:26:19 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49512 - "GET /api/v1/users/guest_880492014db7/dashboard HTTP/1.1" 200
+2026-10-12 20:26:20 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [510a82cd] START GET /api/v1/users/guest_880492014db7/dashboard
+2026-10-12 20:26:20 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [510a82cd] FINISH GET /api/v1/users/guest_880492014db7/dashboard Status=200 (2.09ms)
+2026-10-12 20:26:20 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49512 - "GET /api/v1/users/guest_880492014db7/dashboard HTTP/1.1" 200
+2026-10-12 20:26:49 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [4fe06ed1] START POST /api/v1/telemetry/session
+2026-10-12 20:26:49 | INFO     | [autoxak] main.py:504 (process_telemetry_session) -> Получена сессия sess-q9yy67yh (user=guest_880492014db7, точек=1273)
+2026-10-12 20:26:49 | INFO     | [autoxak] main.py:706 (process_telemetry_session) -> Сессия d653577e-d8e8-464b-ba55-f701dbb364f9 сохранена: 0.54 км, +0.72 ₽ (потери на резких: -0.00 ₽)
+2026-10-12 20:26:49 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [4fe06ed1] FINISH POST /api/v1/telemetry/session Status=200 (63.30ms)
+2026-10-12 20:26:49 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56534 - "POST /api/v1/telemetry/session HTTP/1.1" 200
+2026-10-12 20:26:49 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [a31a864e] START GET /api/v1/users/guest_880492014db7/dashboard
+2026-10-12 20:26:49 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [a31a864e] FINISH GET /api/v1/users/guest_880492014db7/dashboard Status=200 (2.19ms)
+2026-10-12 20:26:49 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56534 - "GET /api/v1/users/guest_880492014db7/dashboard HTTP/1.1" 200
+2026-10-12 20:26:50 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [184c1d65] START GET /api/v1/users/guest_880492014db7/dashboard
+2026-10-12 20:26:50 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [184c1d65] FINISH GET /api/v1/users/guest_880492014db7/dashboard Status=200 (2.33ms)
+2026-10-12 20:26:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56534 - "GET /api/v1/users/guest_880492014db7/dashboard HTTP/1.1" 200
+2026-10-12 20:28:04 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [3ec9f63d] START GET /
+2026-10-12 20:28:04 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [3ec9f63d] FINISH GET / Status=200 (3.30ms)
+2026-10-12 20:28:04 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54228 - "GET / HTTP/1.1" 200
+2026-10-12 20:28:04 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [512b2c1a] START GET /api/v1/auth/me
+2026-10-12 20:28:04 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [512b2c1a] FINISH GET /api/v1/auth/me Status=200 (3.22ms)
+2026-10-12 20:28:04 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54228 - "GET /api/v1/auth/me?user_id=guest_880492014db7 HTTP/1.1" 200
+2026-10-12 20:28:04 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [4e291241] START GET /static/manifest.json
+2026-10-12 20:28:04 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [4e291241] FINISH GET /static/manifest.json Status=200 (4.77ms)
+2026-10-12 20:28:04 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54236 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 20:28:04 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [d688076e] START GET /api/v1/users/guest_880492014db7/dashboard
+2026-10-12 20:28:04 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [d688076e] FINISH GET /api/v1/users/guest_880492014db7/dashboard Status=200 (2.21ms)
+2026-10-12 20:28:04 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54228 - "GET /api/v1/users/guest_880492014db7/dashboard HTTP/1.1" 200
+2026-10-12 20:28:04 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [c861b89b] START GET /static/icon-192.png
+2026-10-12 20:28:04 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [c861b89b] FINISH GET /static/icon-192.png Status=200 (4.30ms)
+2026-10-12 20:28:04 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54246 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 20:28:33 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [59adb7d7] START POST /api/v1/auth/guest
+2026-10-12 20:28:33 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [59adb7d7] FINISH POST /api/v1/auth/guest Status=200 (13.41ms)
+2026-10-12 20:28:33 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:60442 - "POST /api/v1/auth/guest HTTP/1.1" 200
+2026-10-12 20:28:33 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [f8279da8] START GET /api/v1/users/guest_8816a71632e3/dashboard
+2026-10-12 20:28:33 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [f8279da8] FINISH GET /api/v1/users/guest_8816a71632e3/dashboard Status=200 (2.97ms)
+2026-10-12 20:28:33 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:60442 - "GET /api/v1/users/guest_8816a71632e3/dashboard HTTP/1.1" 200

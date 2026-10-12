@@ -3,599 +3,362 @@
 <head>
     <link rel="manifest" href="/static/manifest.json">
     <link rel="apple-touch-icon" href="/static/icon-192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="autoXAK">
+    <link rel="icon" href="data:,">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>autoXAK — Сводная аналитика</title>
-    <!-- 1. Подключаем менеджер сессий -->
-    <script src="/static/session.js"></script>
+    <meta name="theme-color" content="#121417">
+    <title>autoXAK — История поездок</title>
     <style>
         :root {
             --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
-            --font-mono: "Space Grotesk", "Geist Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
-
-            --color-bg-root: #05070C;
-            --color-bg-elevated: #0B0F17;
-            --color-bg-subtle: #111827;
-            --color-border-soft: rgba(148, 163, 184, 0.18);
-            --color-border-strong: rgba(148, 163, 184, 0.45);
-
-            --color-accent-savings: #22C55E;
-            --color-accent-savings-soft: rgba(34, 197, 94, 0.12);
-            --color-accent-warning: #F59E0B;
-            --color-accent-safe: #3B82F6;
-
-            --color-text-primary: #F9FAFB;
-            --color-text-secondary: #9CA3AF;
-            --color-text-muted: #6B7280;
-
-            --shadow-card: 0 12px 32px rgba(5, 7, 12, 0.7);
-            --glass-bg: rgba(11, 15, 23, 0.82);
-            --glass-blur: 16px;
-
-            --radius-phone: 44px;
-            --radius-sm: 10px;
-            --radius-md: 16px;
-            --radius-lg: 24px;
+            --font-mono: "Space Grotesk", "Geist Mono", ui-monospace, monospace;
+            --bg-screen: #121417;
+            --bg-surface: #1E2228;
+            --bg-surface-elevated: #262B33;
+            --accent-lime: #D2FA58;
+            --accent-lime-hover: #C2EA48;
+            --accent-blue: #38BDF8;
+            --accent-amber: #F59E0B;
+            --accent-danger: #EF4444;
+            --text-primary: #FFFFFF;
+            --text-secondary: #8E95A2;
+            --text-muted: #5E6472;
+            --border-soft: rgba(148, 163, 184, 0.12);
+            --border-strong: rgba(148, 163, 184, 0.32);
+            --radius-btn: 16px;
+            --radius-input: 14px;
+            --radius-card: 20px;
             --radius-pill: 9999px;
+            --shadow-card: 0 14px 36px rgba(0, 0, 0, 0.65);
         }
 
         *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: var(--font-sans);
-            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box; margin: 0; padding: 0;
+            font-family: var(--font-sans); -webkit-tap-highlight-color: transparent; user-select: none;
         }
 
         body {
             background-color: #000000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            color: var(--color-text-primary);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; color: var(--text-primary);
             padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            overflow: hidden;
         }
 
         .mobile-container {
-            width: 100%;
-            max-width: 414px;
-            height: 100vh;
-            max-height: 890px;
-            background-color: var(--color-bg-root);
-            border: 1px solid var(--color-border-soft);
-            border-radius: var(--radius-phone);
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.9);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
+            width: 100%; max-width: 414px; height: 100vh; max-height: 890px;
+            background-color: var(--bg-screen); border: 1px solid var(--border-soft);
+            border-radius: 44px; box-shadow: 0 0 60px rgba(0, 0, 0, 0.95);
+            display: flex; flex-direction: column; overflow: hidden; position: relative;
         }
 
+        /* ---------------- НАВИГАЦИОННАЯ ШАПКА ---------------- */
         .top-nav {
-            padding: 20px 20px 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid var(--color-border-soft);
-            background: var(--glass-bg);
-            backdrop-filter: blur(var(--glass-blur));
-            z-index: 10;
+            padding: 20px 20px 14px; display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border-soft); background: var(--bg-screen); z-index: 10;
         }
-
         .btn-back {
-            background: none;
-            border: none;
-            color: var(--color-accent-safe);
-            font-size: 15px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-            text-decoration: none;
+            background: none; border: none; color: var(--text-primary);
+            font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px;
+            cursor: pointer; text-decoration: none; padding: 4px 0; transition: color 0.2s;
         }
+        .btn-back:hover { color: var(--accent-lime); }
+        .nav-title { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+        .nav-placeholder { width: 48px; }
 
-        .nav-title {
-            font-size: 13px;
-            font-weight: 700;
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
-            color: var(--color-text-secondary);
-        }
-
+        /* ---------------- СКРОЛЛ-КОНТЕНТ ---------------- */
         .content-scroll {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 16px 16px 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            scrollbar-width: none;
+            flex-grow: 1; overflow-y: auto; padding: 20px 18px 40px;
+            display: flex; flex-direction: column; gap: 16px; scrollbar-width: none;
         }
         .content-scroll::-webkit-scrollbar { display: none; }
 
-        .filter-pills {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 6px;
-            background: var(--color-bg-elevated);
-            padding: 4px;
-            border-radius: var(--radius-pill);
-            border: 1px solid var(--color-border-soft);
+        /* ГЛАВНАЯ НАКОПИТЕЛЬНАЯ КАРТОЧКА */
+        .hero-savings-card {
+            background: var(--bg-surface); border: 1px solid var(--border-soft);
+            border-radius: var(--radius-card); padding: 22px 20px; box-shadow: var(--shadow-card);
+            display: flex; flex-direction: column; gap: 8px;
         }
-
-        .pill-btn {
-            background: transparent;
-            border: none;
-            color: var(--color-text-secondary);
-            padding: 8px 0;
-            font-size: 12px;
-            font-weight: 600;
-            border-radius: var(--radius-pill);
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .pill-btn.active {
-            background: var(--color-accent-safe);
-            color: #FFFFFF;
-            box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
-        }
-
-        .custom-range-box {
-            display: none;
-            background: var(--color-bg-elevated);
-            border: 1px solid var(--color-border-soft);
-            border-radius: var(--radius-md);
-            padding: 12px;
-            gap: 8px;
-            flex-direction: column;
-        }
-        .custom-range-box.open { display: flex; }
-
-        .date-inputs-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .input-group label {
-            font-size: 10px;
-            color: var(--color-text-muted);
-            text-transform: uppercase;
-            margin-bottom: 2px;
-            display: block;
-        }
-
-        .date-field {
-            width: 100%;
-            background: var(--color-bg-subtle);
-            border: 1px solid var(--color-border-soft);
-            color: var(--color-text-primary);
-            padding: 8px;
-            border-radius: var(--radius-sm);
-            font-family: var(--font-mono);
-            font-size: 12px;
-        }
-
-        .btn-apply {
-            background: var(--color-accent-safe);
-            border: none;
-            color: white;
-            padding: 9px;
-            border-radius: var(--radius-sm);
-            font-weight: 700;
-            font-size: 12px;
-            cursor: pointer;
-            text-transform: uppercase;
-        }
-
-        .summary-hero-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(var(--glass-blur));
-            border: 1px solid var(--color-border-soft);
-            border-radius: var(--radius-lg);
-            padding: 20px 18px;
-            box-shadow: var(--shadow-card);
-            position: relative;
-            overflow: hidden;
-        }
-        .summary-hero-card::before {
-            content: '';
-            position: absolute;
-            top: -40px;
-            right: -40px;
-            width: 130px;
-            height: 130px;
-            background: radial-gradient(circle, var(--color-accent-savings-soft) 0%, transparent 70%);
-            pointer-events: none;
-        }
-
         .hero-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--color-text-secondary);
+            font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px;
+            color: var(--accent-lime); font-weight: 800;
+        }
+        .hero-amount-row {
+            display: flex; align-items: baseline; gap: 4px; font-family: var(--font-mono); margin: 4px 0;
+        }
+        .hero-prefix { font-size: 26px; color: var(--accent-lime); font-weight: 700; }
+        .hero-digits { font-size: 44px; font-weight: 800; color: var(--text-primary); letter-spacing: -1px; }
+        .hero-unit { font-size: 24px; color: var(--accent-lime); font-weight: 700; margin-left: 2px; }
+
+        .hero-stats-grid {
+            display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;
+            border-top: 1px solid var(--border-soft); padding-top: 12px; margin-top: 6px;
+        }
+        .hero-stat-cell { display: flex; flex-direction: column; gap: 2px; }
+        .hero-stat-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
+        .hero-stat-val { font-family: var(--font-mono); font-size: 14px; font-weight: 700; color: var(--text-primary); }
+
+        /* ФИЛЬТРЫ ПЕРИОДА */
+        .period-chips {
+            display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+        }
+        .period-chip {
+            padding: 8px 16px; background: var(--bg-surface); border: 1px solid var(--border-soft);
+            border-radius: var(--radius-pill); font-size: 12px; font-weight: 600; color: var(--text-secondary);
+            cursor: pointer; transition: all 0.2s; white-space: nowrap;
+        }
+        .period-chip.active {
+            background: rgba(210, 250, 88, 0.14); border-color: var(--accent-lime); color: var(--accent-lime);
         }
 
-        .hero-amount {
-            display: flex;
-            align-items: baseline;
-            gap: 4px;
-            font-family: var(--font-mono);
-            margin: 4px 0 10px;
+        /* СПИСОК КАРТОЧЕК ПОЕЗДОК */
+        .trips-section-title {
+            font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+            color: var(--text-muted); margin-top: 4px;
         }
-        .hero-prefix {
-            font-size: 24px;
-            color: var(--color-accent-savings);
-            font-weight: 700;
+        .trips-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .trip-card {
+            background: var(--bg-surface); border: 1px solid var(--border-soft);
+            border-radius: var(--radius-btn); padding: 16px; display: flex;
+            flex-direction: column; gap: 10px; transition: border-color 0.2s;
         }
-        .hero-digits {
-            font-size: 40px;
-            font-weight: 800;
-            color: var(--color-text-primary);
-            letter-spacing: -1px;
+        .trip-card:hover { border-color: var(--border-strong); }
+
+        .trip-header { display: flex; justify-content: space-between; align-items: center; }
+        .trip-date { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
+        .trip-duration { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+
+        .trip-main-row {
+            display: flex; justify-content: space-between; align-items: baseline;
+        }
+        .trip-distance-box { display: flex; align-items: baseline; gap: 4px; }
+        .trip-distance-val { font-family: var(--font-mono); font-size: 20px; font-weight: 800; color: var(--text-primary); }
+        .trip-distance-unit { font-size: 12px; color: var(--text-secondary); font-weight: 600; }
+
+        .trip-savings-val {
+            font-family: var(--font-mono); font-size: 20px; font-weight: 800; color: var(--accent-lime);
         }
 
-        .hero-secondary-row {
-            display: flex;
-            justify-content: space-between;
-            padding-top: 10px;
-            border-top: 1px solid var(--color-border-soft);
-            font-size: 12px;
+        .trip-tags-row {
+            display: flex; flex-wrap: wrap; gap: 6px; border-top: 1px solid var(--border-soft);
+            padding-top: 8px; font-size: 11px;
         }
-        .hero-secondary-item span {
-            color: var(--color-text-muted);
-            display: block;
-            margin-bottom: 2px;
+        .trip-tag {
+            padding: 4px 8px; border-radius: 8px; background: var(--bg-screen);
+            border: 1px solid var(--border-soft); display: flex; align-items: center; gap: 4px;
         }
-        .hero-secondary-item strong {
-            font-family: var(--font-mono);
-            color: var(--color-text-primary);
-        }
+        .trip-tag.smooth { color: var(--accent-lime); border-color: rgba(210, 250, 88, 0.25); }
+        .trip-tag.rush { color: var(--accent-amber); border-color: rgba(245, 158, 11, 0.25); }
+        .trip-tag.bump { color: var(--accent-blue); border-color: rgba(56, 189, 248, 0.25); }
 
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
+        /* ПУСТОЕ СОСТОЯНИЕ */
+        .empty-state {
+            padding: 48px 20px; display: none; flex-direction: column; align-items: center;
+            text-align: center; gap: 12px;
         }
-
-        .metric-tile {
-            background: var(--color-bg-elevated);
-            border: 1px solid var(--color-border-soft);
-            border-radius: var(--radius-md);
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
-        }
-
-        .metric-tile-title {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--color-text-muted);
-        }
-
-        .metric-tile-value {
-            font-family: var(--font-mono);
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--color-text-primary);
-        }
-
-        .metric-tile-sub {
-            font-size: 11px;
-            color: var(--color-text-secondary);
-        }
-
-        .section-header {
-            font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--color-text-secondary);
-            margin-top: 6px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .trips-timeline {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .trip-item-card {
-            background: var(--color-bg-elevated);
-            border: 1px solid var(--color-border-soft);
-            border-radius: var(--radius-md);
-            padding: 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .trip-meta {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-        }
-
-        .trip-time {
-            font-family: var(--font-mono);
-            font-size: 13px;
-            font-weight: 700;
-            color: var(--color-text-primary);
-        }
-
-        .trip-subdetails {
-            font-size: 11px;
-            color: var(--color-text-muted);
-            display: flex;
-            gap: 8px;
-        }
-
-        .trip-kpis {
-            text-align: right;
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-
-        .trip-savings {
-            font-family: var(--font-mono);
-            font-size: 14px;
-            font-weight: 700;
-            color: var(--color-accent-savings);
-        }
-
-        .trip-wear {
-            font-family: var(--font-mono);
-            font-size: 11px;
-            color: var(--color-accent-warning);
-        }
-
-        .empty-placeholder {
-            text-align: center;
-            padding: 40px 10px;
-            color: var(--color-text-muted);
-            font-size: 13px;
+        .empty-state.active { display: flex; }
+        .empty-icon { font-size: 40px; }
+        .empty-title { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+        .empty-desc { font-size: 13px; color: var(--text-secondary); line-height: 1.4; max-width: 260px; }
+        .btn-empty-start {
+            margin-top: 8px; padding: 12px 24px; background: var(--accent-lime); color: #121417;
+            border-radius: var(--radius-btn); text-decoration: none; font-size: 13px; font-weight: 800;
         }
     </style>
 </head>
 <body>
-
-    <div class="mobile-container">
+    <main class="mobile-container">
+        <!-- НАВИГАЦИОННАЯ ШАПКА -->
         <header class="top-nav">
-            <a href="/" class="btn-back">❮ Назад</a>
-            <span class="nav-title">Сводка за период</span>
-            <div style="width: 45px;"></div>
+            <a href="/" class="btn-back">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <span>Назад</span>
+            </a>
+            <span class="nav-title">История поездок</span>
+            <div class="nav-placeholder"></div>
         </header>
 
-        <main class="content-scroll">
-            <!-- Селектор окон -->
-            <div class="filter-pills">
-                <button class="pill-btn" onclick="applyPreset('today')">Сегодня</button>
-                <button class="pill-btn" onclick="applyPreset('7d')">7 дней</button>
-                <button class="pill-btn active" onclick="applyPreset('30d')">30 дней</button>
-                <button class="pill-btn" onclick="applyPreset('custom')">Период</button>
-            </div>
-
-            <!-- Кастомный выбор интервала -->
-            <div class="custom-range-box" id="custom-box">
-                <div class="date-inputs-row">
-                    <div class="input-group">
-                        <label>С даты</label>
-                        <input type="date" class="date-field" id="input-start">
-                    </div>
-                    <div class="input-group">
-                        <label>По дату</label>
-                        <input type="date" class="date-field" id="input-end">
-                    </div>
+        <!-- ОСНОВНОЙ КОНТЕНТ -->
+        <section class="content-scroll">
+            <!-- СУММАРНЫЙ БАНК СБЕРЕЖЕНИЙ (ПУНКТ 8 ЗОИ) -->
+            <article class="hero-savings-card">
+                <span class="hero-label">Суммарная экономия</span>
+                <div class="hero-amount-row">
+                    <span class="hero-prefix">+</span>
+                    <span class="hero-digits" id="total-savings-val">0.00</span>
+                    <span class="hero-unit">₽</span>
                 </div>
-                <button class="btn-apply" onclick="fetchPeriodData()">Применить диапазон</button>
-            </div>
-
-            <!-- Hero KPI -->
-            <section class="summary-hero-card">
-                <div class="hero-label">Сэкономлено за выбранный период</div>
-                <div class="hero-amount">
-                    <span class="hero-prefix">+₽</span>
-                    <span class="hero-digits" id="sum-savings">0.00</span>
-                </div>
-                <div class="hero-secondary-row">
-                    <div class="hero-secondary-item">
-                        <span>Накопленный износ</span>
-                        <strong id="sum-oil-wear">0.000%</strong>
+                <div class="hero-stats-grid">
+                    <div class="hero-stat-cell">
+                        <span class="hero-stat-label">Поездок</span>
+                        <span class="hero-stat-val" id="total-trips-val">0</span>
                     </div>
-                    <div class="hero-secondary-item" style="text-align: right;">
-                        <span>Всего заездов</span>
-                        <strong id="sum-trips-count">0 сессий</strong>
+                    <div class="hero-stat-cell">
+                        <span class="hero-stat-label">Пробег</span>
+                        <span class="hero-stat-val" id="total-distance-val">0.0 км</span>
+                    </div>
+                    <div class="hero-stat-cell">
+                        <span class="hero-stat-label">Топливо</span>
+                        <span class="hero-stat-val" id="total-fuel-val">0.0 л</span>
                     </div>
                 </div>
-            </section>
+            </article>
 
-            <!-- Сетка метрик -->
-            <section class="metrics-grid">
-                <div class="metric-tile">
-                    <span class="metric-tile-title">Дистанция</span>
-                    <span class="metric-tile-value" id="val-distance">0.0 км</span>
-                    <span class="metric-tile-sub">Суммарный пробег</span>
-                </div>
-                <div class="metric-tile">
-                    <span class="metric-tile-title">Время в пути</span>
-                    <span class="metric-tile-value" id="val-duration">0.0 ч</span>
-                    <span class="metric-tile-sub">Чистые моточасы</span>
-                </div>
-                <div class="metric-tile">
-                    <span class="metric-tile-title">Ср. Скорость</span>
-                    <span class="metric-tile-value" id="val-speed">0.0 км/ч</span>
-                    <span class="metric-tile-sub">Путевой темп</span>
-                </div>
-                <div class="metric-tile">
-                    <span class="metric-tile-title">Заторы / ХХ</span>
-                    <span class="metric-tile-value" id="val-idle">0%</span>
-                    <span class="metric-tile-sub">Доля холостого хода</span>
-                </div>
-            </section>
-
-            <!-- Список сессий -->
-            <div class="section-header">
-                <span>Хронология поездок</span>
-                <span id="trips-badge" style="font-family: var(--font-mono); font-size: 11px;">0</span>
+            <!-- ПЕРЕКЛЮЧАТЕЛЬ ПЕРИОДОВ -->
+            <div class="period-chips">
+                <button class="period-chip active" onclick="setPeriod(30, this)">За 30 дней</button>
+                <button class="period-chip" onclick="setPeriod(7, this)">За 7 дней</button>
+                <button class="period-chip" onclick="setPeriod(365, this)">За все время</button>
             </div>
 
-            <div class="trips-timeline" id="trips-list">
-                <div class="empty-placeholder">Загрузка данных...</div>
+            <div class="trips-section-title">Список заездов</div>
+
+            <!-- СПИСОК ПОЕЗДОК -->
+            <div class="trips-list" id="trips-list">
+                <!-- Карточки генерируются скриптом -->
             </div>
-        </main>
-    </div>
+
+            <!-- ПУСТОЙ ЭКРАН -->
+            <div class="empty-state" id="empty-state">
+                <div class="empty-icon">🚗💨</div>
+                <div class="empty-title">Поездок пока нет</div>
+                <div class="empty-desc">Совершите первую поездку, чтобы увидеть финансовую аналитику своего стиля вождения.</div>
+                <a href="/" class="btn-empty-start">Начать поездку</a>
+            </div>
+        </section>
+    </main>
 
     <script>
         'use strict';
 
-        let currentUserId = AutoXAKSession.getUserId();
-        let currentStartDate = null;
-        let currentEndDate = null;
+        let currentUserId = localStorage.getItem('autoXAK_user_id') || 'test_user_01';
+        let currentPeriodDays = 30;
 
-        function applyPreset(preset) {
-            document.querySelectorAll('.pill-btn').forEach(btn => btn.classList.remove('active'));
-            if (event && event.target) event.target.classList.add('active');
-
-            const customBox = document.getElementById('custom-box');
+        function formatDateTime(isoString) {
+            if (!isoString) return 'Недавняя поездка';
+            const date = new Date(isoString);
             const now = new Date();
+            const isToday = date.toDateString() === now.toDateString();
 
-            if (preset === 'today') {
-                customBox.classList.remove('open');
-                const start = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-                currentStartDate = start.toISOString();
-                currentEndDate = now.toISOString();
-                fetchPeriodData();
-            } else if (preset === '7d') {
-                customBox.classList.remove('open');
-                const start = new Date(now.getTime() - 7 * 24 * 3600 * 1000);
-                currentStartDate = start.toISOString();
-                currentEndDate = now.toISOString();
-                fetchPeriodData();
-            } else if (preset === '30d') {
-                customBox.classList.remove('open');
-                const start = new Date(now.getTime() - 30 * 24 * 3600 * 1000);
-                currentStartDate = start.toISOString();
-                currentEndDate = now.toISOString();
-                fetchPeriodData();
-            } else if (preset === 'custom') {
-                customBox.classList.add('open');
-            }
+            const timeStr = date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+            if (isToday) return `Сегодня, ${timeStr}`;
+
+            const dateStr = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+            return `${dateStr}, ${timeStr}`;
         }
 
-        async function fetchPeriodData() {
-            const customBox = document.getElementById('custom-box');
-            if (customBox.classList.contains('open')) {
-                const sVal = document.getElementById('input-start').value;
-                const eVal = document.getElementById('input-end').value;
-                if (!sVal || !eVal) {
-                    alert("Укажите обе даты диапазона");
-                    return;
-                }
-                currentStartDate = new Date(sVal + "T00:00:00Z").toISOString();
-                currentEndDate = new Date(eVal + "T23:59:59Z").toISOString();
-            }
+        function formatDuration(seconds) {
+            const sec = Math.round(Number(seconds) || 0);
+            if (sec < 60) return `${sec} с`;
+            const min = Math.floor(sec / 60);
+            return `${min} мин`;
+        }
 
-            let url = `/api/v1/users/${currentUserId}/analytics/period`;
-            const params = new URLSearchParams();
-            if (currentStartDate) params.append("start_date", currentStartDate);
-            if (currentEndDate) params.append("end_date", currentEndDate);
-            if (params.toString()) url += `?${params.toString()}`;
+        async function loadHistoryData() {
+            const listEl = document.getElementById('trips-list');
+            const emptyEl = document.getElementById('empty-state');
 
             try {
-                const res = await fetch(url, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...AutoXAKSession.getAuthHeaders()
-                    }
-                });
+                // 1. Загрузка агрегатов периода
+                const endDate = new Date();
+                const startDate = new Date();
+                startDate.setDate(endDate.getDate() - currentPeriodDays);
 
-                if (!res.ok) {
-                    const err = await res.text();
-                    console.error("Ошибка загрузки аналитики:", err);
+                const periodUrl = `/api/v1/users/${encodeURIComponent(currentUserId)}/analytics/period?start_date=${startDate.toISOString()}&end_date=${endDate.toISOString()}`;
+                const res = await fetch(periodUrl);
+                
+                if (!res.ok) throw new Error('Сбой загрузки данных аналитики');
+                const data = await res.json();
+
+                // 2. Обновление сводной карточки
+                const summary = data.summary || {};
+                document.getElementById('total-savings-val').innerText = Number(summary.total_savings_rub || 0).toFixed(2);
+                document.getElementById('total-trips-val').innerText = summary.total_trips || 0;
+                document.getElementById('total-distance-val').innerText = `${Number(summary.total_distance_km || 0).toFixed(1)} км`;
+                document.getElementById('total-fuel-val').innerText = `${Number(summary.total_fuel_saved_liters || 0).toFixed(1)} л`;
+
+                // 3. Рендер списка поездок
+                const trips = data.trips || [];
+                listEl.innerHTML = '';
+
+                if (trips.length === 0) {
+                    emptyEl.classList.add('active');
+                    listEl.style.display = 'none';
                     return;
                 }
-                const data = await res.json();
-                renderAnalytics(data);
-            } catch (err) {
-                console.error("Сетевая ошибка:", err);
-            }
-        }
 
-        function renderAnalytics(data) {
-            const summary = data.summary;
+                emptyEl.classList.remove('active');
+                listEl.style.display = 'flex';
 
-            document.getElementById('sum-savings').innerText = Number(summary.total_savings_rub).toFixed(2);
-            document.getElementById('sum-oil-wear').innerText = `${Number(summary.total_oil_wear_percent).toFixed(3)}%`;
-            document.getElementById('sum-trips-count').innerText = `${summary.total_trips} сессий`;
+                trips.forEach(trip => {
+                    const card = document.createElement('div');
+                    card.className = 'trip-card';
 
-            document.getElementById('val-distance').innerText = `${Number(summary.total_distance_km).toFixed(1)} км`;
-            document.getElementById('val-duration').innerText = `${Number(summary.total_duration_hours).toFixed(1)} ч`;
-            document.getElementById('val-speed').innerText = `${Number(summary.avg_speed_kmh).toFixed(1)} км/ч`;
-            document.getElementById('val-idle').innerText = `${(Number(summary.avg_idle_ratio) * 100).toFixed(0)}%`;
+                    const savingsRub = Number(trip.total_savings_rub || 0).toFixed(2);
+                    const distanceKm = Number(trip.distance_km || 0).toFixed(2);
+                    const smoothScore = trip.smooth_score || 100;
+                    const rushPenalty = Number(trip.rush_cost_rub || 0);
+                    const harshCount = (trip.harsh_accel_count || 0) + (trip.harsh_brake_count || 0);
+                    const bumpsCount = trip.road_anomalies_count || 0;
 
-            document.getElementById('trips-badge').innerText = `${data.trips.length} шт.`;
-            const listEl = document.getElementById('trips-list');
-            listEl.innerHTML = '';
-
-            if (data.trips.length === 0) {
-                listEl.innerHTML = '<div class="empty-placeholder">Нет завершенных поездок за этот интервал</div>';
-                return;
-            }
-
-            data.trips.forEach(trip => {
-                const dateObj = new Date(trip.created_at);
-                const dateFormatted = dateObj.toLocaleDateString("ru-RU", { day: 'numeric', month: 'short' });
-                const timeFormatted = dateObj.toLocaleTimeString("ru-RU", { hour: '2-digit', minute: '2-digit' });
-                const durMin = Math.round(trip.duration_seconds / 60);
-
-                const card = document.createElement('div');
-                card.className = 'trip-item-card';
-                card.innerHTML = `
-                    <div class="trip-meta">
-                        <span class="trip-time">${dateFormatted}, ${timeFormatted}</span>
-                        <div class="trip-subdetails">
-                            <span>${trip.distance_km} км</span>
-                            <span>•</span>
-                            <span>${durMin} мин</span>
-                            <span>•</span>
-                            <span>ХХ: ${(trip.idle_ratio * 100).toFixed(0)}%</span>
+                    let tagsHtml = `
+                        <div class="trip-tag smooth">
+                            <span>★</span> Плавность: ${smoothScore}/100
                         </div>
-                    </div>
-                    <div class="trip-kpis">
-                        <span class="trip-savings">+${Number(trip.total_savings_rub).toFixed(1)} ₽</span>
-                        <span class="trip-wear">Износ: ${Number(trip.oil_wear_percent).toFixed(4)}%</span>
-                    </div>
-                `;
-                listEl.appendChild(card);
-            });
+                    `;
+
+                    if (rushPenalty > 0) {
+                        tagsHtml += `
+                            <div class="trip-tag rush">
+                                <span>⚠️</span> ${harshCount} резких (-${rushPenalty.toFixed(2)} ₽)
+                            </div>
+                        `;
+                    }
+
+                    if (bumpsCount > 0) {
+                        tagsHtml += `
+                            <div class="trip-tag bump">
+                                <span>🛡️</span> Неровностей: ${bumpsCount}
+                            </div>
+                        `;
+                    }
+
+                    card.innerHTML = `
+                        <div class="trip-header">
+                            <span class="trip-date">${formatDateTime(trip.created_at)}</span>
+                            <span class="trip-duration">${formatDuration(trip.duration_seconds)}</span>
+                        </div>
+                        <div class="trip-main-row">
+                            <div class="trip-distance-box">
+                                <span class="trip-distance-val">${distanceKm}</span>
+                                <span class="trip-distance-unit">км</span>
+                            </div>
+                            <span class="trip-savings-val">+${savingsRub} ₽</span>
+                        </div>
+                        <div class="trip-tags-row">
+                            ${tagsHtml}
+                        </div>
+                    `;
+
+                    listEl.appendChild(card);
+                });
+
+            } catch (err) {
+                console.warn('Ошибка загрузки истории:', err);
+                emptyEl.classList.add('active');
+            }
         }
 
-        // Единый стартовый поток: авторизация -> расчет дат -> загрузка
-        window.addEventListener('DOMContentLoaded', async () => {
-            const session = await AutoXAKSession.ensureAuthenticated();
-            currentUserId = session.userId;
+        function setPeriod(days, btn) {
+            currentPeriodDays = days;
+            document.querySelectorAll('.period-chip').forEach(c => c.classList.remove('active'));
+            if (btn) btn.classList.add('active');
+            loadHistoryData();
+        }
 
-            const now = new Date();
-            const start = new Date(now.getTime() - 30 * 24 * 3600 * 1000);
-            currentStartDate = start.toISOString();
-            currentEndDate = now.toISOString();
-
-            document.getElementById('input-start').value = start.toISOString().split('T')[0];
-            document.getElementById('input-end').value = now.toISOString().split('T')[0];
-
-            fetchPeriodData();
+        window.addEventListener('DOMContentLoaded', () => {
+            loadHistoryData();
         });
     </script>
 </body>

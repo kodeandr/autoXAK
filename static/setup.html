@@ -1,1020 +1,541 @@
 ﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
-  
     <link rel="manifest" href="/static/manifest.json">
     <link rel="apple-touch-icon" href="/static/icon-192.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="autoXAK">
+    <link rel="icon" href="data:,">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>autoXAK — Параметры автомобиля</title>
-    <!-- Менеджер сессий autoXAK -->
-    <script src="/static/session.js"></script>
+    <meta name="theme-color" content="#121417">
+    <title>autoXAK — Настройки автомобиля</title>
     <style>
         :root {
             --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
-            --font-mono: "Space Grotesk", "Geist Mono", ui-monospace, Menlo, Monaco, Consolas, monospace;
-
-            --color-bg-root: #05070C;
-            --color-bg-elevated: #0B0F17;
-            --color-bg-subtle: #111827;
-            --color-border-soft: rgba(148, 163, 184, 0.16);
-            --color-border-strong: rgba(148, 163, 184, 0.40);
-
-            --color-accent-savings: #00E676;
-            --color-accent-savings-soft: rgba(0, 230, 118, 0.14);
-            --color-accent-safe: #3B82F6;
-            --color-accent-safe-soft: rgba(59, 130, 246, 0.16);
-            --color-accent-warning: #F59E0B;
-            --color-accent-danger: #EF4444;
-
-            --color-text-primary: #F9FAFB;
-            --color-text-secondary: #9CA3AF;
-            --color-text-muted: #6B7280;
-
-            --shadow-card: 0 12px 32px rgba(5, 7, 12, 0.7);
-            --glass-bg: rgba(11, 15, 23, 0.85);
-            --glass-blur: 16px;
-
-            --radius-phone: 44px;
-            --radius-sm: 10px;
-            --radius-md: 16px;
-            --radius-lg: 24px;
+            --font-mono: "Space Grotesk", "Geist Mono", ui-monospace, monospace;
+            --bg-screen: #121417;
+            --bg-surface: #1E2228;
+            --bg-surface-elevated: #262B33;
+            --accent-lime: #D2FA58;
+            --accent-lime-hover: #C2EA48;
+            --accent-blue: #38BDF8;
+            --accent-amber: #F59E0B;
+            --accent-danger: #EF4444;
+            --text-primary: #FFFFFF;
+            --text-secondary: #8E95A2;
+            --text-muted: #5E6472;
+            --border-soft: rgba(148, 163, 184, 0.12);
+            --border-strong: rgba(148, 163, 184, 0.32);
+            --radius-btn: 16px;
+            --radius-input: 14px;
+            --radius-card: 20px;
             --radius-pill: 9999px;
+            --shadow-card: 0 14px 36px rgba(0, 0, 0, 0.65);
         }
 
         *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: var(--font-sans);
-            -webkit-tap-highlight-color: transparent;
+            box-sizing: border-box; margin: 0; padding: 0;
+            font-family: var(--font-sans); -webkit-tap-highlight-color: transparent; user-select: none;
         }
 
         body {
             background-color: #000000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            color: var(--color-text-primary);
+            display: flex; justify-content: center; align-items: center;
+            min-height: 100vh; color: var(--text-primary);
             padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+            overflow: hidden;
         }
 
         .mobile-container {
-            width: 100%;
-            max-width: 414px;
-            height: 100vh;
-            max-height: 890px;
-            background-color: var(--color-bg-root);
-            border: 1px solid var(--color-border-soft);
-            border-radius: var(--radius-phone);
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.9);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            position: relative;
+            width: 100%; max-width: 414px; height: 100vh; max-height: 890px;
+            background-color: var(--bg-screen); border: 1px solid var(--border-soft);
+            border-radius: 44px; box-shadow: 0 0 60px rgba(0, 0, 0, 0.95);
+            display: flex; flex-direction: column; overflow: hidden; position: relative;
         }
 
+        /* ---------------- TOAST-УВЕДОМЛЕНИЯ ---------------- */
+        .inapp-toast {
+            position: absolute; top: 18px; left: 16px; right: 16px;
+            background: rgba(30, 34, 40, 0.96); backdrop-filter: blur(20px);
+            border: 1.5px solid var(--accent-lime); border-radius: var(--radius-btn);
+            padding: 12px 14px; display: flex; align-items: center; gap: 12px; z-index: 600;
+            transform: translateY(-160%); opacity: 0; transition: transform 0.35s ease, opacity 0.3s ease;
+        }
+        .inapp-toast.visible { transform: translateY(0); opacity: 1; }
+        .inapp-toast.toast-alert { border-color: var(--accent-amber); }
+
+        /* ---------------- ШАПКА НАВИГАЦИИ ---------------- */
         .top-nav {
-            padding: 20px 20px 12px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid var(--color-border-soft);
-            background: var(--glass-bg);
-            backdrop-filter: blur(var(--glass-blur));
-            z-index: 10;
+            padding: 20px 20px 14px; display: flex; align-items: center; justify-content: space-between;
+            border-bottom: 1px solid var(--border-soft); background: var(--bg-screen); z-index: 10;
         }
-
         .btn-back {
-            background: none;
-            border: none;
-            color: var(--color-accent-safe);
-            font-size: 15px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            cursor: pointer;
-            text-decoration: none;
+            background: none; border: none; color: var(--text-primary);
+            font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px;
+            cursor: pointer; text-decoration: none; padding: 4px 0;
         }
+        .btn-back:hover { color: var(--accent-lime); }
+        .nav-title { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+        .nav-placeholder { width: 48px; }
 
-        .nav-title {
-            font-size: 13px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.8px;
-            color: var(--color-text-secondary);
-        }
-
+        /* ---------------- СКРОЛЛ-КОНТЕНТ ---------------- */
         .content-scroll {
-            flex-grow: 1;
-            overflow-y: auto;
-            padding: 16px 18px 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            scrollbar-width: none;
+            flex-grow: 1; overflow-y: auto; padding: 20px;
+            display: flex; flex-direction: column; gap: 16px; scrollbar-width: none;
         }
         .content-scroll::-webkit-scrollbar { display: none; }
 
-        .setup-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(var(--glass-blur));
-            border: 1px solid var(--color-border-soft);
-            border-radius: var(--radius-lg);
-            padding: 18px;
-            box-shadow: var(--shadow-card);
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
+        .section-card {
+            background: var(--bg-surface); border: 1px solid var(--border-soft);
+            border-radius: var(--radius-card); padding: 18px 16px; display: flex; flex-direction: column; gap: 14px;
         }
 
-        .section-header {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
+        .section-header { display: flex; flex-direction: column; gap: 4px; }
+        .section-title { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+        .section-subtitle { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
 
-        .section-icon { font-size: 18px; }
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+        .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
 
-        .section-title {
-            font-size: 14px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            color: var(--color-text-primary);
+        .custom-select {
+            width: 100%; height: 48px; background: var(--bg-screen);
+            border: 1.5px solid var(--border-soft); border-radius: var(--radius-input);
+            padding: 0 14px; color: var(--text-primary); font-size: 14px; outline: none;
+            cursor: pointer; transition: border-color 0.2s; appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238E95A2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat; background-position: right 14px center; background-size: 16px;
         }
+        .custom-select:focus { border-color: var(--accent-lime); }
+        .custom-select option { background: var(--bg-surface); color: #FFF; }
 
-        .section-desc {
-            font-size: 12px;
-            color: var(--color-text-secondary);
-            line-height: 1.4;
+        .input-text {
+            width: 100%; height: 48px; background: var(--bg-screen);
+            border: 1.5px solid var(--border-soft); border-radius: var(--radius-input);
+            padding: 0 14px; color: var(--text-primary); font-size: 15px; font-family: var(--font-mono);
+            outline: none; transition: border-color 0.2s;
         }
+        .input-text:focus { border-color: var(--accent-lime); }
 
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
+        /* КАРТОЧКА ПАСПОРТНЫХ ДАННЫХ */
+        .specs-preview {
+            background: var(--bg-screen); border: 1px solid var(--border-soft);
+            border-radius: var(--radius-input); padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
         }
+        .spec-item { display: flex; flex-direction: column; gap: 2px; }
+        .spec-item-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
+        .spec-item-val { font-size: 13px; font-weight: 700; color: var(--accent-lime); font-family: var(--font-mono); }
 
-        .input-label {
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            color: var(--color-text-muted);
-            font-weight: 600;
-        }
-
-        .custom-select, .custom-input {
-            width: 100%;
-            background: var(--color-bg-subtle);
-            border: 1px solid var(--color-border-soft);
-            border-radius: var(--radius-md);
-            padding: 12px 14px;
-            color: var(--color-text-primary);
-            font-size: 14px;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .custom-select:focus, .custom-input:focus {
-            border-color: var(--color-accent-safe);
-        }
-
-        .custom-select:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .physics-preview {
-            background: rgba(59, 130, 246, 0.08);
-            border: 1px solid rgba(59, 130, 246, 0.25);
-            border-radius: var(--radius-md);
-            padding: 12px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            font-size: 11px;
-        }
-
-        .physics-item span {
-            color: var(--color-text-muted);
-            display: block;
-            margin-bottom: 2px;
-        }
-
-        .physics-item strong {
-            font-family: var(--font-mono);
-            color: var(--color-accent-safe);
-            font-size: 12px;
-        }
-
-        .synth-toggle {
-            background: none;
-            border: none;
-            color: var(--color-accent-safe);
-            font-size: 12px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-            padding: 4px 0;
-            text-align: left;
-        }
-
-        .synth-box {
-            display: none;
-            flex-direction: column;
-            gap: 10px;
-            padding: 12px;
-            border-radius: var(--radius-md);
-            background: rgba(17, 24, 39, 0.6);
-            border: 1px dashed var(--color-border-strong);
-        }
-        .synth-box.active { display: flex; }
-
-        .btn-synth-apply {
-            background: var(--color-accent-safe);
-            color: #ffffff;
-            border: none;
-            border-radius: var(--radius-sm);
-            padding: 8px 12px;
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: opacity 0.2s;
-        }
-
-        /* Сетка чипсов брендов АЗС и топлива */
-        .chips-grid-brand {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 6px;
-        }
-
-        .chips-grid-fuel {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 6px;
-        }
-
-        .chip-btn {
-            background: var(--color-bg-subtle);
-            border: 1px solid var(--color-border-soft);
-            color: var(--color-text-secondary);
-            padding: 9px 0;
-            border-radius: var(--radius-sm);
-            font-size: 11px;
-            font-weight: 700;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.2s;
-        }
-
-        .chip-btn.active {
-            background: var(--color-accent-safe);
-            color: white;
-            border-color: var(--color-accent-safe);
-            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.35);
-        }
-
-        /* Интеллектуальный степпер цены */
-        .price-stepper-wrap {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .btn-step {
-            width: 44px;
-            height: 44px;
-            border-radius: var(--radius-md);
-            background: var(--color-bg-subtle);
-            border: 1px solid var(--color-border-soft);
-            color: var(--color-text-primary);
-            font-size: 18px;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.15s;
-        }
-        .btn-step:active {
-            transform: scale(0.92);
-            border-color: var(--color-accent-safe);
-        }
-
-        .fuel-badge-info {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 11px;
-            padding: 8px 10px;
-            border-radius: var(--radius-sm);
-            background: rgba(15, 23, 42, 0.7);
-            border: 1px solid var(--color-border-soft);
-        }
-
-        .fuel-status-dot {
-            width: 7px;
-            height: 7px;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 5px;
-            background: var(--color-accent-savings);
-        }
-
-        .slider-wrap {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-top: 4px;
-        }
-
-        .slider-header {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-        }
-
-        .slider-val {
-            font-family: var(--font-mono);
-            font-weight: 700;
-            color: var(--color-accent-savings);
-        }
-
-        .custom-range {
-            width: 100%;
-            -webkit-appearance: none;
-            appearance: none;
-            height: 6px;
-            background: var(--color-bg-subtle);
-            border-radius: var(--radius-pill);
-            outline: none;
-        }
-
-        .custom-range::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            appearance: none;
-            width: 22px;
-            height: 22px;
-            border-radius: 50%;
-            background: var(--color-accent-savings);
-            cursor: pointer;
-            box-shadow: 0 0 10px rgba(0, 230, 118, 0.5);
-        }
-
+        /* НИЖНЯЯ ПАНЕЛЬ С КНОПКОЙ */
         .bottom-bar {
-            padding: 12px 18px 22px;
-            background: linear-gradient(180deg, transparent 0%, var(--color-bg-root) 60%);
+            padding: 12px 20px 44px; background: linear-gradient(180deg, transparent 0%, var(--bg-screen) 60%);
         }
-
         .btn-save {
-            width: 100%;
-            height: 54px;
-            background: var(--color-accent-savings);
-            color: #022C22;
-            border: none;
-            border-radius: var(--radius-pill);
-            font-size: 15px;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            box-shadow: 0 4px 18px rgba(0, 230, 118, 0.35);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: transform 0.1s;
+            width: 100%; height: 52px; background: var(--accent-lime); color: #121417;
+            border: none; border-radius: var(--radius-btn); font-size: 15px; font-weight: 800; cursor: pointer;
+            box-shadow: 0 6px 24px rgba(210, 250, 88, 0.25); display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: transform 0.15s ease, background 0.2s ease;
         }
         .btn-save:active { transform: scale(0.98); }
-
-        .btn-reset-service {
-            background: none;
-            border: 1px dashed var(--color-border-strong);
-            color: var(--color-text-secondary);
-            padding: 10px;
-            border-radius: var(--radius-md);
-            font-size: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            transition: all 0.2s;
-        }
-        .btn-reset-service:hover {
-            border-color: var(--color-accent-safe);
-            color: var(--color-accent-safe);
-        }
+        .btn-save.loading { opacity: 0.7; cursor: wait; }
     </style>
 </head>
 <body>
+    <main class="mobile-container">
+        <!-- УВЕДОМЛЕНИЕ (TOAST) -->
+        <div class="inapp-toast" id="inapp-toast" onclick="dismissToast()">
+            <div id="toast-icon">💾</div>
+            <div>
+                <div style="font-weight: 700; font-size: 13px;" id="toast-title">Уведомление</div>
+                <div style="font-size: 11px; color: var(--text-secondary);" id="toast-desc">Текст сообщения</div>
+            </div>
+        </div>
 
-    <div class="mobile-container">
+        <!-- НАВИГАЦИОННАЯ ШАПКА -->
         <header class="top-nav">
-            <a href="/" class="btn-back">❮ Назад</a>
-            <span class="nav-title">Гараж и калибровка</span>
-            <div style="width: 45px;"></div>
+            <a href="/" class="btn-back">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <span>Назад</span>
+            </a>
+            <span class="nav-title">Настройки автомобиля</span>
+            <div class="nav-placeholder"></div>
         </header>
 
-        <main class="content-scroll">
-            <!-- Секция 1: Иерархический выбор модификации ТС -->
-            <section class="setup-card">
+        <!-- ОСНОВНОЙ КОНТЕНТ -->
+        <section class="content-scroll">
+            <!-- КАРТОЧКА 1: ВЫБОР АВТОМОБИЛЯ -->
+            <article class="section-card">
                 <div class="section-header">
-                    <span class="section-icon">🚗</span>
-                    <span class="section-title">Автомобиль</span>
+                    <span class="section-title">Автомобиль для поездок</span>
+                    <span class="section-subtitle">В MVP используется один рабочий автомобиль для расчёта тяговой динамики и экономии топлива.</span>
                 </div>
-                <p class="section-desc">Точные паспортные константы массы, трансмиссии и аэродинамики кузова.</p>
 
-                <div class="input-group">
-                    <label class="input-label">Марка</label>
-                    <select class="custom-select" id="make-selector" onchange="onMakeChanged()">
-                        <option value="">Загрузка реестра...</option>
+                <div class="form-group">
+                    <label class="form-label">Марка</label>
+                    <select class="custom-select" id="select-make" onchange="onMakeChanged()">
+                        <option value="">Загрузка марок...</option>
                     </select>
                 </div>
 
-                <div class="input-group">
-                    <label class="input-label">Модель</label>
-                    <select class="custom-select" id="model-selector" onchange="onModelChanged()" disabled>
+                <div class="form-group">
+                    <label class="form-label">Модель</label>
+                    <select class="custom-select" id="select-model" onchange="onModelChanged()" disabled>
                         <option value="">Сначала выберите марку</option>
                     </select>
                 </div>
 
-                <div class="input-group">
-                    <label class="input-label">Модификация силового агрегата</label>
-                    <select class="custom-select" id="trim-selector" onchange="onTrimChanged()" disabled>
+                <div class="form-group">
+                    <label class="form-label">Модификация / Двигатель</label>
+                    <select class="custom-select" id="select-trim" onchange="onTrimChanged()" disabled>
                         <option value="">Сначала выберите модель</option>
                     </select>
                 </div>
 
-                <!-- Блок синтезатора для редких авто -->
-                <button type="button" class="synth-toggle" onclick="toggleSynthBox()">
-                    <span id="synth-arrow">▸</span> Настроить вручную (если авто нет в списке)
-                </button>
-
-                <div id="synth-box" class="synth-box">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <div class="input-group">
-                            <label class="input-label">Тип кузова</label>
-                            <select id="synth-body" class="custom-select" style="padding: 8px 10px; font-size: 13px;">
-                                <option value="sedan">Седан (Cd*A ~0.61)</option>
-                                <option value="liftback">Лифтбек (~0.64)</option>
-                                <option value="crossover" selected>Кроссовер (~0.77)</option>
-                                <option value="suv">Внедорожник (~1.00)</option>
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <label class="input-label">Снаряж. масса, кг</label>
-                            <input type="number" id="synth-weight" class="custom-input" style="padding: 8px 10px; font-size: 13px;" value="1450" step="50">
-                        </div>
+                <!-- ПАСПОРТНЫЕ ДАННЫЕ ВЫБРАННОГО АВТО -->
+                <div class="specs-preview" id="specs-box">
+                    <div class="spec-item">
+                        <span class="spec-item-label">Мощность</span>
+                        <span class="spec-item-val" id="spec-power">150 л.с.</span>
                     </div>
-
-                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px;">
-                        <div class="input-group">
-                            <label class="input-label">Объем ДВС</label>
-                            <input type="number" id="synth-disp" class="custom-input" style="padding: 8px 10px; font-size: 13px;" value="1.5" step="0.1">
-                        </div>
-                        <div class="input-group">
-                            <label class="input-label">Привод</label>
-                            <select id="synth-drive" class="custom-select" style="padding: 8px 6px; font-size: 13px;">
-                                <option value="FWD">FWD</option>
-                                <option value="AWD">AWD</option>
-                                <option value="RWD">RWD</option>
-                            </select>
-                        </div>
-                        <div class="input-group">
-                            <label class="input-label">Коробка</label>
-                            <select id="synth-trans" class="custom-select" style="padding: 8px 6px; font-size: 13px;">
-                                <option value="DCT">Робот</option>
-                                <option value="AT">Автомат</option>
-                                <option value="MT">Механика</option>
-                                <option value="CVT">Вариатор</option>
-                            </select>
-                        </div>
+                    <div class="spec-item">
+                        <span class="spec-item-label">Снаряженная масса</span>
+                        <span class="spec-item-val" id="spec-weight">1445 кг</span>
                     </div>
-
-                    <button type="button" class="btn-synth-apply" onclick="applyCustomSynthesis()">
-                        ⚙️ Рассчитать профиль
-                    </button>
-                </div>
-
-                <div class="physics-preview" id="physics-panel">
-                    <div class="physics-item">
-                        <span>Снаряженная масса:</span>
-                        <strong id="p-mass">1505 кг</strong>
+                    <div class="spec-item">
+                        <span class="spec-item-label">Базовый расход</span>
+                        <span class="spec-item-val" id="spec-consumption">8.5 л / 100 км</span>
                     </div>
-                    <div class="physics-item">
-                        <span>Мощность ДВС:</span>
-                        <strong id="p-power">150 л.с.</strong>
-                    </div>
-                    <div class="physics-item">
-                        <span>Объем картера:</span>
-                        <strong id="p-oil">3.8 л</strong>
-                    </div>
-                    <div class="physics-item">
-                        <span>Рекоменд. масло:</span>
-                        <strong id="p-grade" style="color: var(--color-accent-savings);">0W-20 (C5)</strong>
+                    <div class="spec-item">
+                        <span class="spec-item-label">Привод / КПП</span>
+                        <span class="spec-item-val" id="spec-drivetrain">4WD • Робот</span>
                     </div>
                 </div>
-            </section>
+            </article>
 
-            <!-- Секция 2: Состояние моторного масла -->
-            <section class="setup-card">
+            <!-- КАРТОЧКА 2: ЭКОНОМИЧЕСКИЕ ПАРАМЕТРЫ -->
+            <article class="section-card">
                 <div class="section-header">
-                    <span class="section-icon">🛢️</span>
-                    <span class="section-title">Состояние масла</span>
-                </div>
-                <p class="section-desc">Точка отсчета для кинетики износа. Укажите, сколько км назад была заливка.</p>
-
-                <div class="slider-wrap">
-                    <div class="slider-header">
-                        <span style="color: var(--color-text-secondary);">Пробег на этом масле:</span>
-                        <span class="slider-val" id="oil-km-val">0 км (100% ресурс)</span>
-                    </div>
-                    <input type="range" class="custom-range" id="oil-range" min="0" max="12000" step="500" value="0" oninput="onOilRangeChange(this.value)">
+                    <span class="section-title">Стоимость топлива</span>
+                    <span class="section-subtitle">Цена за 1 литр для расчёта фактической выгоды в рублях относительно агрессивного двойника.</span>
                 </div>
 
-                <button class="btn-reset-service" type="button" onclick="resetOilService()">
-                    <span>🔄</span> Сбросить (Я только что заменил масло)
-                </button>
-            </section>
-
-            <!-- Секция 3: Интеллектуальные цены топлива и нормативы -->
-            <section class="setup-card">
-                <div class="section-header">
-                    <span class="section-icon">💳</span>
-                    <span class="section-title">Цены и нормативы</span>
+                <div class="form-group">
+                    <label class="form-label">Тариф (₽ / литр)</label>
+                    <input type="number" step="0.10" class="input-text" id="fuel-price-input" value="72.40">
                 </div>
-                <p class="section-desc">Динамический мониторинг цен по региону и сетевым АЗС.</p>
+            </article>
+        </section>
 
-                <!-- Выбор сети АЗС -->
-                <div class="input-group">
-                    <label class="input-label">Сеть АЗС</label>
-                    <div class="chips-grid-brand" id="brand-chips">
-                        <div class="chip-btn active" data-brand="rosneft" onclick="selectBrand('rosneft', this)">Роснефть</div>
-                        <div class="chip-btn" data-brand="lukoil" onclick="selectBrand('lukoil', this)">Лукойл</div>
-                        <div class="chip-btn" data-brand="gpn" onclick="selectBrand('gpn', this)">ГПН</div>
-                        <div class="chip-btn" data-brand="independent" onclick="selectBrand('independent', this)">Частные</div>
-                    </div>
-                </div>
-
-                <!-- Выбор марки топлива -->
-                <div class="input-group">
-                    <label class="input-label">Марка топлива</label>
-                    <div class="chips-grid-fuel" id="fuel-chips">
-                        <div class="chip-btn" data-fuel="ai92" onclick="selectFuelGrade('ai92', this)">АИ-92</div>
-                        <div class="chip-btn active" data-fuel="ai95" onclick="selectFuelGrade('ai95', this)">АИ-95</div>
-                        <div class="chip-btn" data-fuel="ai100" onclick="selectFuelGrade('ai100', this)">АИ-100</div>
-                        <div class="chip-btn" data-fuel="dt" onclick="selectFuelGrade('dt', this)">ДТ</div>
-                    </div>
-                </div>
-
-                <!-- Блок стоимости с кнопками шага -->
-                <div class="input-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <label class="input-label">Цена за литр (₽)</label>
-                        <span id="fuel-geo-label" style="font-size: 10px; color: var(--color-accent-safe); font-family: var(--font-mono);">Москва (GPS)</span>
-                    </div>
-                    <div class="price-stepper-wrap">
-                        <button type="button" class="btn-step" onclick="stepFuelPrice(-0.50)">−</button>
-                        <input type="number" class="custom-input" id="input-fuel-price" value="72.40" step="0.10" style="text-align: center; font-weight: 700; font-family: var(--font-mono); font-size: 16px;">
-                        <button type="button" class="btn-step" onclick="stepFuelPrice(+0.50)">+</button>
-                    </div>
-                </div>
-
-                <!-- Плашка доступности топлива на АЗС -->
-                <div class="fuel-badge-info" id="fuel-status-box">
-                    <div style="display: flex; align-items: center;">
-                        <span class="fuel-status-dot" id="fuel-status-dot"></span>
-                        <span id="fuel-source-label" style="color: var(--color-text-secondary);">Роснефть (Москва)</span>
-                    </div>
-                    <span id="fuel-avail-badge" style="color: var(--color-accent-savings); font-weight: 600;">В наличии</span>
-                </div>
-
-                <!-- Стоимость стандартного ТО -->
-                <div class="input-group" style="margin-top: 4px;">
-                    <label class="input-label">Цена стандартного ТО (₽)</label>
-                    <input type="number" class="custom-input" id="input-service-cost" value="9500" step="500">
-                </div>
-            </section>
-        </main>
-
+        <!-- СОХРАНЕНИЕ -->
         <footer class="bottom-bar">
-            <button class="btn-save" type="button" onclick="saveConfiguration()">
-                <span>✓</span> Применить и сохранить
+            <button class="btn-save" id="btn-save" type="button" onclick="saveVehicleSettings()">
+                <span>✓</span> Сохранить автомобиль
             </button>
         </footer>
-    </div>
+    </main>
 
     <script>
         'use strict';
 
-        let currentUserId = AutoXAKSession.getUserId();
         let catalogData = [];
-        let activeTrimId = "haval_jolion_15t_4wd";
-        let currentWearPercent = 0.0;
+        let currentUserId = localStorage.getItem('autoXAK_user_id') || 'dev_user_01';
+        let selectedTrimData = null;
+        let toastTimeoutId = null;
 
-        let activeBrand = "rosneft";
-        let activeFuelGrade = "ai95";
-        let userLocation = { lat: 55.75, lon: 37.61, region: "77" };
-
-        async function initGeoLocation() {
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => {
-                        userLocation.lat = pos.coords.latitude;
-                        userLocation.lon = pos.coords.longitude;
-                        fetchLiveFuelPrice();
-                    },
-                    () => { fetchLiveFuelPrice(); },
-                    { timeout: 4000 }
-                );
-            } else {
-                fetchLiveFuelPrice();
-            }
+        function showToast({ title, message, type = 'success', duration = 3000 }) {
+            const toast = document.getElementById('inapp-toast');
+            if (!toast) return;
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-desc').innerText = message;
+            document.getElementById('toast-icon').innerText = (type === 'alert') ? '⚠️' : '✅';
+            toast.className = 'inapp-toast visible' + (type === 'alert' ? ' toast-alert' : '');
+            if (toastTimeoutId) clearTimeout(toastTimeoutId);
+            toastTimeoutId = setTimeout(() => { toast.classList.remove('visible'); }, duration);
         }
+        function dismissToast() { document.getElementById('inapp-toast')?.classList.remove('visible'); }
 
-        async function fetchLiveFuelPrice(grade) {
-    const input = document.getElementById("input-fuel-price");
-    const DEFAULT_PRICES = { "АИ-92": 65.20, "ai92": 65.20, "АИ-95": 72.40, "ai95": 72.40, "АИ-100": 101.50, "ai100": 101.50, "ДТ": 80.60, "dt": 80.60 };
-    const gStr = (grade || "АИ-95").toString().trim();
-    let finalPrice = DEFAULT_PRICES[gStr] || 72.40;
-    try {
-        const rawGrade = gStr.toLowerCase().replace(/[^a-z0-9а-я]/g, "");
-        let norm = "ai95";
-        if (rawGrade.includes("92")) norm = "ai92";
-        else if (rawGrade.includes("100")) norm = "ai100";
-        else if (rawGrade.includes("дт") || rawGrade.includes("dt")) norm = "dt";
-        const res = await fetch(`/api/v1/fuel/current-price?region_code=77&brand=rosneft&fuel_grade=${norm}`);
-        if (res.ok) {
-            const data = await res.json();
-            const apiVal = parseFloat(data.recommended_price_rub || (data.prices && data.prices[norm]));
-            if (!isNaN(apiVal) && apiVal > 0) finalPrice = apiVal;
-        }
-    } catch (_) {}
-    if (input) input.value = Number(finalPrice).toFixed(2);
-    return finalPrice;
-}
-
-        function selectBrand(brand, element) {
-            document.querySelectorAll("#brand-chips .chip-btn").forEach(b => b.classList.remove("active"));
-            if (element) element.classList.add("active");
-            activeBrand = brand;
-            fetchLiveFuelPrice();
-        }
-
-        function selectFuelGrade(grade, element) {
-            document.querySelectorAll("#fuel-chips .chip-btn").forEach(b => b.classList.remove("active"));
-            if (element) element.classList.add("active");
-            activeFuelGrade = grade;
-            fetchLiveFuelPrice();
-        }
-
-        function stepFuelPrice(delta) {
-            const el = document.getElementById("input-fuel-price");
-            let val = parseFloat(el.value) || 72.40;
-            val = Math.max(30.0, Math.min(150.0, val + delta));
-            el.value = val.toFixed(2);
-        }
-
-        function autoSelectFuelByTrim(trimId) {
-            let targetFuel = "ai95";
-            if (trimId.includes("20tsi") || trimId.includes("turbo_high")) {
-                targetFuel = "ai100";
-            } else if (trimId.includes("16mpi") || trimId.includes("vesta_16")) {
-                targetFuel = "ai92";
-            } else if (trimId.includes("diesel") || trimId.includes("_dt")) {
-                targetFuel = "dt";
-            } else {
-                targetFuel = "ai95";
-            }
-
-            const btn = document.querySelector(`#fuel-chips .chip-btn[data-fuel="${targetFuel}"]`);
-            if (btn) selectFuelGrade(targetFuel, btn);
-        }
-
+        /* ---------------- ЗАГРУЗКА КАТАЛОГА АВТОМОБИЛЕЙ ---------------- */
         async function loadCatalog() {
-    try {
-        const res = await fetch("/api/v1/vehicles/catalog");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const raw = await res.json();
-        const items = Array.isArray(raw) ? raw : (raw.catalog || []);
+            try {
+                const res = await fetch("/api/v1/vehicles/catalog");
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const raw = await res.json();
+                const items = Array.isArray(raw) ? raw : (raw.catalog || []);
 
-        if (items.length > 0 && Array.isArray(items[0].models)) {
-            catalogData = items;
-        } else {
-            const makesMap = {};
-            for (const item of items) {
-                const mkName = item.make || item.name || "Марка";
-                const mkId = (item.make_id || mkName).toLowerCase().replace(/[^a-z0-9]/gi, "_");
-                if (!makesMap[mkId]) {
-                    makesMap[mkId] = { id: mkId, name: mkName, models: {} };
+                if (items.length > 0 && Array.isArray(items[0].models)) {
+                    catalogData = items;
+                } else {
+                    // Адаптер: сворачивание плоского массива в иерархическое дерево
+                    const makesMap = {};
+                    for (const item of items) {
+                        const mkName = item.make || item.name || "Марка";
+                        const mkId = (item.make_id || mkName).toLowerCase().replace(/[^a-z0-9]/gi, "_");
+                        if (!makesMap[mkId]) makesMap[mkId] = { id: mkId, name: mkName, models: {} };
+
+                        const mdName = item.model || "Модель";
+                        const mdId = (item.model_id || (mkId + "_" + mdName)).toLowerCase().replace(/[^a-z0-9]/gi, "_");
+                        if (!makesMap[mkId].models[mdId]) {
+                            makesMap[mkId].models[mdId] = { id: mdId, name: mdName, trims: [] };
+                        }
+
+                        const bName = item.trim || item.badge_name || item.full_name || item.id;
+                        makesMap[mkId].models[mdId].trims.push({
+                            id: item.id,
+                            badge_name: bName,
+                            curb_weight_kg: item.curb_weight_kg || 1450,
+                            rated_power_kw: item.rated_power_kw || 110,
+                            drivetrain_type: item.drivetrain_type || "FWD",
+                            transmission_type: item.transmission_type || "AT"
+                        });
+                    }
+                    catalogData = Object.values(makesMap).map(m => ({
+                        id: m.id,
+                        name: m.name,
+                        models: Object.values(m.models)
+                    }));
                 }
-                const mdName = item.model || "Модель";
-                const mdId = (item.model_id || (mkId + "_" + mdName)).toLowerCase().replace(/[^a-z0-9]/gi, "_");
-                if (!makesMap[mkId].models[mdId]) {
-                    makesMap[mkId].models[mdId] = {
-                        id: mdId,
-                        name: mdName,
-                        body_type: item.body_type || "",
-                        trims: []
-                    };
-                }
-                const bName = item.trim || item.badge_name || item.full_name || item.id;
-                const hpMatch = (bName + "").match(/(\d+)\s*л\.с\./);
-                const hp = item.power_hp || (hpMatch ? hpMatch[1] : (item.rated_power_kw ? Math.round(item.rated_power_kw * 1.36) : "-"));
-                makesMap[mkId].models[mdId].trims.push({
-                    id: item.id,
-                    badge_name: bName,
-                    name: bName,
-                    curb_weight_kg: item.curb_weight_kg || "-",
-                    power_hp: hp,
-                    oil_capacity_l: item.oil_capacity_l || "-",
-                    oil_grade: item.oil_grade || "-",
-                    oil_spec: item.oil_spec || "-",
-                    recommended_oil_brand: item.recommended_oil_brand || "-"
-                });
+
+                populateMakeSelector();
+                await loadCurrentUserSettings();
+            } catch (err) {
+                console.error("Ошибка загрузки каталога:", err);
+                showToast({ title: "Каталог офлайн", message: "Используются базовые профили", type: "alert" });
+                populateFallbackCatalog();
             }
-            catalogData = Object.values(makesMap).map(m => ({
-                id: m.id,
-                name: m.name,
-                models: Object.values(m.models)
-            }));
         }
 
-        populateMakeSelector(catalogData);
-        if (typeof loadCurrentConfig === "function") {
-            await loadCurrentConfig();
+        function populateFallbackCatalog() {
+            catalogData = [
+                {
+                    id: "haval",
+                    name: "Haval",
+                    models: [
+                        {
+                            id: "haval_jolion",
+                            name: "Jolion",
+                            trims: [
+                                { id: "haval_jolion_15t_4wd", badge_name: "1.5T 4WD (150 л.с.)", curb_weight_kg: 1445, rated_power_kw: 110, drivetrain_type: "4WD", transmission_type: "DCT" },
+                                { id: "haval_jolion_15t_fwd", badge_name: "1.5T 2WD (143 л.с.)", curb_weight_kg: 1370, rated_power_kw: 105, drivetrain_type: "FWD", transmission_type: "DCT" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: "skoda",
+                    name: "Skoda",
+                    models: [
+                        {
+                            id: "skoda_octavia",
+                            name: "Octavia",
+                            trims: [
+                                { id: "skoda_octavia_14tsi_dsg", badge_name: "1.4 TSI DSG (150 л.с.)", curb_weight_kg: 1320, rated_power_kw: 110, drivetrain_type: "FWD", transmission_type: "DSG" },
+                                { id: "skoda_octavia_20tsi_dsg_4wd", badge_name: "2.0 TSI 4WD (190 л.с.)", curb_weight_kg: 1470, rated_power_kw: 140, drivetrain_type: "4WD", transmission_type: "DSG" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: "geely",
+                    name: "Geely",
+                    models: [
+                        {
+                            id: "geely_coolray",
+                            name: "Coolray",
+                            trims: [
+                                { id: "geely_coolray_15t_fwd", badge_name: "1.5T DCT (150 л.с.)", curb_weight_kg: 1400, rated_power_kw: 110, drivetrain_type: "FWD", transmission_type: "DCT" }
+                            ]
+                        }
+                    ]
+                }
+            ];
+            populateMakeSelector();
         }
-    } catch (e) {
-        console.error("Каталог офлайн:", e);
-    }
-}
 
         function populateMakeSelector() {
-            const makeSel = document.getElementById("make-selector");
-            makeSel.innerHTML = '<option value="">-- Выберите марку --</option>';
-            catalogData.forEach(mk => {
-                makeSel.innerHTML += `<option value="${mk.id}">${mk.name}</option>`;
+            const makeSelect = document.getElementById('select-make');
+            makeSelect.innerHTML = '<option value="">Выберите марку</option>';
+            catalogData.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m.id;
+                opt.textContent = m.name;
+                makeSelect.appendChild(opt);
             });
         }
 
         function onMakeChanged() {
-            const makeId = document.getElementById("make-selector").value;
-            const modelSel = document.getElementById("model-selector");
-            const trimSel = document.getElementById("trim-selector");
+            const makeId = document.getElementById('select-make').value;
+            const modelSelect = document.getElementById('select-model');
+            const trimSelect = document.getElementById('select-trim');
 
-            modelSel.innerHTML = '<option value="">-- Выберите модель --</option>';
-            trimSel.innerHTML = '<option value="">-- Выберите комплектацию --</option>';
-            modelSel.disabled = !makeId;
-            trimSel.disabled = true;
+            modelSelect.innerHTML = '<option value="">Выберите модель</option>';
+            trimSelect.innerHTML = '<option value="">Сначала выберите модель</option>';
+            trimSelect.disabled = true;
 
-            if (!makeId) return;
             const make = catalogData.find(m => m.id === makeId);
-            if (make && make.models) {
-                make.models.forEach(md => {
-                    modelSel.innerHTML += `<option value="${md.id}">${md.name} (${md.body_type})</option>`;
-                });
+            if (!make || !make.models.length) {
+                modelSelect.disabled = true;
+                return;
             }
+
+            make.models.forEach(md => {
+                const opt = document.createElement('option');
+                opt.value = md.id;
+                opt.textContent = md.name;
+                modelSelect.appendChild(opt);
+            });
+            modelSelect.disabled = false;
         }
 
         function onModelChanged() {
-            const makeId = document.getElementById("make-selector").value;
-            const modelId = document.getElementById("model-selector").value;
-            const trimSel = document.getElementById("trim-selector");
+            const makeId = document.getElementById('select-make').value;
+            const modelId = document.getElementById('select-model').value;
+            const trimSelect = document.getElementById('select-trim');
 
-            trimSel.innerHTML = '<option value="">-- Выберите комплектацию --</option>';
-            trimSel.disabled = !modelId;
+            trimSelect.innerHTML = '<option value="">Выберите комплектацию</option>';
 
-            if (!modelId) return;
             const make = catalogData.find(m => m.id === makeId);
-            const model = make ? make.models.find(m => m.id === modelId) : null;
-            if (model && model.trims) {
-                model.trims.forEach(tr => {
-                    trimSel.innerHTML += `<option value="${tr.id}">${tr.badge_name}</option>`;
-                });
+            const model = make ? make.models.find(md => md.id === modelId) : null;
+
+            if (!model || !model.trims.length) {
+                trimSelect.disabled = true;
+                return;
+            }
+
+            model.trims.forEach(tr => {
+                const opt = document.createElement('option');
+                opt.value = tr.id;
+                opt.textContent = tr.badge_name || tr.name || tr.id;
+                trimSelect.appendChild(opt);
+            });
+            trimSelect.disabled = false;
+
+            // Выбираем первую комплектацию по умолчанию
+            if (model.trims.length > 0) {
+                trimSelect.value = model.trims[0].id;
+                onTrimChanged();
             }
         }
 
         function onTrimChanged() {
-            const trimId = document.getElementById("trim-selector").value;
-            if (!trimId) return;
-            activeTrimId = trimId;
-
-            let trimObj = null;
+            const trimId = document.getElementById('select-trim').value;
             for (const mk of catalogData) {
                 for (const md of mk.models) {
-                    const t = md.trims.find(x => x.id === trimId);
-                    if (t) { trimObj = t; break; }
-                }
-            }
-
-            if (trimObj) {
-                document.getElementById("p-mass").innerText = `${trimObj.curb_weight_kg} кг`;
-                document.getElementById("p-power").innerText = `${trimObj.power_hp} л.с.`;
-                document.getElementById("p-oil").innerText = `${trimObj.oil_capacity_l} л`;
-                document.getElementById("p-grade").innerText = `${trimObj.oil_grade} (${trimObj.recommended_oil_brand})`;
-                autoSelectFuelByTrim(trimId);
-            }
-        }
-
-        function selectTrimInCatalog(trimId) {
-            for (const mk of catalogData) {
-                for (const md of mk.models) {
-                    const t = md.trims.find(x => x.id === trimId);
-                    if (t) {
-                        const makeSel = document.getElementById("make-selector");
-                        makeSel.value = mk.id;
-                        onMakeChanged();
-
-                        const modelSel = document.getElementById("model-selector");
-                        modelSel.value = md.id;
-                        onModelChanged();
-
-                        const trimSel = document.getElementById("trim-selector");
-                        trimSel.value = t.id;
-                        onTrimChanged();
-                        return true;
+                    const tr = md.trims.find(t => t.id === trimId);
+                    if (tr) {
+                        selectedTrimData = { ...tr, make_name: mk.name, model_name: md.name };
+                        updateSpecsCard(selectedTrimData);
+                        return;
                     }
                 }
             }
-            return false;
         }
 
-        function toggleSynthBox() {
-            const box = document.getElementById("synth-box");
-            const arrow = document.getElementById("synth-arrow");
-            box.classList.toggle("active");
-            arrow.innerText = box.classList.contains("active") ? "▾" : "▸";
+        function updateSpecsCard(trim) {
+            if (!trim) return;
+            const hp = trim.rated_power_kw ? Math.round(trim.rated_power_kw * 1.36) : 150;
+            const weight = trim.curb_weight_kg || 1445;
+            const drive = (trim.drivetrain_type || "FWD").toUpperCase();
+            const trans = trim.transmission_type || "AT";
+
+            // Расчет паспортного расхода на основе массы и привода
+            const baseConsumption = (7.0 + (weight - 1200) * 0.0035 + (drive === "4WD" ? 0.7 : 0.0)).toFixed(1);
+
+            document.getElementById('spec-power').innerText = `${hp} л.с.`;
+            document.getElementById('spec-weight').innerText = `${weight} кг`;
+            document.getElementById('spec-consumption').innerText = `${baseConsumption} л / 100 км`;
+            document.getElementById('spec-drivetrain').innerText = `${drive} • ${trans}`;
         }
 
-        async function applyCustomSynthesis() {
-            const bodyType = document.getElementById("synth-body").value;
-            const weight = parseFloat(document.getElementById("synth-weight").value) || 1400.0;
-            const disp = parseFloat(document.getElementById("synth-disp").value) || 1.5;
-            const drive = document.getElementById("synth-drive").value;
-            const trans = document.getElementById("synth-trans").value;
-
-            let carDisplayName = "";
-      const trimSel = document.getElementById("trimSelect");
-      const carSel = document.getElementById("car-selector");
-      const activeSel = (trimSel && !trimSel.disabled && trimSel.value) ? trimSel : carSel;
-      if (activeSel && activeSel.selectedIndex >= 0) {
-          const rawText = activeSel.options[activeSel.selectedIndex].text || "";
-          carDisplayName = rawText.split("(")[0].trim() || rawText.trim();
-      }
-      if (!carDisplayName && typeof CAR_DATABASE !== "undefined" && CAR_DATABASE[selectedTrim]) {
-          carDisplayName = CAR_DATABASE[selectedTrim].name || "";
-      }
-      if (carDisplayName) {
-          localStorage.setItem("autoXAK_car_name", carDisplayName);
-      }
-
-      const payload = {
-                body_type: bodyType,
-                engine_disp_l: disp,
-                is_turbo: true,
-                drivetrain: drive,
-                transmission: trans,
-                curb_weight_kg: weight
-            };
+        /* ---------------- СИНХРОНИЗАЦИЯ С ПОЛЬЗОВАТЕЛЕМ ---------------- */
+        async function loadCurrentUserSettings() {
+            let activeCarId = localStorage.getItem('autoXAK_car_id') || 'haval_jolion_15t_4wd';
 
             try {
-                const res = await fetch("/api/v1/vehicles/synthesize", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        ...AutoXAKSession.getAuthHeaders()
-                    },
-                    body: JSON.stringify(payload)
-                });
-
+                const res = await fetch(`/api/v1/users/${encodeURIComponent(currentUserId)}/dashboard`);
                 if (res.ok) {
                     const data = await res.json();
-                    activeTrimId = data.car_id;
-                    const p = data.profile;
-
-                    document.getElementById("p-mass").innerText = `${p.curb_weight_kg} кг`;
-                    document.getElementById("p-power").innerText = `${Math.round(p.rated_power_kw * 1.36)} л.с.`;
-                    document.getElementById("p-oil").innerText = `${p.oil_capacity_l} л`;
-                    document.getElementById("p-grade").innerText = `${p.oil_grade} (${p.oil_spec})`;
-
-                    toggleSynthBox();
-                    await loadCatalog();
-                    selectTrimInCatalog(activeTrimId);
-                }
-            } catch (err) {
-                console.error("Ошибка синтеза:", err);
-            }
-        }
-
-        function onOilRangeChange(val) {
-            const km = Number(val);
-            const wear = Math.min(100.0, (km / 10000) * 100);
-            currentWearPercent = wear;
-            const remaining = Math.max(0, 100 - wear);
-            document.getElementById('oil-km-val').innerText = `${km} км (Остаток ${remaining.toFixed(0)}%)`;
-        }
-
-        function resetOilService() {
-            document.getElementById('oil-range').value = 0;
-            onOilRangeChange(0);
-        }
-
-        async function loadCurrentConfig() {
-            let carId = "haval_jolion_15t_4wd";
-            let fuelPrice = 72.40;
-            let serviceCost = 9500.0;
-            let wearPercent = 0.0;
-
-            const saved = localStorage.getItem("autoXAK_profile");
-            if (saved) {
-                try {
-                    const p = JSON.parse(saved);
-                    if (p.car_id) carId = p.car_id;
-                    if (p.fuel_price_rub) fuelPrice = p.fuel_price_rub;
-                    if (p.service_cost_rub) serviceCost = p.service_cost_rub;
-                    if (p.current_oil_wear_percent !== undefined) wearPercent = p.current_oil_wear_percent;
-                } catch (_) {}
-            }
-
-            try {
-                const res = await fetch(`/api/v1/users/${currentUserId}/dashboard`, {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...AutoXAKSession.getAuthHeaders()
-                    }
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.car_id) carId = data.car_id;
-                    if (data.fuel_price_rub) fuelPrice = data.fuel_price_rub;
-                    if (data.service_cost_rub) serviceCost = data.service_cost_rub;
-                    if (data.oil_remaining_percent !== undefined) {
-                        wearPercent = Math.max(0, 100.0 - data.oil_remaining_percent);
+                    if (data.car_id) activeCarId = data.car_id;
+                    if (data.fuel_price_rub) {
+                        document.getElementById('fuel-price-input').value = Number(data.fuel_price_rub).toFixed(2);
                     }
                 }
             } catch (_) {}
 
-            activeTrimId = carId;
-            selectTrimInCatalog(carId);
+            // Восстановление выбранных пунктов селектора
+            for (const mk of catalogData) {
+                for (const md of mk.models) {
+                    const tr = md.trims.find(t => t.id === activeCarId);
+                    if (tr) {
+                        document.getElementById('select-make').value = mk.id;
+                        onMakeChanged();
+                        document.getElementById('select-model').value = md.id;
+                        onModelChanged();
+                        document.getElementById('select-trim').value = tr.id;
+                        onTrimChanged();
+                        return;
+                    }
+                }
+            }
 
-            document.getElementById('input-fuel-price').value = Number(fuelPrice).toFixed(2);
-            document.getElementById('input-service-cost').value = Math.round(serviceCost);
-
-            const approxKm = Math.min(12000, Math.round((wearPercent / 100.0) * 10000));
-            const oilRange = document.getElementById('oil-range');
-            if (oilRange) {
-                oilRange.value = approxKm;
-                onOilRangeChange(approxKm);
+            // Fallback: выбор первого доступного
+            if (catalogData.length > 0 && catalogData[0].models.length > 0) {
+                document.getElementById('select-make').value = catalogData[0].id;
+                onMakeChanged();
+                document.getElementById('select-model').value = catalogData[0].models[0].id;
+                onModelChanged();
             }
         }
 
-        async function saveConfiguration() {
-            const fuelPrice = parseFloat(document.getElementById('input-fuel-price').value) || 72.40;
-            const serviceCost = parseFloat(document.getElementById('input-service-cost').value) || 9500.0;
+        /* ---------------- СОХРАНЕНИЕ НАСТРОЕК ---------------- */
+        async function saveVehicleSettings() {
+            const trimSelect = document.getElementById('select-trim');
+            const trimId = trimSelect.value;
+            const fuelPrice = parseFloat(document.getElementById('fuel-price-input').value);
 
-            const payload = {
-                user_id: currentUserId,
-                car_id: activeTrimId,
-                current_oil_wear_percent: currentWearPercent,
-                fuel_price_rub: fuelPrice,
-                service_cost_rub: serviceCost
-            };
+            if (!trimId) {
+                showToast({ title: "Ошибка", message: "Выберите комплектацию автомобиля", type: "alert" });
+                return;
+            }
 
+            const btn = document.getElementById('btn-save');
+            btn.classList.add('loading');
+            btn.innerHTML = '<span>⏳</span> Сохранение...';
+
+            const carName = selectedTrimData 
+                ? `${selectedTrimData.make_name} ${selectedTrimData.model_name} ${selectedTrimData.badge_name || ''}`.trim()
+                : 'Мой автомобиль';
+
+            // 1. Немедленная синхронизация в localStorage
+            localStorage.setItem('autoXAK_car_id', trimId);
+            localStorage.setItem('autoXAK_car_name', carName);
+            localStorage.setItem('autoXAK_fuel_price', fuelPrice.toString());
+
+            // 2. Персистентность в PostgreSQL
             try {
-                await fetch(`/api/v1/users/${currentUserId}/profile`, {
+                const res = await fetch(`/api/v1/users/${encodeURIComponent(currentUserId)}/profile`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...AutoXAKSession.getAuthHeaders()
-                    },
-                    body: JSON.stringify(payload)
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        car_id: trimId,
+                        fuel_price_rub: fuelPrice
+                    })
                 });
 
-                localStorage.setItem("autoXAK_profile", JSON.stringify(payload));
-                window.location.href = "/";
+                if (!res.ok) {
+                    console.warn("Сервер профиля вернул статус:", res.status);
+                }
+
+                showToast({ title: "Сохранено", message: `${carName} выбран основным авто`, type: "success" });
+                setTimeout(() => { window.location.href = "/"; }, 700);
             } catch (err) {
-                console.error("Сетевая ошибка сохранения:", err);
-                localStorage.setItem("autoXAK_profile", JSON.stringify(payload));
-                window.location.href = "/";
+                showToast({ title: "Локально сохранено", message: "Настройки применены на устройстве", type: "success" });
+                setTimeout(() => { window.location.href = "/"; }, 700);
+            } finally {
+                btn.classList.remove('loading');
+                btn.innerHTML = '<span>✓</span> Сохранить автомобиль';
             }
         }
 
-        window.addEventListener('DOMContentLoaded', async () => {
-            const session = await AutoXAKSession.ensureAuthenticated();
-            currentUserId = session.userId;
-            await loadCatalog();
-            await loadCurrentConfig();
-            await initGeoLocation();
+        window.addEventListener('DOMContentLoaded', () => {
+            loadCatalog();
         });
     </script>
 </body>
