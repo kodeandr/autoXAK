@@ -1,6 +1,7 @@
 ﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
+  
     <link rel="manifest" href="/static/manifest.json">
     <link rel="apple-touch-icon" href="/static/icon-192.png">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -641,41 +642,27 @@
             }
         }
 
-        async function fetchLiveFuelPrice() {
-            try {
-                const params = new URLSearchParams({
-                    lat: userLocation.lat,
-                    lon: userLocation.lon,
-                    brand: activeBrand,
-                    fuel_grade: activeFuelGrade
-                });
-                const res = await fetch(`/api/v1/fuel/current-price?${params}`);
-                if (res.ok) {
-                    const data = await res.json();
-                    document.getElementById("input-fuel-price").value = Number(data.recommended_price_rub).toFixed(2);
-                    document.getElementById("fuel-source-label").innerText = data.source_label;
-                    document.getElementById("fuel-geo-label").innerText = `${data.region_name} (Код ${data.region_code})`;
-
-                    const dot = document.getElementById("fuel-status-dot");
-                    const badge = document.getElementById("fuel-avail-badge");
-                    if (data.availability_status === "NORMAL") {
-                        dot.style.background = "var(--color-accent-savings)";
-                        badge.style.color = "var(--color-accent-savings)";
-                        badge.innerText = "В наличии";
-                    } else if (data.availability_status === "SHORTAGE") {
-                        dot.style.background = "var(--color-accent-warning)";
-                        badge.style.color = "var(--color-accent-warning)";
-                        badge.innerText = "Очереди / Дефицит";
-                    } else {
-                        dot.style.background = "var(--color-accent-danger)";
-                        badge.style.color = "var(--color-accent-danger)";
-                        badge.innerText = "Перебои с поставками";
-                    }
-                }
-            } catch (err) {
-                console.warn("Сетевой сбой получения котировок топлива:", err);
-            }
+        async function fetchLiveFuelPrice(grade) {
+    const input = document.getElementById("input-fuel-price");
+    const DEFAULT_PRICES = { "АИ-92": 65.20, "ai92": 65.20, "АИ-95": 72.40, "ai95": 72.40, "АИ-100": 101.50, "ai100": 101.50, "ДТ": 80.60, "dt": 80.60 };
+    const gStr = (grade || "АИ-95").toString().trim();
+    let finalPrice = DEFAULT_PRICES[gStr] || 72.40;
+    try {
+        const rawGrade = gStr.toLowerCase().replace(/[^a-z0-9а-я]/g, "");
+        let norm = "ai95";
+        if (rawGrade.includes("92")) norm = "ai92";
+        else if (rawGrade.includes("100")) norm = "ai100";
+        else if (rawGrade.includes("дт") || rawGrade.includes("dt")) norm = "dt";
+        const res = await fetch(`/api/v1/fuel/current-price?region_code=77&brand=rosneft&fuel_grade=${norm}`);
+        if (res.ok) {
+            const data = await res.json();
+            const apiVal = parseFloat(data.recommended_price_rub || (data.prices && data.prices[norm]));
+            if (!isNaN(apiVal) && apiVal > 0) finalPrice = apiVal;
         }
+    } catch (_) {}
+    if (input) input.value = Number(finalPrice).toFixed(2);
+    return finalPrice;
+}
 
         function selectBrand(brand, element) {
             document.querySelectorAll("#brand-chips .chip-btn").forEach(b => b.classList.remove("active"));
@@ -715,18 +702,62 @@
         }
 
         async function loadCatalog() {
-            try {
-                const res = await fetch("/api/v1/vehicles/catalog", {
-                    headers: AutoXAKSession.getAuthHeaders()
-                });
-                if (res.ok) {
-                    catalogData = await res.json();
-                    populateMakeSelector();
+    try {
+        const res = await fetch("/api/v1/vehicles/catalog");
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const raw = await res.json();
+        const items = Array.isArray(raw) ? raw : (raw.catalog || []);
+
+        if (items.length > 0 && Array.isArray(items[0].models)) {
+            catalogData = items;
+        } else {
+            const makesMap = {};
+            for (const item of items) {
+                const mkName = item.make || item.name || "Марка";
+                const mkId = (item.make_id || mkName).toLowerCase().replace(/[^a-z0-9]/gi, "_");
+                if (!makesMap[mkId]) {
+                    makesMap[mkId] = { id: mkId, name: mkName, models: {} };
                 }
-            } catch (err) {
-                console.warn("Каталог офлайн:", err);
+                const mdName = item.model || "Модель";
+                const mdId = (item.model_id || (mkId + "_" + mdName)).toLowerCase().replace(/[^a-z0-9]/gi, "_");
+                if (!makesMap[mkId].models[mdId]) {
+                    makesMap[mkId].models[mdId] = {
+                        id: mdId,
+                        name: mdName,
+                        body_type: item.body_type || "",
+                        trims: []
+                    };
+                }
+                const bName = item.trim || item.badge_name || item.full_name || item.id;
+                const hpMatch = (bName + "").match(/(\d+)\s*л\.с\./);
+                const hp = item.power_hp || (hpMatch ? hpMatch[1] : (item.rated_power_kw ? Math.round(item.rated_power_kw * 1.36) : "-"));
+                makesMap[mkId].models[mdId].trims.push({
+                    id: item.id,
+                    badge_name: bName,
+                    name: bName,
+                    curb_weight_kg: item.curb_weight_kg || "-",
+                    power_hp: hp,
+                    oil_capacity_l: item.oil_capacity_l || "-",
+                    oil_grade: item.oil_grade || "-",
+                    oil_spec: item.oil_spec || "-",
+                    recommended_oil_brand: item.recommended_oil_brand || "-"
+                });
             }
+            catalogData = Object.values(makesMap).map(m => ({
+                id: m.id,
+                name: m.name,
+                models: Object.values(m.models)
+            }));
         }
+
+        populateMakeSelector(catalogData);
+        if (typeof loadCurrentConfig === "function") {
+            await loadCurrentConfig();
+        }
+    } catch (e) {
+        console.error("Каталог офлайн:", e);
+    }
+}
 
         function populateMakeSelector() {
             const makeSel = document.getElementById("make-selector");

@@ -4,6 +4,11 @@ from typing import Tuple, Union
 
 
 class SignalFilter:
+    def calculate_horizontal_acceleration(self, ax, ay):
+        """Вычисление результирующего горизонтального ускорения: sqrt(ax^2 + ay^2)."""
+        import numpy as np
+        return np.hypot(ax, ay)
+
     def __init__(self, sample_rate_hz: float = 50.0, cutoff_hz: float = 2.5):
         self.fs = sample_rate_hz
         self.cutoff = cutoff_hz

@@ -1,0 +1,1698 @@
+2026-10-12 18:11:20 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-12 18:11:20 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 18:11:20 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 18:11:30 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [fe48e525] START GET /
+2026-10-12 18:11:30 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [fe48e525] FINISH GET / Status=200 (4.75ms)
+2026-10-12 18:11:30 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41408 - "GET / HTTP/1.1" 200
+2026-10-12 18:11:30 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [e33896d2] START GET /static/session.js
+2026-10-12 18:11:30 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [e33896d2] FINISH GET /static/session.js Status=200 (5.91ms)
+2026-10-12 18:11:30 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41408 - "GET /static/session.js HTTP/1.1" 200
+2026-10-12 18:11:30 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [678c81bd] START GET /static/offline_store.js
+2026-10-12 18:11:30 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [fa300afd] START GET /static/manifest.json
+2026-10-12 18:11:30 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [678c81bd] FINISH GET /static/offline_store.js Status=200 (6.25ms)
+2026-10-12 18:11:30 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41430 - "GET /static/offline_store.js HTTP/1.1" 200
+2026-10-12 18:11:30 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [27fd1fbb] START GET /static/manifest.json
+2026-10-12 18:11:30 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [fa300afd] FINISH GET /static/manifest.json Status=200 (4.80ms)
+2026-10-12 18:11:30 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41444 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:11:30 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [27fd1fbb] FINISH GET /static/manifest.json Status=200 (3.07ms)
+2026-10-12 18:11:30 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41448 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:11:31 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [1d0af581] START GET /api/v1/users/dev_4a96eeee705840dc/dashboard
+2026-10-12 18:11:31 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [520cb5e8] START GET /static/sw.js
+2026-10-12 18:11:31 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [b631f199] START GET /static/manifest.json
+2026-10-12 18:11:31 | ERROR    | [autoxak] main.py:328 (log_requests_middleware) -> [1d0af581] UNHANDLED ERROR in GET /api/v1/users/dev_4a96eeee705840dc/dashboard (13.10ms): (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 317, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/main.py", line 699, in get_user_dashboard
+    res = await db.execute(stmt)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 452, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-12 18:11:31 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41430 - "GET /api/v1/users/dev_4a96eeee705840dc/dashboard HTTP/1.1" 500
+2026-10-12 18:11:31 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [520cb5e8] FINISH GET /static/sw.js Status=200 (16.70ms)
+2026-10-12 18:11:31 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [b631f199] FINISH GET /static/manifest.json Status=200 (16.70ms)
+2026-10-12 18:11:31 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41408 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-12 18:11:31 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41444 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:11:31 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [53167678] START GET /static/icon-192.png
+2026-10-12 18:11:31 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [53167678] FINISH GET /static/icon-192.png Status=200 (4.82ms)
+2026-10-12 18:11:31 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41430 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 18:11:32 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [e5bda4fd] START GET /setup
+2026-10-12 18:11:32 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [e5bda4fd] FINISH GET /setup Status=200 (3.78ms)
+2026-10-12 18:11:32 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41430 - "GET /setup HTTP/1.1" 200
+2026-10-12 18:11:32 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [e6d81fdf] START GET /static/manifest.json
+2026-10-12 18:11:32 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [e6d81fdf] FINISH GET /static/manifest.json Status=200 (4.41ms)
+2026-10-12 18:11:32 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41444 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:11:32 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [c95c1138] START GET /api/v1/vehicles/catalog
+2026-10-12 18:11:32 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [95aa355d] START GET /static/manifest.json
+2026-10-12 18:11:32 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [95aa355d] FINISH GET /static/manifest.json Status=200 (5.30ms)
+2026-10-12 18:11:32 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41444 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:11:32 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [c95c1138] FINISH GET /api/v1/vehicles/catalog Status=200 (11.09ms)
+2026-10-12 18:11:32 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41430 - "GET /api/v1/vehicles/catalog HTTP/1.1" 200
+2026-10-12 18:11:32 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [cdb568ab] START GET /favicon.ico
+2026-10-12 18:11:32 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [cdb568ab] FINISH GET /favicon.ico Status=404 (0.89ms)
+2026-10-12 18:11:32 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41480 - "GET /favicon.ico HTTP/1.1" 404
+2026-10-12 18:11:32 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [c293f2ae] START GET /static/icon-192.png
+2026-10-12 18:11:32 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [d13bcfd9] START GET /api/v1/users/dev_4a96eeee705840dc/dashboard
+2026-10-12 18:11:32 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [c293f2ae] FINISH GET /static/icon-192.png Status=200 (6.01ms)
+2026-10-12 18:11:32 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41430 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 18:11:32 | ERROR    | [autoxak] main.py:328 (log_requests_middleware) -> [d13bcfd9] UNHANDLED ERROR in GET /api/v1/users/dev_4a96eeee705840dc/dashboard (3.51ms): (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 317, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/main.py", line 699, in get_user_dashboard
+    res = await db.execute(stmt)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 452, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-12 18:11:32 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41506 - "GET /api/v1/users/dev_4a96eeee705840dc/dashboard HTTP/1.1" 500
+2026-10-12 18:11:57 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [414ac6d7] START GET /static/manifest.json
+2026-10-12 18:11:57 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [414ac6d7] FINISH GET /static/manifest.json Status=200 (4.31ms)
+2026-10-12 18:11:57 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49650 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:11:57 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [d93fac62] START GET /.well-known/appspecific/com.chrome.devtools.json
+2026-10-12 18:11:57 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [d93fac62] FINISH GET /.well-known/appspecific/com.chrome.devtools.json Status=404 (0.75ms)
+2026-10-12 18:11:57 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49676 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404
+2026-10-12 18:11:59 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [160dc11c] START GET /setup
+2026-10-12 18:11:59 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [160dc11c] FINISH GET /setup Status=200 (3.98ms)
+2026-10-12 18:11:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49676 - "GET /setup HTTP/1.1" 200
+2026-10-12 18:11:59 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [66f8614a] START GET /static/session.js
+2026-10-12 18:11:59 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [66f8614a] FINISH GET /static/session.js Status=200 (4.98ms)
+2026-10-12 18:11:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49676 - "GET /static/session.js HTTP/1.1" 200
+2026-10-12 18:11:59 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [1a99aa3c] START GET /static/manifest.json
+2026-10-12 18:11:59 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [e1dd40e3] START GET /static/manifest.json
+2026-10-12 18:11:59 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [1a99aa3c] FINISH GET /static/manifest.json Status=200 (6.46ms)
+2026-10-12 18:11:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49650 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:11:59 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [d041f8d0] START GET /api/v1/vehicles/catalog
+2026-10-12 18:11:59 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [d041f8d0] FINISH GET /api/v1/vehicles/catalog Status=200 (2.82ms)
+2026-10-12 18:11:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49676 - "GET /api/v1/vehicles/catalog HTTP/1.1" 200
+2026-10-12 18:11:59 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [e1dd40e3] FINISH GET /static/manifest.json Status=200 (8.78ms)
+2026-10-12 18:11:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39128 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:11:59 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [ace94213] START GET /.well-known/appspecific/com.chrome.devtools.json
+2026-10-12 18:11:59 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [ace94213] FINISH GET /.well-known/appspecific/com.chrome.devtools.json Status=404 (1.13ms)
+2026-10-12 18:11:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39158 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404
+2026-10-12 18:11:59 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [cb18a614] START GET /static/icon-192.png
+2026-10-12 18:11:59 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [cb18a614] FINISH GET /static/icon-192.png Status=200 (4.69ms)
+2026-10-12 18:11:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39184 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 18:11:59 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [32936dff] START GET /api/v1/users/dev_4a96eeee705840dc/dashboard
+2026-10-12 18:11:59 | ERROR    | [autoxak] main.py:328 (log_requests_middleware) -> [32936dff] UNHANDLED ERROR in GET /api/v1/users/dev_4a96eeee705840dc/dashboard (2.16ms): (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 317, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/main.py", line 699, in get_user_dashboard
+    res = await db.execute(stmt)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 452, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-12 18:11:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39184 - "GET /api/v1/users/dev_4a96eeee705840dc/dashboard HTTP/1.1" 500
+2026-10-12 18:17:26 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-12 18:17:26 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 18:17:26 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [bdb76369] START GET /setup
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [bdb76369] FINISH GET /setup Status=200 (4.21ms)
+2026-10-12 18:18:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:51898 - "GET /setup HTTP/1.1" 200
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [4c46f5f9] START GET /static/session.js
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [4c46f5f9] FINISH GET /static/session.js Status=200 (6.03ms)
+2026-10-12 18:18:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:51898 - "GET /static/session.js HTTP/1.1" 200
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [3a7b8573] START GET /static/manifest.json
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [b4663593] START GET /static/manifest.json
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [e2480b4e] START GET /api/v1/vehicles/catalog
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [3a7b8573] FINISH GET /static/manifest.json Status=200 (19.80ms)
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [b4663593] FINISH GET /static/manifest.json Status=200 (19.11ms)
+2026-10-12 18:18:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:51928 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:18:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:51940 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [e2480b4e] FINISH GET /api/v1/vehicles/catalog Status=200 (22.55ms)
+2026-10-12 18:18:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:51898 - "GET /api/v1/vehicles/catalog HTTP/1.1" 200
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [90538da6] START GET /.well-known/appspecific/com.chrome.devtools.json
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [90538da6] FINISH GET /.well-known/appspecific/com.chrome.devtools.json Status=404 (1.15ms)
+2026-10-12 18:18:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:51960 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [de3bb12f] START GET /api/v1/users/dev_4a96eeee705840dc/dashboard
+2026-10-12 18:18:22 | ERROR    | [autoxak] main.py:328 (log_requests_middleware) -> [de3bb12f] UNHANDLED ERROR in GET /api/v1/users/dev_4a96eeee705840dc/dashboard (3.18ms): (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 317, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/main.py", line 699, in get_user_dashboard
+    res = await db.execute(stmt)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 452, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-12 18:18:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:51898 - "GET /api/v1/users/dev_4a96eeee705840dc/dashboard HTTP/1.1" 500
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [74a2ad91] START GET /api/v1/users/dev_4a96eeee705840dc/dashboard
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [4b2ee968] START GET /api/v1/fuel/current-price
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [7d234c9f] START GET /static/icon-192.png
+2026-10-12 18:18:22 | ERROR    | [autoxak] main.py:328 (log_requests_middleware) -> [74a2ad91] UNHANDLED ERROR in GET /api/v1/users/dev_4a96eeee705840dc/dashboard (5.05ms): (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 317, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/main.py", line 699, in get_user_dashboard
+    res = await db.execute(stmt)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 452, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-12 18:18:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:51986 - "GET /api/v1/users/dev_4a96eeee705840dc/dashboard HTTP/1.1" 500
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [7d234c9f] FINISH GET /static/icon-192.png Status=200 (17.02ms)
+2026-10-12 18:18:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:51990 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [4b2ee968] FINISH GET /api/v1/fuel/current-price Status=200 (27.76ms)
+2026-10-12 18:18:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:51980 - "GET /api/v1/fuel/current-price?region_code=77&brand=rosneft&fuel_grade=ai95 HTTP/1.1" 200
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [0bb12393] START GET /api/v1/fuel/current-price
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [0bb12393] FINISH GET /api/v1/fuel/current-price Status=200 (3.00ms)
+2026-10-12 18:18:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:51986 - "GET /api/v1/fuel/current-price?region_code=77&brand=rosneft&fuel_grade=ai95 HTTP/1.1" 200
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [71dc222d] START GET /api/v1/fuel/current-price
+2026-10-12 18:18:22 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [71dc222d] FINISH GET /api/v1/fuel/current-price Status=200 (2.15ms)
+2026-10-12 18:18:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:51986 - "GET /api/v1/fuel/current-price?region_code=77&brand=rosneft&fuel_grade=ai95 HTTP/1.1" 200
+2026-10-12 18:18:29 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [5864506a] START GET /api/v1/fuel/current-price
+2026-10-12 18:18:29 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [5864506a] FINISH GET /api/v1/fuel/current-price Status=200 (2.18ms)
+2026-10-12 18:18:29 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43864 - "GET /api/v1/fuel/current-price?region_code=77&brand=rosneft&fuel_grade=ai95 HTTP/1.1" 200
+2026-10-12 18:18:35 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [dac1bcae] START POST /api/v1/users/dev_4a96eeee705840dc/profile
+2026-10-12 18:18:35 | ERROR    | [autoxak] main.py:328 (log_requests_middleware) -> [dac1bcae] UNHANDLED ERROR in POST /api/v1/users/dev_4a96eeee705840dc/profile (3.20ms): (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 317, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/main.py", line 928, in update_user_vehicle_profile
+    res = await db.execute(user_stmt)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 452, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-12 18:18:35 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43876 - "POST /api/v1/users/dev_4a96eeee705840dc/profile HTTP/1.1" 500
+2026-10-12 18:18:35 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [c8988996] START GET /
+2026-10-12 18:18:35 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [c8988996] FINISH GET / Status=200 (4.37ms)
+2026-10-12 18:18:35 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43876 - "GET / HTTP/1.1" 200
+2026-10-12 18:18:35 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [6574c705] START GET /static/session.js
+2026-10-12 18:18:35 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [6574c705] FINISH GET /static/session.js Status=200 (5.70ms)
+2026-10-12 18:18:35 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43876 - "GET /static/session.js HTTP/1.1" 200
+2026-10-12 18:18:35 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [2de60370] START GET /static/offline_store.js
+2026-10-12 18:18:35 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [2de60370] FINISH GET /static/offline_store.js Status=200 (6.09ms)
+2026-10-12 18:18:35 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43916 - "GET /static/offline_store.js HTTP/1.1" 200
+2026-10-12 18:18:35 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [fc724662] START GET /static/manifest.json
+2026-10-12 18:18:35 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [fc724662] FINISH GET /static/manifest.json Status=200 (6.07ms)
+2026-10-12 18:18:35 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [4ba14b0c] START GET /api/v1/users/dev_4a96eeee705840dc/dashboard
+2026-10-12 18:18:35 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43954 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:18:35 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [143b445f] START GET /.well-known/appspecific/com.chrome.devtools.json
+2026-10-12 18:18:35 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [143b445f] FINISH GET /.well-known/appspecific/com.chrome.devtools.json Status=404 (0.94ms)
+2026-10-12 18:18:35 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43876 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404
+2026-10-12 18:18:35 | ERROR    | [autoxak] main.py:328 (log_requests_middleware) -> [4ba14b0c] UNHANDLED ERROR in GET /api/v1/users/dev_4a96eeee705840dc/dashboard (6.33ms): (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 317, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/main.py", line 699, in get_user_dashboard
+    res = await db.execute(stmt)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 452, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-12 18:18:35 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43916 - "GET /api/v1/users/dev_4a96eeee705840dc/dashboard HTTP/1.1" 500
+2026-10-12 18:18:35 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [dc9eb2df] START GET /static/icon-192.png
+2026-10-12 18:18:35 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [dc9eb2df] FINISH GET /static/icon-192.png Status=200 (4.61ms)
+2026-10-12 18:18:35 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43976 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [46b631dc] START GET /setup
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [46b631dc] FINISH GET /setup Status=200 (3.74ms)
+2026-10-12 18:18:36 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43916 - "GET /setup HTTP/1.1" 200
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [dd5b4749] START GET /static/session.js
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [dd5b4749] FINISH GET /static/session.js Status=200 (5.31ms)
+2026-10-12 18:18:36 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43916 - "GET /static/session.js HTTP/1.1" 200
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [305ccdca] START GET /static/manifest.json
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [33d688d8] START GET /.well-known/appspecific/com.chrome.devtools.json
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [33d688d8] FINISH GET /.well-known/appspecific/com.chrome.devtools.json Status=404 (1.00ms)
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [305ccdca] FINISH GET /static/manifest.json Status=200 (7.10ms)
+2026-10-12 18:18:36 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43916 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404
+2026-10-12 18:18:36 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43954 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [458f5ba3] START GET /api/v1/vehicles/catalog
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [458f5ba3] FINISH GET /api/v1/vehicles/catalog Status=200 (6.44ms)
+2026-10-12 18:18:36 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43976 - "GET /api/v1/vehicles/catalog HTTP/1.1" 200
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [9f57fce3] START GET /static/icon-192.png
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [a72684db] START GET /api/v1/users/dev_4a96eeee705840dc/dashboard
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [6ca32822] START GET /static/sw.js
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [9f57fce3] FINISH GET /static/icon-192.png Status=200 (9.05ms)
+2026-10-12 18:18:36 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43976 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 18:18:36 | ERROR    | [autoxak] main.py:328 (log_requests_middleware) -> [a72684db] UNHANDLED ERROR in GET /api/v1/users/dev_4a96eeee705840dc/dashboard (5.73ms): (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 317, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/main.py", line 699, in get_user_dashboard
+    res = await db.execute(stmt)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 452, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-12 18:18:36 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:44022 - "GET /api/v1/users/dev_4a96eeee705840dc/dashboard HTTP/1.1" 500
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [6ca32822] FINISH GET /static/sw.js Status=200 (7.18ms)
+2026-10-12 18:18:36 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:44030 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [583428bd] START GET /api/v1/fuel/current-price
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [38ec181a] START GET /api/v1/users/dev_4a96eeee705840dc/dashboard
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [583428bd] FINISH GET /api/v1/fuel/current-price Status=200 (3.79ms)
+2026-10-12 18:18:36 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:44022 - "GET /api/v1/fuel/current-price?region_code=77&brand=rosneft&fuel_grade=ai95 HTTP/1.1" 200
+2026-10-12 18:18:36 | ERROR    | [autoxak] main.py:328 (log_requests_middleware) -> [38ec181a] UNHANDLED ERROR in GET /api/v1/users/dev_4a96eeee705840dc/dashboard (3.43ms): (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 317, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/main.py", line 699, in get_user_dashboard
+    res = await db.execute(stmt)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 452, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column users.name does not exist
+[SQL: SELECT users.id, users.name, users.email, users.hashed_password, users.car_id, users.fuel_price_rub, users.service_cost_rub, users.total_savings_rub, users.total_fuel_saved_liters, users.range_bank_km, users.current_oil_wear_percent, users.created_at 
+FROM users 
+WHERE users.id = $1::VARCHAR]
+[parameters: ('dev_4a96eeee705840dc',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-12 18:18:36 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43976 - "GET /api/v1/users/dev_4a96eeee705840dc/dashboard HTTP/1.1" 500
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [ab961078] START GET /api/v1/fuel/current-price
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [ab961078] FINISH GET /api/v1/fuel/current-price Status=200 (2.62ms)
+2026-10-12 18:18:36 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:44030 - "GET /api/v1/fuel/current-price?region_code=77&brand=rosneft&fuel_grade=ai95 HTTP/1.1" 200
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [cf0e604f] START GET /api/v1/fuel/current-price
+2026-10-12 18:18:36 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [cf0e604f] FINISH GET /api/v1/fuel/current-price Status=200 (1.99ms)
+2026-10-12 18:18:36 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43976 - "GET /api/v1/fuel/current-price?region_code=77&brand=rosneft&fuel_grade=ai95 HTTP/1.1" 200
+2026-10-12 18:18:37 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [4e8eb63e] START GET /static/manifest.json
+2026-10-12 18:18:37 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [4e8eb63e] FINISH GET /static/manifest.json Status=200 (4.55ms)
+2026-10-12 18:18:37 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43954 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:21:58 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [58de7d16] START GET /api/v1/users/dev_4a96eeee705840dc/dashboard
+2026-10-12 18:21:58 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [58de7d16] FINISH GET /api/v1/users/dev_4a96eeee705840dc/dashboard Status=200 (4.44ms)
+2026-10-12 18:21:58 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41722 - "GET /api/v1/users/dev_4a96eeee705840dc/dashboard HTTP/1.1" 200
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [9966627b] START GET /setup
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [9966627b] FINISH GET /setup Status=200 (3.40ms)
+2026-10-12 18:22:07 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56326 - "GET /setup HTTP/1.1" 200
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [666d8d7f] START GET /static/session.js
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [666d8d7f] FINISH GET /static/session.js Status=200 (5.52ms)
+2026-10-12 18:22:07 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56326 - "GET /static/session.js HTTP/1.1" 200
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [c0b3da00] START GET /static/manifest.json
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [bb34de79] START GET /api/v1/vehicles/catalog
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [f58bc304] START GET /static/manifest.json
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [bb34de79] FINISH GET /api/v1/vehicles/catalog Status=200 (4.39ms)
+2026-10-12 18:22:07 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56326 - "GET /api/v1/vehicles/catalog HTTP/1.1" 200
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [f58bc304] FINISH GET /static/manifest.json Status=200 (5.80ms)
+2026-10-12 18:22:07 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56360 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [66c89697] START GET /api/v1/users/dev_4a96eeee705840dc/dashboard
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [c0b3da00] FINISH GET /static/manifest.json Status=200 (11.84ms)
+2026-10-12 18:22:07 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56358 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [66c89697] FINISH GET /api/v1/users/dev_4a96eeee705840dc/dashboard Status=200 (7.39ms)
+2026-10-12 18:22:07 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56326 - "GET /api/v1/users/dev_4a96eeee705840dc/dashboard HTTP/1.1" 200
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [c2099ba1] START GET /.well-known/appspecific/com.chrome.devtools.json
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [c2099ba1] FINISH GET /.well-known/appspecific/com.chrome.devtools.json Status=404 (0.89ms)
+2026-10-12 18:22:07 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56396 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [0553ed15] START GET /static/icon-192.png
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [0553ed15] FINISH GET /static/icon-192.png Status=200 (5.19ms)
+2026-10-12 18:22:07 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56412 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [8aadb0e0] START GET /api/v1/users/dev_4a96eeee705840dc/dashboard
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [8aadb0e0] FINISH GET /api/v1/users/dev_4a96eeee705840dc/dashboard Status=200 (3.11ms)
+2026-10-12 18:22:07 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56396 - "GET /api/v1/users/dev_4a96eeee705840dc/dashboard HTTP/1.1" 200
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [6798bfc4] START GET /api/v1/fuel/current-price
+2026-10-12 18:22:07 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [6798bfc4] FINISH GET /api/v1/fuel/current-price Status=200 (2.63ms)
+2026-10-12 18:22:07 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56396 - "GET /api/v1/fuel/current-price?region_code=77&brand=rosneft&fuel_grade=ai95 HTTP/1.1" 200
+2026-10-12 18:22:13 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [7644c793] START POST /api/v1/users/dev_4a96eeee705840dc/profile
+2026-10-12 18:22:13 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [7644c793] FINISH POST /api/v1/users/dev_4a96eeee705840dc/profile Status=200 (7.72ms)
+2026-10-12 18:22:13 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47234 - "POST /api/v1/users/dev_4a96eeee705840dc/profile HTTP/1.1" 200
+2026-10-12 18:22:13 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [59bf4c01] START GET /
+2026-10-12 18:22:13 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [59bf4c01] FINISH GET / Status=200 (4.88ms)
+2026-10-12 18:22:13 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47234 - "GET / HTTP/1.1" 200
+2026-10-12 18:22:13 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [f23a4393] START GET /static/session.js
+2026-10-12 18:22:13 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [f23a4393] FINISH GET /static/session.js Status=200 (5.23ms)
+2026-10-12 18:22:13 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47234 - "GET /static/session.js HTTP/1.1" 200
+2026-10-12 18:22:13 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [3383f99c] START GET /static/offline_store.js
+2026-10-12 18:22:13 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [3383f99c] FINISH GET /static/offline_store.js Status=200 (7.07ms)
+2026-10-12 18:22:13 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47234 - "GET /static/offline_store.js HTTP/1.1" 200
+2026-10-12 18:22:13 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [ff705bd0] START GET /static/manifest.json
+2026-10-12 18:22:13 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [a0d22eef] START GET /.well-known/appspecific/com.chrome.devtools.json
+2026-10-12 18:22:13 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [a0d22eef] FINISH GET /.well-known/appspecific/com.chrome.devtools.json Status=404 (1.39ms)
+2026-10-12 18:22:13 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [ff705bd0] FINISH GET /static/manifest.json Status=200 (7.70ms)
+2026-10-12 18:22:13 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47234 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404
+2026-10-12 18:22:13 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47282 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:22:13 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [70c9d5cb] START GET /api/v1/users/dev_4a96eeee705840dc/dashboard
+2026-10-12 18:22:13 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [70c9d5cb] FINISH GET /api/v1/users/dev_4a96eeee705840dc/dashboard Status=200 (5.11ms)
+2026-10-12 18:22:13 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47270 - "GET /api/v1/users/dev_4a96eeee705840dc/dashboard HTTP/1.1" 200
+2026-10-12 18:22:13 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [53889aab] START GET /static/icon-192.png
+2026-10-12 18:22:13 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [53889aab] FINISH GET /static/icon-192.png Status=200 (4.44ms)
+2026-10-12 18:22:13 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47320 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 18:22:15 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [ebc5e024] START GET /static/manifest.json
+2026-10-12 18:22:15 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [ebc5e024] FINISH GET /static/manifest.json Status=200 (4.16ms)
+2026-10-12 18:22:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47282 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:22:16 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [d8b941d2] START GET /history
+2026-10-12 18:22:16 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [d8b941d2] FINISH GET /history Status=200 (4.49ms)
+2026-10-12 18:22:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47270 - "GET /history HTTP/1.1" 200
+2026-10-12 18:22:16 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [baea1019] START GET /.well-known/appspecific/com.chrome.devtools.json
+2026-10-12 18:22:16 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [baea1019] FINISH GET /.well-known/appspecific/com.chrome.devtools.json Status=404 (1.15ms)
+2026-10-12 18:22:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47320 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404
+2026-10-12 18:22:16 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [d6f764e4] START GET /static/session.js
+2026-10-12 18:22:16 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [c9435813] START GET /static/manifest.json
+2026-10-12 18:22:16 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [419a718f] START GET /static/manifest.json
+2026-10-12 18:22:16 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [c9435813] FINISH GET /static/manifest.json Status=200 (4.31ms)
+2026-10-12 18:22:16 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [d6f764e4] FINISH GET /static/session.js Status=200 (5.82ms)
+2026-10-12 18:22:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47282 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:22:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47270 - "GET /static/session.js HTTP/1.1" 200
+2026-10-12 18:22:16 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [419a718f] FINISH GET /static/manifest.json Status=200 (4.52ms)
+2026-10-12 18:22:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47348 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:22:16 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [9f81a251] START GET /api/v1/users/dev_4a96eeee705840dc/analytics/period
+2026-10-12 18:22:16 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [c1cbf03d] START GET /static/sw.js
+2026-10-12 18:22:16 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [9f81a251] FINISH GET /api/v1/users/dev_4a96eeee705840dc/analytics/period Status=200 (12.14ms)
+2026-10-12 18:22:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47270 - "GET /api/v1/users/dev_4a96eeee705840dc/analytics/period?start_date=2026-09-12T18%3A22%3A16.405Z&end_date=2026-10-12T18%3A22%3A16.405Z HTTP/1.1" 200
+2026-10-12 18:22:16 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [c1cbf03d] FINISH GET /static/sw.js Status=200 (7.39ms)
+2026-10-12 18:22:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47320 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-12 18:22:16 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [84bfef9f] START GET /static/icon-192.png
+2026-10-12 18:22:16 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [84bfef9f] FINISH GET /static/icon-192.png Status=200 (5.23ms)
+2026-10-12 18:22:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47374 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 18:22:19 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [96f0e256] START GET /api/v1/users/dev_4a96eeee705840dc/analytics/period
+2026-10-12 18:22:19 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [96f0e256] FINISH GET /api/v1/users/dev_4a96eeee705840dc/analytics/period Status=200 (5.28ms)
+2026-10-12 18:22:19 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47270 - "GET /api/v1/users/dev_4a96eeee705840dc/analytics/period?start_date=2026-10-11T21%3A00%3A00.000Z&end_date=2026-10-12T18%3A22%3A19.078Z HTTP/1.1" 200
+2026-10-12 18:22:19 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [527ba467] START GET /api/v1/users/dev_4a96eeee705840dc/analytics/period
+2026-10-12 18:22:19 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [527ba467] FINISH GET /api/v1/users/dev_4a96eeee705840dc/analytics/period Status=200 (3.97ms)
+2026-10-12 18:22:19 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47270 - "GET /api/v1/users/dev_4a96eeee705840dc/analytics/period?start_date=2026-10-05T18%3A22%3A19.570Z&end_date=2026-10-12T18%3A22%3A19.570Z HTTP/1.1" 200
+2026-10-12 18:22:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [50d71309] START GET /
+2026-10-12 18:22:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [50d71309] FINISH GET / Status=200 (3.22ms)
+2026-10-12 18:22:26 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42138 - "GET / HTTP/1.1" 200
+2026-10-12 18:22:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [f9e069f4] START GET /static/session.js
+2026-10-12 18:22:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [f9e069f4] FINISH GET /static/session.js Status=200 (5.63ms)
+2026-10-12 18:22:26 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42138 - "GET /static/session.js HTTP/1.1" 200
+2026-10-12 18:22:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [cb3bda20] START GET /static/offline_store.js
+2026-10-12 18:22:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [efc8d3d1] START GET /static/manifest.json
+2026-10-12 18:22:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [50b1d791] START GET /static/manifest.json
+2026-10-12 18:22:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [cb3bda20] FINISH GET /static/offline_store.js Status=200 (7.06ms)
+2026-10-12 18:22:26 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42158 - "GET /static/offline_store.js HTTP/1.1" 200
+2026-10-12 18:22:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [09c6ca62] START GET /.well-known/appspecific/com.chrome.devtools.json
+2026-10-12 18:22:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [09c6ca62] FINISH GET /.well-known/appspecific/com.chrome.devtools.json Status=404 (1.01ms)
+2026-10-12 18:22:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [efc8d3d1] FINISH GET /static/manifest.json Status=200 (8.07ms)
+2026-10-12 18:22:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [50b1d791] FINISH GET /static/manifest.json Status=200 (7.26ms)
+2026-10-12 18:22:26 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42138 - "GET /.well-known/appspecific/com.chrome.devtools.json HTTP/1.1" 404
+2026-10-12 18:22:26 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42200 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:22:26 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42210 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-12 18:22:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [0067b937] START GET /api/v1/users/dev_4a96eeee705840dc/dashboard
+2026-10-12 18:22:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [0067b937] FINISH GET /api/v1/users/dev_4a96eeee705840dc/dashboard Status=200 (2.92ms)
+2026-10-12 18:22:26 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42158 - "GET /api/v1/users/dev_4a96eeee705840dc/dashboard HTTP/1.1" 200
+2026-10-12 18:22:26 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [c62d609a] START GET /static/icon-192.png
+2026-10-12 18:22:26 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [c62d609a] FINISH GET /static/icon-192.png Status=200 (5.00ms)
+2026-10-12 18:22:26 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42226 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [7baa1abd] START GET /health
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [7baa1abd] FINISH GET /health Status=200 (1.42ms)
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [6b088f02] START POST /api/v1/telemetry/session
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:462 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 18:24:38 | ERROR    | [autoxak] main.py:687 (process_telemetry_session) -> Критический сбой сессии test_user_coverage: 'SignalFilter' object has no attribute 'calculate_horizontal_acceleration'
+Traceback (most recent call last):
+  File "/app/app/main.py", line 485, in process_telemetry_session
+    horiz_acc = signal_filter.calculate_horizontal_acceleration(filt_x, filt_y)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SignalFilter' object has no attribute 'calculate_horizontal_acceleration'
+
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [6b088f02] FINISH POST /api/v1/telemetry/session Status=500 (18.50ms)
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [de6761d4] START POST /api/v1/telemetry/session
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:462 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 18:24:38 | ERROR    | [autoxak] main.py:687 (process_telemetry_session) -> Критический сбой сессии test_user_coverage: 'SignalFilter' object has no attribute 'calculate_horizontal_acceleration'
+Traceback (most recent call last):
+  File "/app/app/main.py", line 485, in process_telemetry_session
+    horiz_acc = signal_filter.calculate_horizontal_acceleration(filt_x, filt_y)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SignalFilter' object has no attribute 'calculate_horizontal_acceleration'
+
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [de6761d4] FINISH POST /api/v1/telemetry/session Status=500 (12.29ms)
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [c7fe9dad] START GET /api/v1/users/test_user_coverage/dashboard
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [c7fe9dad] FINISH GET /api/v1/users/test_user_coverage/dashboard Status=200 (31.00ms)
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [28aeb7b9] START POST /api/v1/telemetry/session
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:462 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 18:24:38 | ERROR    | [autoxak] main.py:687 (process_telemetry_session) -> Критический сбой сессии test_user_coverage: 'SignalFilter' object has no attribute 'calculate_horizontal_acceleration'
+Traceback (most recent call last):
+  File "/app/app/main.py", line 485, in process_telemetry_session
+    horiz_acc = signal_filter.calculate_horizontal_acceleration(filt_x, filt_y)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SignalFilter' object has no attribute 'calculate_horizontal_acceleration'
+
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [28aeb7b9] FINISH POST /api/v1/telemetry/session Status=500 (11.85ms)
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [09bfdc98] START GET /api/v1/users/test_user_coverage/trips
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [09bfdc98] FINISH GET /api/v1/users/test_user_coverage/trips Status=200 (5.98ms)
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [cb164a68] START POST /api/v1/telemetry/session
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:462 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 18:24:38 | ERROR    | [autoxak] main.py:687 (process_telemetry_session) -> Критический сбой сессии test_user_coverage: 'SignalFilter' object has no attribute 'calculate_horizontal_acceleration'
+Traceback (most recent call last):
+  File "/app/app/main.py", line 485, in process_telemetry_session
+    horiz_acc = signal_filter.calculate_horizontal_acceleration(filt_x, filt_y)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SignalFilter' object has no attribute 'calculate_horizontal_acceleration'
+
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [cb164a68] FINISH POST /api/v1/telemetry/session Status=500 (40.50ms)
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [2096d6c9] START GET /api/v1/users/test_user_coverage/analytics/period
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [2096d6c9] FINISH GET /api/v1/users/test_user_coverage/analytics/period Status=200 (5.88ms)
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [adfcb502] START GET /api/v1/users/test_user_coverage/analytics/period
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [adfcb502] FINISH GET /api/v1/users/test_user_coverage/analytics/period Status=200 (3.06ms)
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [0703af25] START GET /
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [0703af25] FINISH GET / Status=200 (4.81ms)
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [d614d367] START GET /setup
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [d614d367] FINISH GET /setup Status=200 (2.42ms)
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [1983da9a] START GET /history
+2026-10-12 18:24:38 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [1983da9a] FINISH GET /history Status=200 (2.86ms)
+2026-10-12 18:28:33 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-12 18:28:33 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-12 18:28:33 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [f5704055] START GET /health
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [f5704055] FINISH GET /health Status=200 (1.34ms)
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [ba59b2ff] START POST /api/v1/telemetry/session
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:462 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:649 (process_telemetry_session) -> Сессия сохранена (60bda40f-6b64-4d90-9c46-0156f0840a12): 0.57 км, +0.1 км запаса хода, +0.01 л топлива
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [ba59b2ff] FINISH POST /api/v1/telemetry/session Status=200 (48.74ms)
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [2d886d2a] START POST /api/v1/telemetry/session
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:462 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:649 (process_telemetry_session) -> Сессия сохранена (84f722cb-c5a8-4d4d-a78c-c60b65a1d21c): 0.57 км, +0.1 км запаса хода, +0.01 л топлива
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [2d886d2a] FINISH POST /api/v1/telemetry/session Status=200 (14.73ms)
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [ad1760e8] START GET /api/v1/users/test_user_coverage/dashboard
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [ad1760e8] FINISH GET /api/v1/users/test_user_coverage/dashboard Status=200 (1.49ms)
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [e2c80ed0] START POST /api/v1/telemetry/session
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:462 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:649 (process_telemetry_session) -> Сессия сохранена (187dc3b2-93ea-436e-b11d-bcdde0cac2b5): 0.57 км, +0.1 км запаса хода, +0.01 л топлива
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [e2c80ed0] FINISH POST /api/v1/telemetry/session Status=200 (13.35ms)
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [d9ab3669] START GET /api/v1/users/test_user_coverage/trips
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [d9ab3669] FINISH GET /api/v1/users/test_user_coverage/trips Status=200 (4.62ms)
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [a9a7389e] START POST /api/v1/telemetry/session
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:462 (process_telemetry_session) -> Получена сессия test-session-coverage-001 (user=test_user_coverage, точек=3000)
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:649 (process_telemetry_session) -> Сессия сохранена (262e924e-eb0a-40f9-a556-7ea93f89a79e): 0.57 км, +0.1 км запаса хода, +0.01 л топлива
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [a9a7389e] FINISH POST /api/v1/telemetry/session Status=200 (42.09ms)
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [e6e70f1f] START GET /api/v1/users/test_user_coverage/analytics/period
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [e6e70f1f] FINISH GET /api/v1/users/test_user_coverage/analytics/period Status=200 (5.53ms)
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [e9d29a45] START GET /api/v1/users/test_user_coverage/analytics/period
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [e9d29a45] FINISH GET /api/v1/users/test_user_coverage/analytics/period Status=200 (2.82ms)
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [8489db40] START GET /
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [8489db40] FINISH GET / Status=200 (4.11ms)
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [c8069730] START GET /setup
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [c8069730] FINISH GET /setup Status=200 (2.21ms)
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:314 (log_requests_middleware) -> [df1311b3] START GET /history
+2026-10-12 18:29:14 | INFO     | [autoxak] main.py:319 (log_requests_middleware) -> [df1311b3] FINISH GET /history Status=200 (2.72ms)
