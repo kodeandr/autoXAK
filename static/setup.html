@@ -4,6 +4,10 @@
     <link rel="manifest" href="/static/manifest.json">
     <link rel="apple-touch-icon" href="/static/icon-192.png">
     <link rel="icon" href="data:,">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="autoXAK">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#121417">
@@ -27,112 +31,264 @@
             --border-strong: rgba(148, 163, 184, 0.32);
             --radius-btn: 16px;
             --radius-input: 14px;
-            --radius-card: 20px;
+            --radius-card: 22px;
             --radius-pill: 9999px;
             --shadow-card: 0 14px 36px rgba(0, 0, 0, 0.65);
+
+            /* Безопасные системные зоны экрана смартфона (Safe Area Insets) */
+            --sat: env(safe-area-inset-top, 0px);
+            --sab: env(safe-area-inset-bottom, 0px);
+            --sal: env(safe-area-inset-left, 0px);
+            --sar: env(safe-area-inset-right, 0px);
         }
 
         *, *::before, *::after {
-            box-sizing: border-box; margin: 0; padding: 0;
-            font-family: var(--font-sans); -webkit-tap-highlight-color: transparent; user-select: none;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-sans);
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        input, select, textarea {
+            user-select: auto;
+            -webkit-user-select: auto;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-screen);
+            color: var(--text-primary);
+            overflow: hidden;
+            position: fixed;
+            overscroll-behavior: none;
         }
 
         body {
-            background-color: #000000;
-            display: flex; justify-content: center; align-items: center;
-            min-height: 100vh; color: var(--text-primary);
-            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
         }
 
+        /* ОСНОВНОЙ КОНТЕЙНЕР: без рамок, 100% высоты и ширины на мобильных устройствах */
         .mobile-container {
-            width: 100%; max-width: 414px; height: 100vh; max-height: 890px;
-            background-color: var(--bg-screen); border: 1px solid var(--border-soft);
-            border-radius: 44px; box-shadow: 0 0 60px rgba(0, 0, 0, 0.95);
-            display: flex; flex-direction: column; overflow: hidden; position: relative;
+            width: 100%;
+            max-width: 480px;
+            height: 100%;
+            height: 100dvh;
+            background-color: var(--bg-screen);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
         }
 
         /* ---------------- TOAST-УВЕДОМЛЕНИЯ ---------------- */
         .inapp-toast {
-            position: absolute; top: 18px; left: 16px; right: 16px;
-            background: rgba(30, 34, 40, 0.96); backdrop-filter: blur(20px);
-            border: 1.5px solid var(--accent-lime); border-radius: var(--radius-btn);
-            padding: 12px 14px; display: flex; align-items: center; gap: 12px; z-index: 600;
-            transform: translateY(-160%); opacity: 0; transition: transform 0.35s ease, opacity 0.3s ease;
+            position: absolute;
+            top: calc(var(--sat) + 14px);
+            left: calc(var(--sal) + 16px);
+            right: calc(var(--sar) + 16px);
+            background: rgba(30, 34, 40, 0.96);
+            backdrop-filter: blur(20px);
+            border: 1.5px solid var(--accent-lime);
+            border-radius: var(--radius-btn);
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 600;
+            transform: translateY(-180%);
+            opacity: 0;
+            transition: transform 0.35s ease, opacity 0.3s ease;
         }
         .inapp-toast.visible { transform: translateY(0); opacity: 1; }
         .inapp-toast.toast-alert { border-color: var(--accent-amber); }
 
         /* ---------------- ШАПКА НАВИГАЦИИ ---------------- */
         .top-nav {
-            padding: 20px 20px 14px; display: flex; align-items: center; justify-content: space-between;
-            border-bottom: 1px solid var(--border-soft); background: var(--bg-screen); z-index: 10;
+            flex-shrink: 0;
+            padding-top: calc(var(--sat) + 16px);
+            padding-bottom: 14px;
+            padding-left: calc(var(--sal) + 18px);
+            padding-right: calc(var(--sar) + 18px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-soft);
+            background: var(--bg-screen);
+            z-index: 10;
         }
         .btn-back {
-            background: none; border: none; color: var(--text-primary);
-            font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 6px;
-            cursor: pointer; text-decoration: none; padding: 4px 0;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-soft);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 13px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            padding: 7px 12px;
+            transition: border-color 0.2s, color 0.2s;
         }
-        .btn-back:hover { color: var(--accent-lime); }
-        .nav-title { font-size: 15px; font-weight: 700; color: var(--text-primary); }
-        .nav-placeholder { width: 48px; }
+        .btn-back:active {
+            border-color: var(--accent-lime);
+            color: var(--accent-lime);
+        }
+        .nav-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .nav-placeholder { width: 72px; }
 
         /* ---------------- СКРОЛЛ-КОНТЕНТ ---------------- */
         .content-scroll {
-            flex-grow: 1; overflow-y: auto; padding: 20px;
-            display: flex; flex-direction: column; gap: 16px; scrollbar-width: none;
+            flex: 1 1 auto;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-top: 18px;
+            padding-left: calc(var(--sal) + 18px);
+            padding-right: calc(var(--sar) + 18px);
+            padding-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scrollbar-width: none;
         }
         .content-scroll::-webkit-scrollbar { display: none; }
 
         .section-card {
-            background: var(--bg-surface); border: 1px solid var(--border-soft);
-            border-radius: var(--radius-card); padding: 18px 16px; display: flex; flex-direction: column; gap: 14px;
+            background: var(--bg-surface);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-card);
+            padding: 18px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            box-shadow: var(--shadow-card);
         }
 
         .section-header { display: flex; flex-direction: column; gap: 4px; }
-        .section-title { font-size: 14px; font-weight: 700; color: var(--text-primary); }
-        .section-subtitle { font-size: 12px; color: var(--text-secondary); line-height: 1.4; }
+        .section-title { font-size: 15px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.2px; }
+        .section-subtitle { font-size: 12px; color: var(--text-secondary); line-height: 1.45; }
 
         .form-group { display: flex; flex-direction: column; gap: 6px; }
-        .form-label { font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+        .form-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); }
 
+        /* Шрифт 16px предотвращает принудительный зум страницы в iOS Safari */
         .custom-select {
-            width: 100%; height: 48px; background: var(--bg-screen);
-            border: 1.5px solid var(--border-soft); border-radius: var(--radius-input);
-            padding: 0 14px; color: var(--text-primary); font-size: 14px; outline: none;
-            cursor: pointer; transition: border-color 0.2s; appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238E95A2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat; background-position: right 14px center; background-size: 16px;
+            width: 100%;
+            height: 50px;
+            background: var(--bg-screen);
+            border: 1.5px solid var(--border-soft);
+            border-radius: var(--radius-input);
+            padding: 0 38px 0 14px;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 500;
+            outline: none;
+            cursor: pointer;
+            transition: border-color 0.2s;
+            -webkit-appearance: none;
+            appearance: none;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238E95A2' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+            background-repeat: no-repeat;
+            background-position: right 14px center;
+            background-size: 16px;
+            text-overflow: ellipsis;
         }
         .custom-select:focus { border-color: var(--accent-lime); }
-        .custom-select option { background: var(--bg-surface); color: #FFF; }
+        .custom-select:disabled { opacity: 0.5; cursor: not-allowed; }
+        .custom-select option { background: var(--bg-surface); color: #FFFFFF; }
 
         .input-text {
-            width: 100%; height: 48px; background: var(--bg-screen);
-            border: 1.5px solid var(--border-soft); border-radius: var(--radius-input);
-            padding: 0 14px; color: var(--text-primary); font-size: 15px; font-family: var(--font-mono);
-            outline: none; transition: border-color 0.2s;
+            width: 100%;
+            height: 50px;
+            background: var(--bg-screen);
+            border: 1.5px solid var(--border-soft);
+            border-radius: var(--radius-input);
+            padding: 0 14px;
+            color: var(--text-primary);
+            font-size: 16px;
+            font-weight: 700;
+            font-family: var(--font-mono);
+            outline: none;
+            transition: border-color 0.2s;
         }
         .input-text:focus { border-color: var(--accent-lime); }
 
+        /* ЧИПСЫ БЫСТРОГО ВЫБОРА ТОПЛИВА */
+        .fuel-chips {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+        }
+        .fuel-chip {
+            height: 40px;
+            background: var(--bg-screen);
+            border: 1px solid var(--border-soft);
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        .fuel-chip.active {
+            border-color: var(--accent-lime);
+            background: rgba(210, 250, 88, 0.14);
+            color: var(--accent-lime);
+        }
+
         /* КАРТОЧКА ПАСПОРТНЫХ ДАННЫХ */
         .specs-preview {
-            background: var(--bg-screen); border: 1px solid var(--border-soft);
-            border-radius: var(--radius-input); padding: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+            background: var(--bg-screen);
+            border: 1px solid var(--border-soft);
+            border-radius: var(--radius-input);
+            padding: 14px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
         }
-        .spec-item { display: flex; flex-direction: column; gap: 2px; }
+        .spec-item { display: flex; flex-direction: column; gap: 3px; }
         .spec-item-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
         .spec-item-val { font-size: 13px; font-weight: 700; color: var(--accent-lime); font-family: var(--font-mono); }
 
         /* НИЖНЯЯ ПАНЕЛЬ С КНОПКОЙ */
         .bottom-bar {
-            padding: 12px 20px 44px; background: linear-gradient(180deg, transparent 0%, var(--bg-screen) 60%);
+            flex-shrink: 0;
+            padding: 12px calc(var(--sal) + 18px) calc(var(--sab) + 16px) calc(var(--sar) + 18px);
+            background: linear-gradient(180deg, rgba(18,20,23,0) 0%, rgba(18,20,23,0.92) 28%, var(--bg-screen) 100%);
+            z-index: 50;
         }
         .btn-save {
-            width: 100%; height: 52px; background: var(--accent-lime); color: #121417;
-            border: none; border-radius: var(--radius-btn); font-size: 15px; font-weight: 800; cursor: pointer;
-            box-shadow: 0 6px 24px rgba(210, 250, 88, 0.25); display: flex; align-items: center; justify-content: center; gap: 8px;
-            transition: transform 0.15s ease, background 0.2s ease;
+            width: 100%;
+            height: 56px;
+            background: var(--accent-lime);
+            color: #121417;
+            border: none;
+            border-radius: var(--radius-btn);
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            box-shadow: 0 6px 24px rgba(210, 250, 88, 0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            transition: transform 0.15s ease, background 0.2s ease, opacity 0.2s ease;
         }
         .btn-save:active { transform: scale(0.98); }
         .btn-save.loading { opacity: 0.7; cursor: wait; }
@@ -152,10 +308,10 @@
         <!-- НАВИГАЦИОННАЯ ШАПКА -->
         <header class="top-nav">
             <a href="/" class="btn-back">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
                 <span>Назад</span>
             </a>
-            <span class="nav-title">Настройки автомобиля</span>
+            <span class="nav-title">Настройки авто</span>
             <div class="nav-placeholder"></div>
         </header>
 
@@ -165,25 +321,25 @@
             <article class="section-card">
                 <div class="section-header">
                     <span class="section-title">Автомобиль для поездок</span>
-                    <span class="section-subtitle">В MVP используется один рабочий автомобиль для расчёта тяговой динамики и экономии топлива.</span>
+                    <span class="section-subtitle">Физические параметры кузова и трансмиссии используются для расчёта тяговой динамики и экономии топлива.</span>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Марка</label>
+                    <label class="form-label" for="select-make">Марка</label>
                     <select class="custom-select" id="select-make" onchange="onMakeChanged()">
                         <option value="">Загрузка марок...</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Модель</label>
+                    <label class="form-label" for="select-model">Модель</label>
                     <select class="custom-select" id="select-model" onchange="onModelChanged()" disabled>
                         <option value="">Сначала выберите марку</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Модификация / Двигатель</label>
+                    <label class="form-label" for="select-trim">Модификация / Двигатель</label>
                     <select class="custom-select" id="select-trim" onchange="onTrimChanged()" disabled>
                         <option value="">Сначала выберите модель</option>
                     </select>
@@ -205,7 +361,7 @@
                     </div>
                     <div class="spec-item">
                         <span class="spec-item-label">Привод / КПП</span>
-                        <span class="spec-item-val" id="spec-drivetrain">4WD • Робот</span>
+                        <span class="spec-item-val" id="spec-drivetrain">4WD • DCT</span>
                     </div>
                 </div>
             </article>
@@ -214,12 +370,22 @@
             <article class="section-card">
                 <div class="section-header">
                     <span class="section-title">Стоимость топлива</span>
-                    <span class="section-subtitle">Цена за 1 литр для расчёта фактической выгоды в рублях относительно агрессивного двойника.</span>
+                    <span class="section-subtitle">Цена за 1 литр для расчёта фактической выгоды в рублях относительно базового агрессивного двойника.</span>
                 </div>
 
                 <div class="form-group">
-                    <label class="form-label">Тариф (₽ / литр)</label>
-                    <input type="number" step="0.10" class="input-text" id="fuel-price-input" value="72.40">
+                    <label class="form-label">Быстрый выбор марки</label>
+                    <div class="fuel-chips">
+                        <button type="button" class="fuel-chip" onclick="selectFuelPreset(56.80, this)">АИ-92</button>
+                        <button type="button" class="fuel-chip" onclick="selectFuelPreset(62.50, this)">АИ-95</button>
+                        <button type="button" class="fuel-chip active" onclick="selectFuelPreset(72.40, this)">АИ-100</button>
+                        <button type="button" class="fuel-chip" onclick="selectFuelPreset(68.90, this)">ДТ</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="fuel-price-input">Точный тариф (₽ / литр)</label>
+                    <input type="number" step="0.10" min="20" max="250" inputmode="decimal" class="input-text" id="fuel-price-input" value="72.40" oninput="syncFuelChipsWithInput()">
                 </div>
             </article>
         </section>
@@ -236,7 +402,7 @@
         'use strict';
 
         let catalogData = [];
-        let currentUserId = localStorage.getItem('autoXAK_user_id') || 'dev_user_01';
+        let currentUserId = localStorage.getItem('autoXAK_user_id') || null;
         let selectedTrimData = null;
         let toastTimeoutId = null;
 
@@ -250,7 +416,29 @@
             if (toastTimeoutId) clearTimeout(toastTimeoutId);
             toastTimeoutId = setTimeout(() => { toast.classList.remove('visible'); }, duration);
         }
-        function dismissToast() { document.getElementById('inapp-toast')?.classList.remove('visible'); }
+
+        function dismissToast() {
+            document.getElementById('inapp-toast')?.classList.remove('visible');
+        }
+
+        function selectFuelPreset(price, btnEl) {
+            document.querySelectorAll('.fuel-chip').forEach(b => b.classList.remove('active'));
+            if (btnEl) btnEl.classList.add('active');
+            document.getElementById('fuel-price-input').value = Number(price).toFixed(2);
+        }
+
+        function syncFuelChipsWithInput() {
+            const val = parseFloat(document.getElementById('fuel-price-input').value);
+            const presets = [56.80, 62.50, 72.40, 68.90];
+            const chips = document.querySelectorAll('.fuel-chip');
+            chips.forEach((chip, idx) => {
+                if (!isNaN(val) && Math.abs(val - presets[idx]) < 0.15) {
+                    chip.classList.add('active');
+                } else {
+                    chip.classList.remove('active');
+                }
+            });
+        }
 
         /* ---------------- ЗАГРУЗКА КАТАЛОГА АВТОМОБИЛЕЙ ---------------- */
         async function loadCatalog() {
@@ -262,8 +450,7 @@
 
                 if (items.length > 0 && Array.isArray(items[0].models)) {
                     catalogData = items;
-                } else {
-                    // Адаптер: сворачивание плоского массива в иерархическое дерево
+                } else if (items.length > 0) {
                     const makesMap = {};
                     for (const item of items) {
                         const mkName = item.make || item.name || "Марка";
@@ -291,15 +478,16 @@
                         name: m.name,
                         models: Object.values(m.models)
                     }));
+                } else {
+                    populateFallbackCatalog();
                 }
-
-                populateMakeSelector();
-                await loadCurrentUserSettings();
             } catch (err) {
-                console.error("Ошибка загрузки каталога:", err);
-                showToast({ title: "Каталог офлайн", message: "Используются базовые профили", type: "alert" });
+                console.warn("Используется встроенный каталог:", err);
                 populateFallbackCatalog();
             }
+
+            populateMakeSelector();
+            await loadCurrentUserSettings();
         }
 
         function populateFallbackCatalog() {
@@ -312,7 +500,8 @@
                             id: "haval_jolion",
                             name: "Jolion",
                             trims: [
-                                { id: "haval_jolion_15t_4wd", badge_name: "1.5T 4WD (150 л.с.)", curb_weight_kg: 1445, rated_power_kw: 110, drivetrain_type: "4WD", transmission_type: "DCT" },
+                                { id: "haval_jolion_15t", badge_name: "1.5T 4WD (150 л.с.)", curb_weight_kg: 1445, rated_power_kw: 110, drivetrain_type: "4WD", transmission_type: "DCT" },
+                                { id: "haval_jolion_15t_4wd", badge_name: "1.5T 4WD Elite (150 л.с.)", curb_weight_kg: 1445, rated_power_kw: 110, drivetrain_type: "4WD", transmission_type: "DCT" },
                                 { id: "haval_jolion_15t_fwd", badge_name: "1.5T 2WD (143 л.с.)", curb_weight_kg: 1370, rated_power_kw: 105, drivetrain_type: "FWD", transmission_type: "DCT" }
                             ]
                         }
@@ -327,6 +516,8 @@
                             name: "Octavia",
                             trims: [
                                 { id: "skoda_octavia_14tsi_dsg", badge_name: "1.4 TSI DSG (150 л.с.)", curb_weight_kg: 1320, rated_power_kw: 110, drivetrain_type: "FWD", transmission_type: "DSG" },
+                                { id: "skoda_octavia_14tsi", badge_name: "1.4 TSI (150 л.с.)", curb_weight_kg: 1305, rated_power_kw: 110, drivetrain_type: "FWD", transmission_type: "AT" },
+                                { id: "skoda_octavia_16mpi_mt", badge_name: "1.6 MPI MT (110 л.с.)", curb_weight_kg: 1225, rated_power_kw: 81, drivetrain_type: "FWD", transmission_type: "MT" },
                                 { id: "skoda_octavia_20tsi_dsg_4wd", badge_name: "2.0 TSI 4WD (190 л.с.)", curb_weight_kg: 1470, rated_power_kw: 140, drivetrain_type: "4WD", transmission_type: "DSG" }
                             ]
                         }
@@ -340,13 +531,54 @@
                             id: "geely_coolray",
                             name: "Coolray",
                             trims: [
-                                { id: "geely_coolray_15t_fwd", badge_name: "1.5T DCT (150 л.с.)", curb_weight_kg: 1400, rated_power_kw: 110, drivetrain_type: "FWD", transmission_type: "DCT" }
+                                { id: "geely_coolray_15t_fwd", badge_name: "1.5T DCT (150 л.с.)", curb_weight_kg: 1400, rated_power_kw: 110, drivetrain_type: "FWD", transmission_type: "DCT" },
+                                { id: "geely_coolray_15t", badge_name: "1.5T Flagship (150 л.с.)", curb_weight_kg: 1415, rated_power_kw: 110, drivetrain_type: "FWD", transmission_type: "DCT" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: "chery",
+                    name: "Chery",
+                    models: [
+                        {
+                            id: "chery_tiggo_7",
+                            name: "Tiggo 7 Pro",
+                            trims: [
+                                { id: "chery_tiggo_7pro", badge_name: "1.5T CVT (147 л.с.)", curb_weight_kg: 1465, rated_power_kw: 108, drivetrain_type: "FWD", transmission_type: "CVT" },
+                                { id: "chery_tiggo_7pro_16t_awd", badge_name: "Max 1.6T AWD (150 л.с.)", curb_weight_kg: 1580, rated_power_kw: 110, drivetrain_type: "AWD", transmission_type: "DCT" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: "lada",
+                    name: "LADA",
+                    models: [
+                        {
+                            id: "lada_vesta",
+                            name: "Vesta",
+                            trims: [
+                                { id: "lada_vesta_16_mt", badge_name: "1.6 MT (106 л.с.)", curb_weight_kg: 1230, rated_power_kw: 78, drivetrain_type: "FWD", transmission_type: "MT" },
+                                { id: "lada_vesta_18_cvt", badge_name: "1.8 CVT (122 л.с.)", curb_weight_kg: 1280, rated_power_kw: 90, drivetrain_type: "FWD", transmission_type: "CVT" }
+                            ]
+                        }
+                    ]
+                },
+                {
+                    id: "audi",
+                    name: "Audi",
+                    models: [
+                        {
+                            id: "audi_q3",
+                            name: "Q3",
+                            trims: [
+                                { id: "audi_q3_20tfsi_180_culb", badge_name: "2.0 TFSI quattro (180 л.с.)", curb_weight_kg: 1540, rated_power_kw: 132, drivetrain_type: "AWD", transmission_type: "S-Tronic" }
                             ]
                         }
                     ]
                 }
             ];
-            populateMakeSelector();
         }
 
         function populateMakeSelector() {
@@ -370,7 +602,7 @@
             trimSelect.disabled = true;
 
             const make = catalogData.find(m => m.id === makeId);
-            if (!make || !make.models.length) {
+            if (!make || !make.models || !make.models.length) {
                 modelSelect.disabled = true;
                 return;
             }
@@ -382,6 +614,11 @@
                 modelSelect.appendChild(opt);
             });
             modelSelect.disabled = false;
+
+            if (make.models.length > 0) {
+                modelSelect.value = make.models[0].id;
+                onModelChanged();
+            }
         }
 
         function onModelChanged() {
@@ -389,12 +626,12 @@
             const modelId = document.getElementById('select-model').value;
             const trimSelect = document.getElementById('select-trim');
 
-            trimSelect.innerHTML = '<option value="">Выберите комплектацию</option>';
+            trimSelect.innerHTML = '<option value="">Выберите модификацию</option>';
 
             const make = catalogData.find(m => m.id === makeId);
             const model = make ? make.models.find(md => md.id === modelId) : null;
 
-            if (!model || !model.trims.length) {
+            if (!model || !model.trims || !model.trims.length) {
                 trimSelect.disabled = true;
                 return;
             }
@@ -407,7 +644,6 @@
             });
             trimSelect.disabled = false;
 
-            // Выбираем первую комплектацию по умолчанию
             if (model.trims.length > 0) {
                 trimSelect.value = model.trims[0].id;
                 onTrimChanged();
@@ -435,8 +671,7 @@
             const drive = (trim.drivetrain_type || "FWD").toUpperCase();
             const trans = trim.transmission_type || "AT";
 
-            // Расчет паспортного расхода на основе массы и привода
-            const baseConsumption = (7.0 + (weight - 1200) * 0.0035 + (drive === "4WD" ? 0.7 : 0.0)).toFixed(1);
+            const baseConsumption = (7.0 + (weight - 1200) * 0.0035 + (drive === "4WD" || drive === "AWD" ? 0.7 : 0.0)).toFixed(1);
 
             document.getElementById('spec-power').innerText = `${hp} л.с.`;
             document.getElementById('spec-weight').innerText = `${weight} кг`;
@@ -444,25 +679,52 @@
             document.getElementById('spec-drivetrain').innerText = `${drive} • ${trans}`;
         }
 
+        function buildCleanCarName(trimData) {
+            if (!trimData) return 'Мой автомобиль';
+            const make = (trimData.make_name || '').trim();
+            const model = (trimData.model_name || '').trim();
+            let badge = (trimData.badge_name || '').replace(/\s*\([^)]*\)/g, '').trim();
+
+            if (badge.toLowerCase().startsWith(make.toLowerCase())) {
+                return badge;
+            }
+            if (badge.toLowerCase().startsWith(model.toLowerCase())) {
+                return `${make} ${badge}`.trim();
+            }
+            return `${make} ${model} ${badge}`.replace(/\s+/g, ' ').trim();
+        }
+
         /* ---------------- СИНХРОНИЗАЦИЯ С ПОЛЬЗОВАТЕЛЕМ ---------------- */
         async function loadCurrentUserSettings() {
             let activeCarId = localStorage.getItem('autoXAK_car_id') || 'haval_jolion_15t_4wd';
+            let activeFuelPrice = parseFloat(localStorage.getItem('autoXAK_fuel_price')) || 72.40;
 
-            try {
-                const res = await fetch(`/api/v1/users/${encodeURIComponent(currentUserId)}/dashboard`);
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.car_id) activeCarId = data.car_id;
-                    if (data.fuel_price_rub) {
-                        document.getElementById('fuel-price-input').value = Number(data.fuel_price_rub).toFixed(2);
+            const savedProfile = localStorage.getItem('autoXAK_profile');
+            if (savedProfile) {
+                try {
+                    const parsed = JSON.parse(savedProfile);
+                    if (parsed.car_id) activeCarId = parsed.car_id;
+                    if (parsed.fuel_price_rub) activeFuelPrice = Number(parsed.fuel_price_rub);
+                } catch (_) {}
+            }
+
+            if (currentUserId) {
+                try {
+                    const res = await fetch(`/api/v1/users/${encodeURIComponent(currentUserId)}/dashboard`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        if (data.car_id) activeCarId = data.car_id;
+                        if (data.fuel_price_rub) activeFuelPrice = Number(data.fuel_price_rub);
                     }
-                }
-            } catch (_) {}
+                } catch (_) {}
+            }
 
-            // Восстановление выбранных пунктов селектора
+            document.getElementById('fuel-price-input').value = activeFuelPrice.toFixed(2);
+            syncFuelChipsWithInput();
+
             for (const mk of catalogData) {
                 for (const md of mk.models) {
-                    const tr = md.trims.find(t => t.id === activeCarId);
+                    const tr = md.trims.find(t => t.id === activeCarId || t.id.startsWith(activeCarId));
                     if (tr) {
                         document.getElementById('select-make').value = mk.id;
                         onMakeChanged();
@@ -475,12 +737,9 @@
                 }
             }
 
-            // Fallback: выбор первого доступного
             if (catalogData.length > 0 && catalogData[0].models.length > 0) {
                 document.getElementById('select-make').value = catalogData[0].id;
                 onMakeChanged();
-                document.getElementById('select-model').value = catalogData[0].models[0].id;
-                onModelChanged();
             }
         }
 
@@ -488,10 +747,11 @@
         async function saveVehicleSettings() {
             const trimSelect = document.getElementById('select-trim');
             const trimId = trimSelect.value;
-            const fuelPrice = parseFloat(document.getElementById('fuel-price-input').value);
+            const rawPrice = parseFloat(document.getElementById('fuel-price-input').value);
+            const fuelPrice = (!isNaN(rawPrice) && rawPrice >= 20 && rawPrice <= 300) ? rawPrice : 72.40;
 
             if (!trimId) {
-                showToast({ title: "Ошибка", message: "Выберите комплектацию автомобиля", type: "alert" });
+                showToast({ title: "Выберите авто", message: "Укажите марку, модель и модификацию", type: "alert" });
                 return;
             }
 
@@ -499,35 +759,57 @@
             btn.classList.add('loading');
             btn.innerHTML = '<span>⏳</span> Сохранение...';
 
-            const carName = selectedTrimData 
-                ? `${selectedTrimData.make_name} ${selectedTrimData.model_name} ${selectedTrimData.badge_name || ''}`.trim()
-                : 'Мой автомобиль';
+            const carName = buildCleanCarName(selectedTrimData);
 
-            // 1. Немедленная синхронизация в localStorage
+            const profileObj = {
+                user_id: currentUserId || 'guest',
+                car_id: trimId,
+                car_name: carName,
+                fuel_price_rub: fuelPrice
+            };
+
+            // 1. Синхронизация со всеми ключами, которые читает главная страница index.html
             localStorage.setItem('autoXAK_car_id', trimId);
             localStorage.setItem('autoXAK_car_name', carName);
-            localStorage.setItem('autoXAK_fuel_price', fuelPrice.toString());
+            localStorage.setItem('autoXAK_fuel_price', fuelPrice.toFixed(2));
+            localStorage.setItem('autoXAK_profile', JSON.stringify(profileObj));
 
-            // 2. Персистентность в PostgreSQL
+            // 2. Если сессии еще нет, создаем гостевую для сохранения в БД
+            if (!currentUserId) {
+                try {
+                    const guestRes = await fetch('/api/v1/auth/guest', { method: 'POST' });
+                    if (guestRes.ok) {
+                        const guestData = await guestRes.json();
+                        currentUserId = guestData.user_id;
+                        localStorage.setItem('autoXAK_user_id', currentUserId);
+                        localStorage.setItem('autoXAK_is_guest', 'true');
+                    }
+                } catch (_) {}
+            }
+
+            // 3. Персистентное сохранение на сервере
             try {
-                const res = await fetch(`/api/v1/users/${encodeURIComponent(currentUserId)}/profile`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        car_id: trimId,
-                        fuel_price_rub: fuelPrice
-                    })
-                });
+                if (currentUserId) {
+                    const res = await fetch(`/api/v1/users/${encodeURIComponent(currentUserId)}/profile`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            user_id: currentUserId,
+                            car_id: trimId,
+                            fuel_price_rub: fuelPrice
+                        })
+                    });
 
-                if (!res.ok) {
-                    console.warn("Сервер профиля вернул статус:", res.status);
+                    if (!res.ok) {
+                        console.warn("Статус ответа профиля:", res.status);
+                    }
                 }
 
-                showToast({ title: "Сохранено", message: `${carName} выбран основным авто`, type: "success" });
-                setTimeout(() => { window.location.href = "/"; }, 700);
+                showToast({ title: "Сохранено", message: `${carName} установлен`, type: "success" });
+                setTimeout(() => { window.location.href = "/"; }, 550);
             } catch (err) {
-                showToast({ title: "Локально сохранено", message: "Настройки применены на устройстве", type: "success" });
-                setTimeout(() => { window.location.href = "/"; }, 700);
+                showToast({ title: "Сохранено локально", message: `${carName} применен на устройстве`, type: "success" });
+                setTimeout(() => { window.location.href = "/"; }, 550);
             } finally {
                 btn.classList.remove('loading');
                 btn.innerHTML = '<span>✓</span> Сохранить автомобиль';

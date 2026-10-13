@@ -37,6 +37,12 @@
             --radius-card: 22px;
             --radius-pill: 9999px;
             --shadow-card: 0 14px 36px rgba(0, 0, 0, 0.65);
+
+            /* Системные безопасные отступы (Safe Area Insets) */
+            --sat: env(safe-area-inset-top, 0px);
+            --sab: env(safe-area-inset-bottom, 0px);
+            --sal: env(safe-area-inset-left, 0px);
+            --sar: env(safe-area-inset-right, 0px);
         }
 
         *, *::before, *::after {
@@ -44,73 +50,109 @@
             font-family: var(--font-sans); -webkit-tap-highlight-color: transparent; user-select: none;
         }
 
-        body {
-            background-color: #000000;
-            display: flex; justify-content: center; align-items: center;
-            min-height: 100vh; color: var(--text-primary);
-            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        html, body {
+            width: 100%;
+            height: 100%;
+            background-color: var(--bg-screen);
+            color: var(--text-primary);
             overflow: hidden;
+            position: fixed;
+            overscroll-behavior: none;
         }
 
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: stretch;
+        }
+
+        /* ОСНОВНОЙ КОНТЕЙНЕР: без рамок, 100% экрана на смартфонах, аккуратная колонка на ПК */
         .mobile-container {
-            width: 100%; max-width: 414px; height: 100vh; max-height: 890px;
-            background-color: var(--bg-screen); border: 1px solid var(--border-soft);
-            border-radius: 44px; box-shadow: 0 0 60px rgba(0, 0, 0, 0.95);
-            display: flex; flex-direction: column; overflow: hidden; position: relative;
+            width: 100%;
+            max-width: 480px;
+            height: 100%;
+            height: 100dvh;
+            background-color: var(--bg-screen);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
         }
 
         /* ---------------- TOAST-УВЕДОМЛЕНИЯ ---------------- */
         .inapp-toast {
-            position: absolute; top: 18px; left: 16px; right: 16px;
-            background: rgba(30, 34, 40, 0.96); backdrop-filter: blur(20px);
-            border: 1.5px solid var(--accent-lime); border-radius: var(--radius-btn);
-            padding: 12px 14px; display: flex; align-items: center; gap: 12px; z-index: 600;
-            transform: translateY(-160%); opacity: 0; transition: transform 0.35s ease, opacity 0.3s ease;
+            position: absolute;
+            top: calc(var(--sat) + 14px);
+            left: calc(var(--sal) + 16px);
+            right: calc(var(--sar) + 16px);
+            background: rgba(30, 34, 40, 0.96);
+            backdrop-filter: blur(20px);
+            border: 1.5px solid var(--accent-lime);
+            border-radius: var(--radius-btn);
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 600;
+            transform: translateY(-180%);
+            opacity: 0;
+            transition: transform 0.35s ease, opacity 0.3s ease;
         }
         .inapp-toast.visible { transform: translateY(0); opacity: 1; }
         .inapp-toast.toast-alert { border-color: var(--accent-amber); }
 
-        /* ---------------- 1. ДАШБОРД В ПОКОЕ ---------------- */
+        /* ---------------- 1. ДАШБОРД В ПОКОЕ (ГЛАВНЫЙ ЭКРАН) ---------------- */
         .dashboard-scroll {
-            flex-grow: 1; overflow-y: auto; padding: 24px 20px 80px;
-            display: flex; flex-direction: column; gap: 16px; scrollbar-width: none;
+            flex: 1 1 auto;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            padding-top: calc(var(--sat) + 18px);
+            padding-left: calc(var(--sal) + 18px);
+            padding-right: calc(var(--sar) + 18px);
+            padding-bottom: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scrollbar-width: none;
         }
         .dashboard-scroll::-webkit-scrollbar { display: none; }
 
         .top-brand { display: flex; justify-content: space-between; align-items: center; }
         .brand-block { display: flex; flex-direction: column; }
-        .brand-title { font-size: 17px; font-weight: 800; letter-spacing: -0.3px; color: var(--text-primary); }
+        .brand-title { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; color: var(--text-primary); }
         .vehicle-badge { font-size: 12px; color: var(--accent-lime); margin-top: 2px; font-weight: 600; }
         .brand-right-group { display: flex; align-items: center; gap: 8px; }
 
         .btn-user-badge {
-            font-size: 11px; padding: 6px 12px; border-radius: var(--radius-pill);
+            font-size: 12px; padding: 7px 12px; border-radius: var(--radius-pill);
             background: var(--bg-surface); border: 1px solid var(--border-soft);
             color: var(--text-secondary); font-weight: 600; cursor: pointer; transition: 0.2s;
         }
-        .btn-user-badge:hover { color: var(--text-primary); border-color: var(--border-strong); }
+        .btn-user-badge:active { color: var(--text-primary); border-color: var(--border-strong); }
 
         .link-setup {
             font-size: 12px; color: var(--text-secondary); text-decoration: none;
-            padding: 6px 10px; border-radius: 12px; background: var(--bg-surface);
+            padding: 7px 11px; border-radius: 12px; background: var(--bg-surface);
             border: 1px solid var(--border-soft); font-weight: 600;
         }
 
         /* КАРТОЧКА ГЛАВНОЙ ВЫГОДЫ */
         .piggy-card {
             background: var(--bg-surface); border: 1px solid var(--border-soft);
-            border-radius: var(--radius-card); padding: 22px 20px; box-shadow: var(--shadow-card);
+            border-radius: var(--radius-card); padding: 20px 18px; box-shadow: var(--shadow-card);
             position: relative; overflow: hidden;
         }
         .piggy-top-row { display: flex; justify-content: space-between; align-items: center; }
         .piggy-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.8px; color: var(--accent-lime); font-weight: 800; }
         .link-history { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-decoration: none; }
-        .link-history:hover { color: var(--text-primary); }
 
-        .piggy-amount-row { display: flex; align-items: baseline; gap: 4px; font-family: var(--font-mono); margin: 8px 0; }
-        .piggy-prefix { font-size: 28px; color: var(--accent-lime); font-weight: 700; }
-        .piggy-digits { font-size: 46px; font-weight: 800; color: var(--text-primary); letter-spacing: -1px; }
-        .piggy-unit { font-size: 26px; color: var(--accent-lime); font-weight: 700; margin-left: 2px; }
+        .piggy-amount-row { display: flex; align-items: baseline; gap: 4px; font-family: var(--font-mono); margin: 6px 0; }
+        .piggy-prefix { font-size: 26px; color: var(--accent-lime); font-weight: 700; }
+        .piggy-digits { font-size: clamp(38px, 10vw, 46px); font-weight: 800; color: var(--text-primary); letter-spacing: -1px; }
+        .piggy-unit { font-size: 24px; color: var(--accent-lime); font-weight: 700; margin-left: 2px; }
 
         .piggy-sub {
             font-size: 12px; color: var(--text-secondary); display: flex;
@@ -123,10 +165,16 @@
         .spec-label { font-size: 11px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
         .spec-val { font-size: 13px; font-weight: 600; margin-top: 4px; color: var(--text-primary); }
 
-        .bottom-bar { padding: 12px 20px 48px; background: linear-gradient(180deg, transparent 0%, var(--bg-screen) 60%); }
+        /* НИЖНЯЯ ПАНЕЛЬ С КНОПКОЙ СТАРТА */
+        .bottom-bar {
+            flex-shrink: 0;
+            padding: 12px calc(var(--sal) + 18px) calc(var(--sab) + 16px) calc(var(--sar) + 18px);
+            background: linear-gradient(180deg, rgba(18,20,23,0) 0%, rgba(18,20,23,0.92) 28%, var(--bg-screen) 100%);
+            z-index: 50;
+        }
         .btn-start-trip {
-            width: 100%; height: 54px; background: var(--accent-lime); color: #121417;
-            border: none; border-radius: var(--radius-btn); font-size: 15px; font-weight: 800; cursor: pointer;
+            width: 100%; height: 56px; background: var(--accent-lime); color: #121417;
+            border: none; border-radius: var(--radius-btn); font-size: 16px; font-weight: 800; cursor: pointer;
             box-shadow: 0 6px 24px rgba(210, 250, 88, 0.25); display: flex; align-items: center; justify-content: center; gap: 10px;
             transition: transform 0.15s ease, background 0.2s ease;
         }
@@ -136,27 +184,31 @@
         .safety-hud-overlay {
             position: absolute; inset: 0; background: #000000; z-index: 100;
             display: none; flex-direction: column; justify-content: space-between;
-            padding: 38px 20px 48px; text-align: center; border-radius: 44px;
-            border: 3.5px solid transparent; box-sizing: border-box; transition: border-color 0.25s, box-shadow 0.25s;
+            padding-top: calc(var(--sat) + 16px);
+            padding-bottom: calc(var(--sab) + 16px);
+            padding-left: calc(var(--sal) + 18px);
+            padding-right: calc(var(--sar) + 18px);
+            text-align: center; border-radius: 0;
+            border: none; box-sizing: border-box; transition: box-shadow 0.25s;
         }
         .safety-hud-overlay.active { display: flex; }
-        .safety-hud-overlay.glow-lime { border-color: var(--accent-lime); box-shadow: inset 0 0 100px rgba(210, 250, 88, 0.28); }
-        .safety-hud-overlay.glow-amber { border-color: var(--accent-amber); box-shadow: inset 0 0 120px rgba(245, 158, 11, 0.45); }
-        .safety-hud-overlay.glow-blue { border-color: var(--accent-blue); box-shadow: inset 0 0 100px rgba(56, 189, 248, 0.35); }
+        .safety-hud-overlay.glow-lime { box-shadow: inset 0 0 100px rgba(210, 250, 88, 0.28); }
+        .safety-hud-overlay.glow-amber { box-shadow: inset 0 0 120px rgba(245, 158, 11, 0.45); }
+        .safety-hud-overlay.glow-blue { box-shadow: inset 0 0 100px rgba(56, 189, 248, 0.35); }
 
         .hud-top-bar {
             display: flex; justify-content: space-between; align-items: center;
             background: rgba(30, 34, 40, 0.85); border: 1px solid var(--border-soft);
-            border-radius: var(--radius-pill); padding: 10px 18px;
+            border-radius: var(--radius-pill); padding: 10px 18px; flex-shrink: 0;
         }
         .hud-badge-rec { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: #FFF; }
         .hud-rec-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--accent-lime); box-shadow: 0 0 10px var(--accent-lime); }
         .hud-timer { font-family: var(--font-mono); font-size: 18px; font-weight: 800; color: #FFF; }
 
-        .hud-center-stage { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .hud-center-stage { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: auto 0; }
         .ambient-glow-circle {
-            width: 178px;
-            height: 178px;
+            width: clamp(140px, 36vw, 178px);
+            height: clamp(140px, 36vw, 178px);
             border-radius: 50%;
             background: radial-gradient(circle, rgba(210,250,88,0.22) 0%, rgba(18,20,23,0.95) 72%);
             border: 3px solid var(--accent-lime);
@@ -181,7 +233,7 @@
         }
         .hud-savings-val {
             font-family: var(--font-mono);
-            font-size: 26px;
+            font-size: clamp(20px, 5.5vw, 26px);
             font-weight: 800;
             color: #FFFFFF;
             margin: 2px 0;
@@ -189,7 +241,7 @@
             white-space: nowrap;
             text-align: center;
             line-height: 1.1;
-            max-width: 154px;
+            max-width: 90%;
             overflow: hidden;
             transition: font-size 0.2s ease;
         }
@@ -207,7 +259,7 @@
         .hud-stats-strip {
             display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; width: 100%;
             background: rgba(30, 34, 40, 0.85); border: 1px solid var(--border-soft);
-            border-radius: var(--radius-btn); padding: 12px 14px;
+            border-radius: var(--radius-btn); padding: 12px 14px; flex-shrink: 0; margin-bottom: 12px;
         }
         .hud-stat-box { display: flex; flex-direction: column; gap: 2px; text-align: center; }
         .hud-stat-title { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; font-weight: 700; }
@@ -217,30 +269,37 @@
             width: 100%; height: 56px; background: var(--bg-surface);
             border: 1px solid var(--border-strong); border-radius: var(--radius-pill);
             position: relative; display: flex; align-items: center; overflow: hidden; touch-action: none;
+            flex-shrink: 0;
         }
-        .swipe-rail-text { width: 100%; text-align: center; font-size: 13px; font-weight: 800; text-transform: uppercase; color: var(--text-secondary); }
+        .swipe-rail-text { width: 100%; text-align: center; font-size: 13px; font-weight: 800; text-transform: uppercase; color: var(--text-secondary); transition: opacity 0.15s ease; }
         .swipe-thumb {
             position: absolute; left: 4px; width: 48px; height: 48px; border-radius: var(--radius-pill);
             background: var(--accent-danger); display: flex; align-items: center; justify-content: center;
-            color: white; font-weight: bold; cursor: grab;
+            color: white; font-weight: bold; cursor: grab; user-select: none;
         }
 
-        /* ---------------- 3. МОДАЛЬНОЕ ОКНО ИТОГОВ (ШАГ 7) ---------------- */
+        /* ---------------- 3. МОДАЛЬНОЕ ОКНО ИТОГОВ ---------------- */
         .modal-overlay {
             position: absolute; inset: 0; background: rgba(18, 20, 23, 0.96); backdrop-filter: blur(14px);
-            z-index: 400; display: none; align-items: center; justify-content: center; padding: 20px;
+            z-index: 400; display: none; align-items: center; justify-content: center;
+            padding-top: calc(var(--sat) + 16px);
+            padding-bottom: calc(var(--sab) + 16px);
+            padding-left: calc(var(--sal) + 16px);
+            padding-right: calc(var(--sar) + 16px);
+            overflow-y: auto;
         }
         .modal-overlay.active { display: flex; }
 
         .summary-card {
-            width: 100%; max-width: 374px; background: var(--bg-surface); border-radius: var(--radius-card);
+            width: 100%; max-width: 400px; background: var(--bg-surface); border-radius: var(--radius-card);
             border: 1px solid var(--border-strong); padding: 22px 18px; display: flex; flex-direction: column; gap: 12px;
+            margin: auto; max-height: 100%; overflow-y: auto;
         }
         .summary-header { display: flex; justify-content: space-between; align-items: center; }
         .summary-tag { font-size: 11px; padding: 4px 10px; border-radius: var(--radius-pill); background: rgba(210,250,88,0.14); color: var(--accent-lime); font-weight: 700; }
 
         .hero-autonomy-box { text-align: center; padding: 4px 0; }
-        .hero-autonomy-val { font-family: var(--font-mono); font-size: 44px; font-weight: 800; color: var(--accent-lime); line-height: 1.1; }
+        .hero-autonomy-val { font-family: var(--font-mono); font-size: 40px; font-weight: 800; color: var(--accent-lime); line-height: 1.1; }
         .hero-autonomy-label { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
 
         .breakdown-box {
@@ -263,31 +322,35 @@
         /* ---------------- 4. МОДУЛЬ АВТОРИЗАЦИИ (FIGMA AUTH FLOW) ---------------- */
         .auth-flow-overlay {
             position: absolute; inset: 0; background: var(--bg-screen); z-index: 500;
-            display: none; flex-direction: column; padding: 24px 20px 36px; box-sizing: border-box;
-            overflow-y: auto; scrollbar-width: none;
+            display: none; flex-direction: column;
+            padding-top: calc(var(--sat) + 16px);
+            padding-bottom: calc(var(--sab) + 20px);
+            padding-left: calc(var(--sal) + 20px);
+            padding-right: calc(var(--sar) + 20px);
+            box-sizing: border-box; overflow-y: auto; scrollbar-width: none;
         }
         .auth-flow-overlay.active { display: flex; }
         .auth-flow-overlay::-webkit-scrollbar { display: none; }
 
         .auth-nav-top {
             display: flex; align-items: center; gap: 8px; color: var(--text-primary);
-            font-size: 14px; font-weight: 500; cursor: pointer; margin-bottom: 24px;
+            font-size: 14px; font-weight: 500; cursor: pointer; margin-bottom: 20px;
         }
 
         .auth-screen-splash {
             flex: 1; display: flex; flex-direction: column; justify-content: space-between;
-            align-items: center; padding-top: 60px;
+            align-items: center; padding-top: 30px;
         }
-        .auth-splash-brand { display: flex; flex-direction: column; align-items: center; gap: 20px; }
-        .auth-brand-logo-svg { width: 112px; height: 112px; }
-        .auth-brand-title { font-size: 34px; font-weight: 800; letter-spacing: -0.5px; color: var(--text-primary); }
-        .auth-splash-actions { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+        .auth-splash-brand { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+        .auth-brand-logo-svg { width: 104px; height: 104px; }
+        .auth-brand-title { font-size: 32px; font-weight: 800; letter-spacing: -0.5px; color: var(--text-primary); }
+        .auth-splash-actions { width: 100%; display: flex; flex-direction: column; gap: 12px; margin-top: 24px; }
 
         .auth-screen-form { display: none; flex-direction: column; flex: 1; }
         .auth-screen-form.active { display: flex; }
 
-        .auth-title { font-size: 28px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
-        .auth-subtitle { font-size: 13px; color: var(--text-secondary); line-height: 1.45; margin-bottom: 24px; }
+        .auth-title { font-size: 26px; font-weight: 700; color: var(--text-primary); margin-bottom: 6px; }
+        .auth-subtitle { font-size: 13px; color: var(--text-secondary); line-height: 1.45; margin-bottom: 20px; }
 
         .auth-form-group { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
         .auth-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
@@ -333,7 +396,7 @@
 
         .auth-disclaimer { font-size: 11px; color: var(--text-muted); text-align: center; line-height: 1.5; margin-top: 14px; }
         .auth-disclaimer a { color: var(--accent-lime); text-decoration: none; }
-        .auth-bottom-switch { margin-top: auto; text-align: center; font-size: 13px; color: var(--text-secondary); padding-top: 20px; }
+        .auth-bottom-switch { margin-top: auto; text-align: center; font-size: 13px; color: var(--text-secondary); padding-top: 18px; }
         .auth-bottom-switch span { color: var(--accent-lime); cursor: pointer; }
 
         .auth-spinner {
@@ -346,9 +409,10 @@
         .demo-dock {
             position: absolute; bottom: 0; left: 0; right: 0; background: rgba(18,20,23,0.96);
             backdrop-filter: blur(20px); border-top: 1.5px solid var(--accent-blue); z-index: 250;
-            padding: 8px 16px 14px; display: flex; flex-direction: column; gap: 8px; transition: transform 0.3s;
+            padding: 8px calc(var(--sal) + 16px) calc(var(--sab) + 12px) calc(var(--sar) + 16px);
+            display: flex; flex-direction: column; gap: 8px; transition: transform 0.3s;
         }
-        .demo-dock.collapsed { transform: translateY(calc(100% - 30px)); }
+        .demo-dock.collapsed { transform: translateY(calc(100% - 32px - var(--sab))); }
         .demo-dock-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
         .demo-dock-title { font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--accent-blue); }
         .demo-range-input { width: 100%; height: 6px; background: var(--bg-surface); border-radius: var(--radius-pill); }
@@ -482,7 +546,6 @@
                     <div class="hero-autonomy-label">сэкономлено на топливе относительно лихача</div>
                 </div>
 
-                <!-- Финансовая декомпозиция связи стиля с рублями -->
                 <div class="breakdown-box">
                     <div class="breakdown-row">
                         <span style="color: var(--text-muted);">Базовая потенциальная выгода:</span>
@@ -526,7 +589,6 @@
 
         <!-- 4. ПОЛНОЭКРАННЫЙ AUTH-КОНТУР (FIGMA) -->
         <div class="auth-flow-overlay" id="auth-flow-overlay">
-            <!-- ЭКРАН 1: РАЗВОДНАЯ -->
             <div class="auth-screen-splash" id="screen-splash">
                 <div class="auth-splash-brand">
                     <svg class="auth-brand-logo-svg" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -553,7 +615,6 @@
                 </div>
             </div>
 
-            <!-- ЭКРАН 2: ВХОД -->
             <div class="auth-screen-form" id="screen-login">
                 <div class="auth-nav-top" onclick="AuthFlow.goTo('splash')">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
@@ -593,7 +654,6 @@
                 </div>
             </div>
 
-            <!-- ЭКРАН 3: РЕГИСТРАЦИЯ -->
             <div class="auth-screen-form" id="screen-register">
                 <div class="auth-nav-top" onclick="AuthFlow.goTo('splash')">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
@@ -688,13 +748,52 @@
         function formatCarName(rawId) {
             if (!rawId || typeof rawId !== 'string') return 'Мой автомобиль';
             if (CAR_CATALOG[rawId]) return CAR_CATALOG[rawId];
-            return rawId.replace(/_/g, ' ');
+
+            let clean = rawId.replace(/_custom$/i, '').replace(/_trim\d*$/i, '');
+            const brandMap = {
+                'skoda': 'Skoda', 'haval': 'Haval', 'geely': 'Geely', 'chery': 'Chery',
+                'lada': 'LADA', 'volkswagen': 'Volkswagen', 'vw': 'VW', 'audi': 'Audi',
+                'bmw': 'BMW', 'toyota': 'Toyota', 'kia': 'KIA', 'hyundai': 'Hyundai'
+            };
+            const tokens = clean.split(/[_-]+/);
+            const formatted = [];
+            for (let t of tokens) {
+                const low = t.toLowerCase();
+                if (brandMap[low]) { formatted.push(brandMap[low]); continue; }
+                if (['4wd', 'awd', 'fwd', 'rwd', 'dsg', 'dct', 'cvt'].includes(low)) { formatted.push(low.toUpperCase()); continue; }
+                formatted.push(t.charAt(0).toUpperCase() + t.slice(1));
+            }
+            return formatted.join(' ') || rawId;
         }
 
         function updateCarHeader(serverCarId = null) {
-            if (serverCarId) currentCarId = serverCarId;
+            if (serverCarId) {
+                currentCarId = serverCarId;
+            } else {
+                const savedProfile = localStorage.getItem("autoXAK_profile");
+                if (savedProfile) {
+                    try {
+                        const p = JSON.parse(savedProfile);
+                        if (p.car_name && p.car_name.trim()) {
+                            const badge = document.getElementById('dash-car-name');
+                            if (badge) badge.innerText = p.car_name;
+                            if (p.car_id) currentCarId = p.car_id;
+                            return;
+                        }
+                        if (p.car_id) currentCarId = p.car_id;
+                    } catch (_) {}
+                }
+                const savedName = localStorage.getItem("autoXAK_car_name");
+                if (savedName && savedName.trim()) {
+                    const badge = document.getElementById('dash-car-name');
+                    if (badge) badge.innerText = savedName;
+                    return;
+                }
+            }
+
+            const humanName = CAR_CATALOG[currentCarId] || formatCarName(currentCarId);
             const badge = document.getElementById('dash-car-name');
-            if (badge) badge.innerText = CAR_CATALOG[currentCarId] || formatCarName(currentCarId);
+            if (badge) badge.innerText = humanName;
         }
 
         /* ---------------- УПРАВЛЕНИЕ АВТОРИЗАЦИЕЙ (FIGMA AUTH FLOW) ---------------- */
@@ -911,16 +1010,15 @@
         let wakeLockSentinel = null;
         let sensorsBound = false;
 
-        // Физические переменные акселерометра и разделения гравитации
         let gravX = 0.0, gravY = 0.0, gravZ = 9.81;
         let linAx = 0.0, linAy = 0.0, linAz = 0.0;
         let curAx = 0.0, curAy = 0.0, curAz = 9.81;
         let curSpeed = 0.0, curLat = 55.751244, curLon = 37.618423;
 
-        // Состояния гистерезиса для предотвращения лавины тиков 50 Гц
         let inHarshAccel = false;
         let inHarshBrake = false;
         let inBumpCooldown = false;
+        let lastBumpTime = 0;
 
         let liveDistanceKm = 0.0;
         let liveSavedLiters = 0.0;
@@ -932,6 +1030,9 @@
         let liveHarshBrakeCount = 0;
         let liveTrafficJamSeconds = 0;
         let totalSamplesCount = 0;
+
+        let penaltyAccumulator = 0.0;
+        let maneuverPenalized = false;
 
         let isDemoMode = false;
         let demoTargetSpeedKmh = 0.0;
@@ -986,27 +1087,10 @@
         }
 
         function triggerRoadBump() {
-            curAz = 16.5; curAx = 0.2; linAx = 0.2; window.curLinAcc = 0.2;
-            liveBumpsCount++;
-            document.getElementById('hud-bumps-val').innerText = liveBumpsCount;
-            
-            const hudOverlay = document.getElementById('safety-hud');
-            const glowRing = document.getElementById('hud-glow-ring');
-            const hint = document.getElementById('hud-driving-hint');
-            if (hudOverlay && glowRing && hint) {
-                hudOverlay.className = "safety-hud-overlay active glow-blue";
-                glowRing.className = "ambient-glow-circle bump";
-                hint.innerText = "Неровность дороги • Защита";
-                hint.className = "hud-driving-status bump";
-            }
+            isDemoMode = true;
+            curAz = 16.5; curAx = 0.2; linAx = 0.2; linAz = 6.69; window.curLinAcc = 0.2;
             setTimeout(() => { 
-                curAz = 9.81; curAx = 0.0; linAx = 0.0;
-                if (hudOverlay && glowRing && hint && isRecording) {
-                    hudOverlay.className = "safety-hud-overlay active glow-lime";
-                    glowRing.className = "ambient-glow-circle";
-                    hint.innerText = "Плавный ход • Зона выгоды";
-                    hint.className = "hud-driving-status";
-                }
+                curAz = 9.81; curAx = 0.0; linAx = 0.0; linAz = 0.0;
             }, 500);
             showToast({ title: "Неровность дороги", message: "Импульс 16.5 м/с² изолирован Z-Veto", type: "success" });
         }
@@ -1020,7 +1104,8 @@
                 curAx = osc * 0.65; linAx = curAx; window.curLinAcc = Math.abs(curAx);
             } else {
                 const diff = demoTargetSpeedKmh - demoCurrentSpeedKmh;
-                const step = 14.0 * dt;
+                const rate = (demoTargetSpeedKmh > 75.0) ? 14.0 : 5.0;
+                const step = rate * dt;
                 if (Math.abs(diff) > 0.2) {
                     const delta = Math.sign(diff) * Math.min(Math.abs(diff), step);
                     demoCurrentSpeedKmh += delta;
@@ -1083,13 +1168,11 @@
                 const rawY = Number(e.accelerationIncludingGravity.y) || 0.0;
                 const rawZ = Number(e.accelerationIncludingGravity.z) || 9.81;
 
-                // IIR low-pass фильтр гравитации
                 const alpha = 0.94;
                 gravX = alpha * gravX + (1.0 - alpha) * rawX;
                 gravY = alpha * gravY + (1.0 - alpha) * rawY;
                 gravZ = alpha * gravZ + (1.0 - alpha) * rawZ;
 
-                // Линейное динамическое ускорение (High-Pass)
                 linAx = rawX - gravX;
                 linAy = rawY - gravY;
                 linAz = rawZ - gravZ;
@@ -1155,9 +1238,12 @@
             liveTrafficJamSeconds = 0;
             totalSamplesCount = 0;
 
+            penaltyAccumulator = 0.0;
+            maneuverPenalized = false;
             inHarshAccel = false;
             inHarshBrake = false;
             inBumpCooldown = false;
+            lastBumpTime = 0;
 
             resetSwipeRail();
             document.getElementById('safety-hud').classList.add('active');
@@ -1167,10 +1253,11 @@
             sensorTimer = setInterval(() => {
                 if (!isRecording) return;
                 const dt = 0.02;
+                const now = Date.now();
                 updateDemoPhysics(dt);
 
                 telemetryBuffer.push({
-                    t: Date.now() / 1000,
+                    t: now / 1000,
                     ax: Number(curAx.toFixed(3)), ay: Number(curAy.toFixed(3)), az: Number(curAz.toFixed(3)),
                     gx: 0.0, gy: 0.0, gz: 0.0, speed: Number(curSpeed.toFixed(2)),
                     lat: curLat, lon: curLon
@@ -1184,19 +1271,31 @@
                 liveSavingsRub = liveSavedLiters * currentFuelPrice;
                 liveRangeBonusKm = (100.0 * liveSavedLiters) / baseCityFuelRate;
 
-                // 1. Изоляция неровностей (Z-Veto)
-                const isBump = Math.abs(curAz - 9.81) > 3.4;
-
-                if (isBump) {
-                    if (!inBumpCooldown) {
-                        inBumpCooldown = true;
-                        liveBumpsCount++;
-                        setTimeout(() => { inBumpCooldown = false; }, 600);
-                    }
+                // 1. ИЗОЛЯЦИЯ ВЕРТИКАЛЬНОГО УДАРА (Z-Veto) ОТ ПРОДОЛЬНОГО РАЗГОНА
+                let dynamicJolt = 0.0;
+                if (isDemoMode) {
+                    dynamicJolt = Math.abs(curAz - 9.81);
                 } else {
-                    // 2. Событийная детекция маневров с гистерезисом (триггер Шмитта)
+                    const gNorm = Math.hypot(gravX, gravY, gravZ) || 9.81;
+                    dynamicJolt = Math.abs((linAx * gravX + linAy * gravY + linAz * gravZ) / gNorm);
+                }
+
+                if (dynamicJolt > 3.6) {
+                    if (!inBumpCooldown && (now - lastBumpTime > 600)) {
+                        inBumpCooldown = true;
+                        lastBumpTime = now;
+                        liveBumpsCount++;
+                    }
+                } else if (dynamicJolt < 1.5 && (now - lastBumpTime > 400)) {
+                    inBumpCooldown = false;
+                }
+
+                const isBumpActive = (now - lastBumpTime < 450);
+
+                if (!isBumpActive) {
+                    // 2. ДЕТЕКЦИЯ МАНЕВРОВ И ДИНАМИЧЕСКИЙ РАСЧЕТ ПЛАВНОСТИ (LEAKY BUCKET)
                     const activeAccelX = isDemoMode ? curAx : linAx;
-                    const activeHoriz = (typeof window.curLinAcc !== 'undefined') ? window.curLinAcc : Math.abs(activeAccelX);
+                    const activeHoriz = (typeof window.curLinAcc !== 'undefined') ? window.curLinAcc : Math.hypot(linAx, linAy);
 
                     if (activeAccelX > 2.2 || activeHoriz > 2.4) {
                         if (!inHarshAccel) {
@@ -1207,26 +1306,44 @@
                         inHarshAccel = false;
                     }
 
-                    if (activeAccelX < -2.4) {
+                    if (activeAccelX < -2.4 || (linAy < -2.4 && !isDemoMode)) {
                         if (!inHarshBrake) {
                             inHarshBrake = true;
                             liveHarshBrakeCount++;
                         }
-                    } else if (activeAccelX > -1.2) {
+                    } else if (activeAccelX > -1.2 && linAy > -1.2) {
                         inHarshBrake = false;
                     }
-                }
 
-                // 3. Честный расчет плавности (начинается со 100, -4 балла за каждое дискретное резкое событие)
-                const totalHarshEvents = liveHarshAccelCount + liveHarshBrakeCount;
-                liveSmoothScore = Math.max(40, Math.min(100, 100 - (totalHarshEvents * 4)));
+                    const currentAccel = isDemoMode ? Math.abs(curAx) : activeHoriz;
+                    const excessAccel = Math.max(0.0, currentAccel - 1.2);
 
-                const elapsed = Math.floor((Date.now() - tripStartTime) / 1000);
+                    if (excessAccel > 0.0) {
+                        const instantPenalty = Math.pow(excessAccel / 1.0, 1.8) * 1.4 * dt;
+                        penaltyAccumulator = Math.min(100.0, penaltyAccumulator + instantPenalty);
+                    } else {
+                        const recoveryRate = 0.20 * dt;
+                        penaltyAccumulator = Math.max(0.0, penaltyAccumulator - recoveryRate);
+                    }
+
+                    if (inHarshAccel || inHarshBrake) {
+                        if (!maneuverPenalized) {
+                            penaltyAccumulator = Math.min(100.0, penaltyAccumulator + 3.5);
+                            maneuverPenalized = true;
+                        }
+                    } else {
+                        maneuverPenalized = false;
+                    }
+
+                    liveSmoothScore = Math.round(Math.max(10, Math.min(100, 100.0 - penaltyAccumulator)));
+                } // Закрытие условия (!isBumpActive)
+
+                const elapsed = Math.floor((now - tripStartTime) / 1000);
                 const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
                 const s = String(elapsed % 60).padStart(2, '0');
                 document.getElementById('hud-timer').innerText = `${m}:${s}`;
 
-                // 4. Вывод суммы рублей с автомасштабированием шрифта внутри круга
+                // Вывод суммы рублей с автомасштабированием шрифта
                 const rubText = `+${liveSavingsRub.toFixed(2)} ₽`;
                 const rubEl = document.getElementById('hud-live-savings');
                 if (rubEl) {
@@ -1247,10 +1364,12 @@
                 document.getElementById('hud-smooth-val').innerText = `${liveSmoothScore} / 100`;
                 document.getElementById('hud-bumps-val').innerText = liveBumpsCount;
 
+                // Цветовая индикация HUD
                 const hudOverlay = document.getElementById('safety-hud');
                 const glowRing = document.getElementById('hud-glow-ring');
                 const hint = document.getElementById('hud-driving-hint');
-                if (isBump) {
+                
+                if (isBumpActive) {
                     hudOverlay.className = "safety-hud-overlay active glow-blue";
                     glowRing.className = "ambient-glow-circle bump";
                     hint.innerText = "Неровность дороги • Защита";
@@ -1273,7 +1392,12 @@
             if (!isRecording) return;
             isRecording = false;
             clearInterval(sensorTimer);
-            if (gpsWatchId) navigator.geolocation.clearWatch(gpsWatchId);
+
+            if (gpsWatchId) {
+                navigator.geolocation.clearWatch(gpsWatchId);
+                gpsWatchId = null;
+            }
+
             releaseWakeLock();
             document.getElementById('safety-hud').classList.remove('active');
 
@@ -1299,12 +1423,30 @@
                 duration_seconds: durationSec
             });
 
+            const tripSessionId = (window.crypto && crypto.randomUUID)
+                ? crypto.randomUUID()
+                : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+                    const r = Math.random() * 16 | 0;
+                    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+                    return v.toString(16);
+                });
+
             const payload = {
-                session_id: 'sess-' + Math.random().toString(36).substring(2, 10),
+                session_id: tripSessionId,
                 user_id: currentUserId,
                 car_id: currentCarId,
-                telemetry_stream: telemetryBuffer
+                telemetry_stream: [...telemetryBuffer]
             };
+
+            telemetryBuffer = [];
+
+            if (typeof AutoXAKOfflineStore !== 'undefined') {
+                try {
+                    await AutoXAKOfflineStore.savePendingTrip(payload);
+                } catch (e) {
+                    console.warn("[OfflineStore] Ошибка IndexedDB:", e);
+                }
+            }
 
             try {
                 const res = await fetch('/api/v1/telemetry/session', {
@@ -1312,8 +1454,14 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
+
                 if (res.ok) {
                     const serverData = await res.json();
+
+                    if (typeof AutoXAKOfflineStore !== 'undefined') {
+                        await AutoXAKOfflineStore.removePendingTrip(payload.session_id);
+                    }
+
                     if (serverData.cost_savings_rub !== undefined) {
                         document.getElementById('res-savings-num').innerText = Number(serverData.cost_savings_rub).toFixed(2);
                     }
@@ -1323,15 +1471,35 @@
                     if (serverData.base_potential_rub !== undefined) {
                         document.getElementById('res-base-potential').innerText = `+${Number(serverData.base_potential_rub).toFixed(2)} ₽`;
                     }
+                    if (serverData.distance_km !== undefined) {
+                        document.getElementById('res-dist-time').innerText = `${Number(serverData.distance_km).toFixed(2)} км`;
+                    }
+
+                    showToast({ title: "Успешно", message: "Поездка зафиксирована в копилке", type: "success" });
                     await fetchDashboard();
+                } else {
+                    const errText = await res.text();
+                    console.error(`[API Error ${res.status}]`, errText);
+                    showToast({
+                        title: "Сохранено локально",
+                        message: `Сервер недоступен (${res.status}). Данные в очереди.`,
+                        type: "alert"
+                    });
                 }
-            } catch (_) {}
+            } catch (networkErr) {
+                console.warn("[Network Offline]", networkErr);
+                showToast({
+                    title: "Оффлайн-режим",
+                    message: "Связь отсутствует. Поездка синхронизируется при появлении сети.",
+                    type: "alert"
+                });
+            }
         }
 
         function showPostTripModalData(data) {
-            document.getElementById('res-savings-num').innerText = data.savings_rub.toFixed(2);
-            document.getElementById('res-base-potential').innerText = `+${data.base_potential_rub.toFixed(2)} ₽`;
-            document.getElementById('res-rush-penalty').innerText = `-${data.rush_cost_rub.toFixed(2)} ₽`;
+            document.getElementById('res-savings-num').innerText = Number(data.savings_rub || 0).toFixed(2);
+            document.getElementById('res-base-potential').innerText = `+${Number(data.base_potential_rub || 0).toFixed(2)} ₽`;
+            document.getElementById('res-rush-penalty').innerText = `-${Number(data.rush_cost_rub || 0).toFixed(2)} ₽`;
             document.getElementById('res-harsh-accel').innerText = data.harsh_accel;
             document.getElementById('res-harsh-brake').innerText = data.harsh_brake;
             document.getElementById('res-harsh-sub').innerText = (data.harsh_accel + data.harsh_brake > 0) ? 'Снизило выгоду' : 'Идеально плавно';
@@ -1339,8 +1507,8 @@
             const jamMin = Math.round(data.jam_seconds / 60);
             document.getElementById('res-jam-time').innerText = `${jamMin} мин`;
             document.getElementById('res-bumps').innerText = data.road_anomalies;
-            document.getElementById('res-dist-time').innerText = `${data.distance_km.toFixed(2)} км`;
-            document.getElementById('res-sec-sub').innerText = `${Math.round(data.duration_seconds)} с`;
+            document.getElementById('res-dist-time').innerText = `${Number(data.distance_km || 0).toFixed(2)} км`;
+            document.getElementById('res-sec-sub').innerText = `${Math.round(data.duration_seconds || 0)} с`;
 
             document.getElementById('post-trip-modal').classList.add('active');
         }
@@ -1353,33 +1521,75 @@
         /* ---------------- СВАЙП-КОНТРОЛЛЕР ---------------- */
         const rail = document.getElementById('swipeRail');
         const thumb = document.getElementById('swipeThumb');
+        const railText = document.getElementById('swipeText');
         let isDragging = false, startX = 0, curTranslate = 0, maxTranslate = 0;
+        let activePointerId = null;
 
         thumb.addEventListener('pointerdown', (e) => {
-            isDragging = true; startX = e.clientX;
+            isDragging = true;
+            activePointerId = e.pointerId;
+            startX = e.clientX;
             maxTranslate = Math.max(0, rail.offsetWidth - thumb.offsetWidth - 8);
+            
+            try { thumb.setPointerCapture(e.pointerId); } catch (_) {}
             thumb.style.transition = 'none';
         });
+
         window.addEventListener('pointermove', (e) => {
-            if (!isDragging) return;
+            if (!isDragging || e.pointerId !== activePointerId) return;
+            
             curTranslate = Math.max(0, Math.min(e.clientX - startX, maxTranslate));
             thumb.style.transform = `translateX(${curTranslate}px)`;
+            
+            if (railText && maxTranslate > 0) {
+                railText.style.opacity = (1 - (curTranslate / maxTranslate) * 0.95).toFixed(2);
+            }
         });
-        window.addEventListener('pointerup', () => {
-            if (!isDragging) return;
+
+        const onPointerEnd = (e) => {
+            if (!isDragging || (activePointerId !== null && e.pointerId !== activePointerId)) return;
             isDragging = false;
+            
+            try { thumb.releasePointerCapture(e.pointerId); } catch (_) {}
+            activePointerId = null;
+
             if (curTranslate >= maxTranslate * 0.75) {
+                thumb.style.pointerEvents = 'none';
+                thumb.style.transition = 'transform 0.15s ease-out';
                 thumb.style.transform = `translateX(${maxTranslate}px)`;
-                setTimeout(completeTripSession, 100);
+                
+                if (railText) {
+                    railText.innerText = "Расчет выгоды...";
+                    railText.style.opacity = '1';
+                }
+                
+                setTimeout(completeTripSession, 120);
             } else {
                 resetSwipeRail();
             }
-        });
+        };
+
+        window.addEventListener('pointerup', onPointerEnd);
+        window.addEventListener('pointercancel', onPointerEnd);
+
         function resetSwipeRail() {
+            thumb.style.pointerEvents = 'auto';
             thumb.style.transition = 'transform 0.25s ease';
             thumb.style.transform = 'translateX(0px)';
             curTranslate = 0;
+            
+            if (railText) {
+                railText.innerText = "Свайп для завершения ❯❯";
+                railText.style.opacity = '1';
+            }
         }
+
+        /* ---------------- УДЕРЖАНИЕ ЭКРАНА ПРИ ПЕРЕКЛЮЧЕНИИ ВКЛАДОК ---------------- */
+        document.addEventListener('visibilitychange', async () => {
+            if (document.visibilityState === 'visible' && isRecording) {
+                await acquireWakeLock();
+            }
+        });
 
         /* ---------------- ИНИЦИАЛИЗАЦИЯ СЕССИИ ПРИ ЗАПУСКЕ ---------------- */
         window.addEventListener('DOMContentLoaded', async () => {

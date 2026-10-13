@@ -311,3 +311,26 @@ class TwinEngine:
 
 
 AggressiveTwinEngine = TwinEngine
+
+def calculate_trip_smoothness_score(
+    distance_km: float,
+    harsh_accel_count: int,
+    harsh_brake_count: int,
+    mean_excess_jerk: float = 0.0
+) -> int:
+    """
+    Эталонный расчет итогового индекса плавности поездки:
+    - Нормирован на дистанцию (события на 10 км пути).
+    - Учитывает интегральную энергию рывков кузова (Jerk).
+    """
+    if distance_km < 0.2:
+        return 100
+
+    total_events = harsh_accel_count + harsh_brake_count
+    events_per_10km = (total_events / distance_km) * 10.0
+
+    event_penalty = 100.0 * (1.0 - np.exp(-0.065 * events_per_10km))
+    jerk_penalty = min(20.0, float(mean_excess_jerk) * 4.0)
+
+    final_score = int(np.clip(100.0 - (event_penalty + jerk_penalty), 10.0, 100.0))
+    return final_score
