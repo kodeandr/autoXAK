@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <link rel="manifest" href="/static/manifest.json">
@@ -38,7 +38,6 @@
             --radius-pill: 9999px;
             --shadow-card: 0 14px 36px rgba(0, 0, 0, 0.65);
 
-            /* Системные безопасные отступы (Safe Area Insets) */
             --sat: env(safe-area-inset-top, 0px);
             --sab: env(safe-area-inset-bottom, 0px);
             --sal: env(safe-area-inset-left, 0px);
@@ -48,6 +47,11 @@
         *, *::before, *::after {
             box-sizing: border-box; margin: 0; padding: 0;
             font-family: var(--font-sans); -webkit-tap-highlight-color: transparent; user-select: none;
+        }
+
+        input, textarea {
+            user-select: text;
+            -webkit-user-select: text;
         }
 
         html, body {
@@ -66,7 +70,6 @@
             align-items: stretch;
         }
 
-        /* ОСНОВНОЙ КОНТЕЙНЕР: без рамок, 100% экрана на смартфонах, аккуратная колонка на ПК */
         .mobile-container {
             width: 100%;
             max-width: 480px;
@@ -538,7 +541,7 @@
             <div class="summary-card">
                 <div class="summary-header">
                     <span style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; font-weight: 700;">Итог поездки</span>
-                    <span class="summary-tag">🏆 Выгода сохранена</span>
+                    <span class="summary-tag" id="res-status-tag">🏆 Выгода сохранена</span>
                 </div>
 
                 <div class="hero-autonomy-box">
@@ -668,7 +671,7 @@
                     <div class="auth-input-wrapper">
                         <input class="auth-input" type="text" id="reg-input-user" placeholder="Придумайте логин" autocomplete="username">
                     </div>
-                    <div class="auth-input-hint" id="reg-hint-user">5–15 латинских букв</div>
+                    <div class="auth-input-hint" id="reg-hint-user">5–15 латинских символов</div>
                 </div>
 
                 <div class="auth-form-group">
@@ -705,7 +708,7 @@
             </div>
             <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--text-secondary); font-family: var(--font-mono);">
                 <span>Скорость:</span>
-                <strong id="demoSpeedLabel" style="color: var(--accent-blue);">0 км/ч</strong>
+                <strong id="demoSpeedLabel" style="color: var(--accent-blue);">0 км/ч (Реальные датчики)</strong>
             </div>
             <input type="range" class="demo-range-input" id="demoSpeedSlider" min="0" max="130" value="0" step="1" oninput="onDemoSpeedChange(this.value)">
             <div class="demo-presets-grid">
@@ -774,6 +777,7 @@
                 if (savedProfile) {
                     try {
                         const p = JSON.parse(savedProfile);
+                        if (p.fuel_city_l100km) baseCityFuelRate = Number(p.fuel_city_l100km) || 8.5;
                         if (p.car_name && p.car_name.trim()) {
                             const badge = document.getElementById('dash-car-name');
                             if (badge) badge.innerText = p.car_name;
@@ -867,12 +871,21 @@
                 const regHint = document.getElementById('reg-hint-user');
                 if (regUser) regUser.classList.remove('has-error');
                 if (regHint) {
-                    regHint.innerText = '5–15 латинских букв';
+                    regHint.innerText = '5–15 латинских символов';
                     regHint.classList.remove('error');
                 }
             },
 
             async continueAsGuest() {
+                // Защита: если у пользователя уже есть сохраненный ID в localStorage — не затираем его копилку!
+                const savedId = localStorage.getItem('autoXAK_user_id');
+                if (savedId) {
+                    currentUserId = savedId;
+                    this.close();
+                    await fetchDashboard();
+                    showToast({ title: "Профиль активен", message: "Текущая копилка сохранена", type: "success" });
+                    return;
+                }
                 try {
                     const res = await fetch('/api/v1/auth/guest', { method: 'POST' });
                     if (!res.ok) throw new Error('Сбой создания сессии');
@@ -881,7 +894,10 @@
                     this.close();
                     showToast({ title: "Гостевой режим", message: "Сессия успешно создана", type: "success" });
                 } catch (e) {
-                    showToast({ title: "Ошибка подключения", message: e.message, type: "alert" });
+                    const fallbackId = 'dev_' + Math.random().toString(36).substring(2, 10);
+                    applySession({ user_id: fallbackId, is_guest: true, name: 'Гость' });
+                    this.close();
+                    showToast({ title: "Локальный профиль", message: "Создана автономная сессия", type: "success" });
                 }
             },
 
@@ -937,13 +953,13 @@
 
                 this.resetFieldErrors();
 
-                if (loginVal.length < 5 || loginVal.length > 15) {
+                if (loginVal.length < 5 || loginVal.length > 35 || !/^[a-zA-Z0-9_.@-]+$/.test(loginVal)) {
                     regInput.classList.add('has-error');
-                    regHint.innerText = 'Логин должен быть от 5 до 15 символов';
+                    regHint.innerText = 'Используйте 5–15 латинских букв или цифр';
                     regHint.classList.add('error');
                     return;
                 }
-                if (passVal.length < 8 || passVal.length > 15) {
+                if (passVal.length < 8 || passVal.length > 32) {
                     showToast({ title: "Пароль не подходит", message: "Требуется от 8 до 15 символов", type: "alert" });
                     return;
                 }
@@ -952,28 +968,37 @@
                 btn.innerHTML = `<div class="auth-spinner"></div> <span>Создать аккаунт</span>`;
 
                 try {
-                    const res = await fetch('/api/v1/auth/register', {
+                    const existingGuest = localStorage.getItem('autoXAK_user_id');
+                    const isGuest = localStorage.getItem('autoXAK_is_guest') === 'true';
+                    const endpoint = (existingGuest && isGuest) ? '/api/v1/auth/upgrade-guest' : '/api/v1/auth/register';
+
+                    const payload = {
+                        email: loginVal,
+                        password: passVal,
+                        name: loginVal,
+                        car_id: currentCarId
+                    };
+                    if (existingGuest && isGuest) {
+                        payload.guest_user_id = existingGuest;
+                    }
+
+                    const res = await fetch(endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            email: loginVal,
-                            password: passVal,
-                            name: loginVal,
-                            car_id: currentCarId
-                        })
+                        body: JSON.stringify(payload)
                     });
                     const data = await res.json();
 
                     if (!res.ok) {
                         regInput.classList.add('has-error');
-                        regHint.innerText = 'Этот логин уже занят';
+                        regHint.innerText = data.detail || 'Этот логин уже занят';
                         regHint.classList.add('error');
                         return;
                     }
 
                     applySession(data);
                     this.close();
-                    showToast({ title: "Аккаунт создан", message: "История сохраняется", type: "success" });
+                    showToast({ title: "Аккаунт создан", message: "Ваша копилка привязана к профилю", type: "success" });
                 } catch (err) {
                     showToast({ title: "Сбой сети", message: err.message, type: "alert" });
                 } finally {
@@ -987,6 +1012,7 @@
             currentUserId = userData.user_id;
             localStorage.setItem('autoXAK_user_id', currentUserId);
             localStorage.setItem('autoXAK_is_guest', userData.is_guest ? 'true' : 'false');
+            if (userData.name) localStorage.setItem('autoXAK_user_name', userData.name);
             updateUserBadge(userData);
             fetchDashboard();
         }
@@ -1007,6 +1033,7 @@
         let sensorTimer = null;
         let gpsWatchId = null;
         let tripStartTime = 0;
+        let lastTickTime = 0;
         let wakeLockSentinel = null;
         let sensorsBound = false;
 
@@ -1015,6 +1042,10 @@
         let curAx = 0.0, curAy = 0.0, curAz = 9.81;
         let curSpeed = 0.0, curLat = 55.751244, curLon = 37.618423;
 
+        let lastGpsFixTime = 0;
+        let prevLat = null;
+        let prevLon = null;
+
         let inHarshAccel = false;
         let inHarshBrake = false;
         let inBumpCooldown = false;
@@ -1022,6 +1053,7 @@
 
         let liveDistanceKm = 0.0;
         let liveSavedLiters = 0.0;
+        let liveBasePotentialRub = 0.0;
         let liveSavingsRub = 0.0;
         let liveRangeBonusKm = 0.0;
         let liveSmoothScore = 100;
@@ -1039,6 +1071,7 @@
         let demoCurrentSpeedKmh = 0.0;
         let demoHuntingActive = false;
         let demoHuntingTime = 0.0;
+        let demoHarshHoldUntil = 0;
         let toastTimeoutId = null;
 
         function showToast({ title, message, type = 'success', duration = 3000 }) {
@@ -1056,15 +1089,30 @@
         function toggleDemoDock() {
             const dock = document.getElementById('demoDock');
             dock.classList.toggle('collapsed');
-            document.getElementById('demoToggleText').innerText = dock.classList.contains('collapsed') ? 'Развернуть ▲' : 'Свернуть ▼';
+            const isCollapsed = dock.classList.contains('collapsed');
+            document.getElementById('demoToggleText').innerText = isCollapsed ? 'Развернуть ▲' : 'Свернуть ▼';
+            if (isCollapsed && demoTargetSpeedKmh === 0) {
+                isDemoMode = false;
+                document.getElementById('demoSpeedLabel').innerText = '0 км/ч (Реальные датчики)';
+            }
         }
 
         function onDemoSpeedChange(valKmh) {
-            isDemoMode = true;
+            const numVal = parseFloat(valKmh) || 0.0;
             demoHuntingActive = false;
-            demoTargetSpeedKmh = parseFloat(valKmh);
-            document.getElementById('demoSpeedLabel').innerText = `${Math.round(demoTargetSpeedKmh)} км/ч`;
+            demoTargetSpeedKmh = numVal;
             document.querySelectorAll('.btn-preset').forEach(b => b.classList.remove('active-preset'));
+
+            if (numVal <= 0.0) {
+                isDemoMode = false;
+                demoCurrentSpeedKmh = 0.0;
+                curSpeed = 0.0;
+                curAx = 0.0; linAx = 0.0; window.curLinAcc = 0.0;
+                document.getElementById('demoSpeedLabel').innerText = '0 км/ч (Реальные датчики)';
+            } else {
+                isDemoMode = true;
+                document.getElementById('demoSpeedLabel').innerText = `${Math.round(demoTargetSpeedKmh)} км/ч`;
+            }
         }
 
         function setDemoPreset(type) {
@@ -1073,14 +1121,17 @@
             if (type === 'calm') {
                 document.getElementById('btn-pre-calm').classList.add('active-preset');
                 demoHuntingActive = false; demoTargetSpeedKmh = 60.0;
-                curAx = 0.0; linAx = 0.0; window.curLinAcc = 0.0;
+                demoHarshHoldUntil = 0;
+                curAx = 0.0; linAx = 0.0; window.curLinAcc = 0.0; window.curSignedLongAcc = 0.0;
             } else if (type === 'harsh') {
                 document.getElementById('btn-pre-harsh').classList.add('active-preset');
                 demoHuntingActive = false; demoTargetSpeedKmh = 80.0;
-                curAx = 3.2; linAx = 3.2; window.curLinAcc = 3.2;
+                demoHarshHoldUntil = Date.now() + 1400;
+                curAx = 3.2; linAx = 3.2; window.curLinAcc = 3.2; window.curSignedLongAcc = 3.2;
             } else if (type === 'hunting') {
                 document.getElementById('btn-pre-hunt').classList.add('active-preset');
                 demoHuntingActive = true; demoHuntingTime = 0.0; demoTargetSpeedKmh = 72.0;
+                demoHarshHoldUntil = 0;
             }
             document.getElementById('demoSpeedSlider').value = Math.round(demoTargetSpeedKmh);
             document.getElementById('demoSpeedLabel').innerText = `${Math.round(demoTargetSpeedKmh)} км/ч`;
@@ -1088,48 +1139,78 @@
 
         function triggerRoadBump() {
             isDemoMode = true;
-            curAz = 16.5; curAx = 0.2; linAx = 0.2; linAz = 6.69; window.curLinAcc = 0.2;
-            setTimeout(() => { 
+            curAz = 16.5; curAx = 0.2; linAx = 0.2; linAz = 6.69;
+            window.curVertJolt = 6.69; window.curLinAcc = 0.2;
+            setTimeout(() => {
                 curAz = 9.81; curAx = 0.0; linAx = 0.0; linAz = 0.0;
-            }, 500);
+                window.curVertJolt = 0.0;
+            }, 450);
             showToast({ title: "Неровность дороги", message: "Импульс 16.5 м/с² изолирован Z-Veto", type: "success" });
         }
 
         function updateDemoPhysics(dt) {
             if (!isDemoMode) return;
-            if (demoHuntingActive) {
+            const now = Date.now();
+            if (now < demoHarshHoldUntil) {
+                demoCurrentSpeedKmh = Math.min(130.0, demoCurrentSpeedKmh + 3.2 * 3.6 * dt);
+                curAx = 3.2; linAx = 3.2; window.curLinAcc = 3.2; window.curSignedLongAcc = 3.2;
+            } else if (demoHuntingActive) {
                 demoHuntingTime += dt;
                 const osc = Math.sin(2 * Math.PI * 0.4 * demoHuntingTime);
                 demoCurrentSpeedKmh = 72.0 + osc * 3.5;
-                curAx = osc * 0.65; linAx = curAx; window.curLinAcc = Math.abs(curAx);
+                curAx = osc * 0.65; linAx = curAx; window.curLinAcc = Math.abs(curAx); window.curSignedLongAcc = curAx;
             } else {
                 const diff = demoTargetSpeedKmh - demoCurrentSpeedKmh;
-                const rate = (demoTargetSpeedKmh > 75.0) ? 14.0 : 5.0;
+                const rate = 5.0; // Плавный набор ~1.38 м/с², не вызывающий ложного штрафа
                 const step = rate * dt;
                 if (Math.abs(diff) > 0.2) {
                     const delta = Math.sign(diff) * Math.min(Math.abs(diff), step);
                     demoCurrentSpeedKmh += delta;
-                    curAx = (delta / 3.6) / dt; linAx = curAx; window.curLinAcc = Math.abs(curAx);
+                    curAx = (delta / 3.6) / dt; linAx = curAx;
+                    window.curLinAcc = Math.abs(curAx); window.curSignedLongAcc = curAx;
                 } else {
                     demoCurrentSpeedKmh = demoTargetSpeedKmh;
-                    curAx *= 0.8; linAx = curAx; window.curLinAcc = Math.abs(curAx);
+                    curAx *= 0.8; linAx = curAx;
+                    window.curLinAcc = Math.abs(curAx); window.curSignedLongAcc = curAx;
                 }
             }
             curSpeed = Math.max(0.0, demoCurrentSpeedKmh / 3.6);
             document.getElementById('demoSpeedLabel').innerText = `${Math.round(demoCurrentSpeedKmh)} км/ч`;
         }
 
+        async function syncPendingOfflineTrips() {
+            if (typeof AutoXAKOfflineStore === 'undefined' || !navigator.onLine) return;
+            try {
+                const pending = await AutoXAKOfflineStore.getAllPendingTrips();
+                if (!Array.isArray(pending) || pending.length === 0) return;
+                for (const item of pending) {
+                    const payload = item.payload || item;
+                    if (!payload || !payload.session_id) continue;
+                    const res = await fetch('/api/v1/telemetry/session', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (res.ok) {
+                        await AutoXAKOfflineStore.removePendingTrip(payload.session_id);
+                    }
+                }
+            } catch (_) {}
+        }
+
         async function fetchDashboard() {
             if (!currentUserId) return;
             try {
-                const res = await fetch(`/api/v1/users/${currentUserId}/dashboard`);
+                const res = await fetch(`/api/v1/users/${encodeURIComponent(currentUserId)}/dashboard`);
                 if (!res.ok) return;
                 const data = await res.json();
 
                 if (data.car_id) updateCarHeader(data.car_id);
                 if (data.fuel_price_rub) currentFuelPrice = Number(data.fuel_price_rub);
 
-                const totalRub = Number(data.total_savings_rub || data.month_savings_rub || 0);
+                const totalRub = Number(
+                    data.total_savings_rub !== undefined ? data.total_savings_rub : (data.month_savings_rub || 0)
+                );
                 document.getElementById('dash-savings').innerText = totalRub.toFixed(2);
                 document.getElementById('dash-fuel-liters').innerText = `${Number(data.total_fuel_saved_liters || 0).toFixed(2)} л`;
                 document.getElementById('dash-range-bank').innerText = `+${Number(data.range_bank_km || 0).toFixed(1)} км`;
@@ -1148,40 +1229,74 @@
 
         function releaseWakeLock() {
             if (wakeLockSentinel) {
-                wakeLockSentinel.release().then(() => { wakeLockSentinel = null; });
+                wakeLockSentinel.release().then(() => { wakeLockSentinel = null; }).catch(() => {});
             }
         }
 
         function handleDeviceMotion(e) {
             if (isDemoMode) return;
 
-            if (e.acceleration && e.acceleration.x !== null && e.acceleration.x !== undefined) {
+            // 1. ВСЕГДА обновляем 3D-вектор гравитации из accelerationIncludingGravity
+            const rawG = e.accelerationIncludingGravity;
+            if (rawG && rawG.x !== null && rawG.x !== undefined) {
+                const rx = Number(rawG.x) || 0.0;
+                const ry = Number(rawG.y) || 0.0;
+                const rz = Number(rawG.z) || 9.81;
+
+                const alpha = 0.92;
+                gravX = alpha * gravX + (1.0 - alpha) * rx;
+                gravY = alpha * gravY + (1.0 - alpha) * ry;
+                gravZ = alpha * gravZ + (1.0 - alpha) * rz;
+
+                if (e.acceleration && e.acceleration.x !== null && e.acceleration.x !== undefined) {
+                    linAx = Number(e.acceleration.x) || 0.0;
+                    linAy = Number(e.acceleration.y) || 0.0;
+                    linAz = Number(e.acceleration.z) || 0.0;
+                } else {
+                    linAx = rx - gravX;
+                    linAy = ry - gravY;
+                    linAz = rz - gravZ;
+                }
+            } else if (e.acceleration && e.acceleration.x !== null) {
                 linAx = Number(e.acceleration.x) || 0.0;
                 linAy = Number(e.acceleration.y) || 0.0;
                 linAz = Number(e.acceleration.z) || 0.0;
-                curAx = linAx;
-                curAy = linAy;
-                curAz = (e.accelerationIncludingGravity && e.accelerationIncludingGravity.z !== null)
-                    ? Number(e.accelerationIncludingGravity.z) : 9.81;
-            } else if (e.accelerationIncludingGravity) {
-                const rawX = Number(e.accelerationIncludingGravity.x) || 0.0;
-                const rawY = Number(e.accelerationIncludingGravity.y) || 0.0;
-                const rawZ = Number(e.accelerationIncludingGravity.z) || 9.81;
-
-                const alpha = 0.94;
-                gravX = alpha * gravX + (1.0 - alpha) * rawX;
-                gravY = alpha * gravY + (1.0 - alpha) * rawY;
-                gravZ = alpha * gravZ + (1.0 - alpha) * rawZ;
-
-                linAx = rawX - gravX;
-                linAy = rawY - gravY;
-                linAz = rawZ - gravZ;
-
-                curAx = linAx;
-                curAy = linAy;
-                curAz = rawZ;
             }
-            window.curLinAcc = Math.hypot(linAx, linAy);
+
+            // 2. Ортогональная 3D-декомпозиция: отделяем вертикальный удар (вдоль g) от горизонтальной плоскости дороги
+            const gNorm = Math.hypot(gravX, gravY, gravZ) || 9.81;
+            const ux = gravX / gNorm, uy = gravY / gNorm, uz = gravZ / gNorm;
+
+            // Проекция линейного ускорения строго на вертикальную ось земли (Z-Veto)
+            const vertSigned = linAx * ux + linAy * uy + linAz * uz;
+            window.curVertJolt = Math.abs(vertSigned);
+
+            // Истинный горизонтальный вектор ускорения автомобиля (инвариантный к наклону телефона в держателе)
+            const hx = linAx - vertSigned * ux;
+            const hy = linAy - vertSigned * uy;
+            const hz = linAz - vertSigned * uz;
+            const horizMag = Math.hypot(hx, hy, hz);
+            window.curLinAcc = horizMag;
+
+            // Знак продольного маневра (разгон vs торможение) по доминирующей сагиттальной компоненте (Y/Z)
+            const domLong = (Math.abs(hz) > Math.abs(hy)) ? hz : hy;
+            const signLong = (domLong >= 0) ? 1.0 : -1.0;
+            window.curSignedLongAcc = signLong * horizMag;
+
+            // Согласованные оси для серверного DSP-фильтра (app/main.py)
+            curAx = Number((signLong * horizMag).toFixed(3));
+            curAy = Number(hx.toFixed(3));
+            curAz = Number((9.81 + vertSigned).toFixed(3));
+        }
+
+        function calcHaversineMeters(lat1, lon1, lat2, lon2) {
+            const R = 6371000;
+            const p1 = lat1 * Math.PI / 180;
+            const p2 = lat2 * Math.PI / 180;
+            const dp = (lat2 - lat1) * Math.PI / 180;
+            const dl = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dp / 2) ** 2 + Math.cos(p1) * Math.cos(p2) * Math.sin(dl / 2) ** 2;
+            return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         }
 
         async function setupSensors() {
@@ -1195,16 +1310,46 @@
             }
 
             if ('geolocation' in navigator) {
+                if (gpsWatchId !== null) {
+                    navigator.geolocation.clearWatch(gpsWatchId);
+                    gpsWatchId = null;
+                }
                 try {
                     gpsWatchId = navigator.geolocation.watchPosition(
-                        (p) => { 
-                            if (!isDemoMode) curSpeed = (p.coords.speed !== null && p.coords.speed >= 0.5) ? p.coords.speed : 0.0;
-                            curLat = p.coords.latitude;
-                            curLon = p.coords.longitude;
+                        (p) => {
+                            const nowGps = Date.now();
+                            const lat = p.coords.latitude;
+                            const lon = p.coords.longitude;
+                            const accuracy = p.coords.accuracy || 20;
+
+                            if (!isDemoMode) {
+                                let spd = (p.coords.speed !== null && p.coords.speed >= 0.5) ? p.coords.speed : null;
+
+                                // Haversine Fallback: если GPS-модуль вернул speed = null, считаем скорость по смещению координат
+                                if (spd === null && prevLat !== null && prevLon !== null && lastGpsFixTime > 0) {
+                                    const dtGps = (nowGps - lastGpsFixTime) / 1000.0;
+                                    const distM = calcHaversineMeters(prevLat, prevLon, lat, lon);
+                                    const minDrift = Math.max(1.5, Math.min(accuracy * 0.25, 4.0));
+                                    if (dtGps > 0.2 && distM > minDrift && (distM / dtGps) < 55.0) {
+                                        spd = distM / dtGps;
+                                    } else {
+                                        spd = 0.0;
+                                    }
+                                }
+                                curSpeed = (spd !== null && spd >= 0.5) ? spd : 0.0;
+                            }
+
+                            prevLat = lat;
+                            prevLon = lon;
+                            curLat = lat;
+                            curLon = lon;
+                            lastGpsFixTime = nowGps;
+
                             const gpsLabel = document.getElementById('gps-status-label');
                             if (gpsLabel) gpsLabel.innerText = "GPS активен (1 Гц)";
                         },
                         () => {
+                            if (!isDemoMode) curSpeed = 0.0;
                             const gpsLabel = document.getElementById('gps-status-label');
                             if (gpsLabel) gpsLabel.innerText = "GPS: нет сигнала";
                         },
@@ -1226,9 +1371,11 @@
             telemetryBuffer = [];
             isRecording = true;
             tripStartTime = Date.now();
+            lastTickTime = tripStartTime;
 
             liveDistanceKm = 0.0;
             liveSavedLiters = 0.0;
+            liveBasePotentialRub = 0.0;
             liveSavingsRub = 0.0;
             liveRangeBonusKm = 0.0;
             liveSmoothScore = 100;
@@ -1252,14 +1399,24 @@
 
             sensorTimer = setInterval(() => {
                 if (!isRecording) return;
-                const dt = 0.02;
                 const now = Date.now();
+                const dt = Math.min(0.25, Math.max(0.005, (now - lastTickTime) / 1000.0));
+                lastTickTime = now;
+
                 updateDemoPhysics(dt);
 
+                // Сторожевой таймер GPS: если в реальном режиме сигнал пропал более 4.5 сек назад, плавно гасим скорость
+                if (!isDemoMode && lastGpsFixTime > 0 && (now - lastGpsFixTime > 4500)) {
+                    curSpeed = 0.0;
+                }
+
                 telemetryBuffer.push({
-                    t: now / 1000,
-                    ax: Number(curAx.toFixed(3)), ay: Number(curAy.toFixed(3)), az: Number(curAz.toFixed(3)),
-                    gx: 0.0, gy: 0.0, gz: 0.0, speed: Number(curSpeed.toFixed(2)),
+                    t: Number((now / 1000).toFixed(3)),
+                    ax: Number(curAx.toFixed(3)),
+                    ay: Number(curAy.toFixed(3)),
+                    az: Number(curAz.toFixed(3)),
+                    gx: 0.0, gy: 0.0, gz: 0.0,
+                    speed: Number(curSpeed.toFixed(2)),
                     lat: curLat, lon: curLon
                 });
                 totalSamplesCount++;
@@ -1267,56 +1424,46 @@
                 liveDistanceKm += (curSpeed * dt) / 1000.0;
                 if (curSpeed < 1.0) liveTrafficJamSeconds += dt;
 
-                liveSavedLiters = (liveDistanceKm * 0.018);
-                liveSavingsRub = liveSavedLiters * currentFuelPrice;
-                liveRangeBonusKm = (100.0 * liveSavedLiters) / baseCityFuelRate;
+                // 1. ИЗОЛЯЦИЯ ВЕРТИКАЛЬНОГО УДАРА (Z-Veto) ОТ ГОРИЗОНТАЛЬНЫХ МАНЕВРОВ
+                const dynamicJolt = isDemoMode ? Math.abs(curAz - 9.81) : (window.curVertJolt || 0.0);
+                const activeHoriz = isDemoMode ? Math.abs(curAx) : (window.curLinAcc || 0.0);
 
-                // 1. ИЗОЛЯЦИЯ ВЕРТИКАЛЬНОГО УДАРА (Z-Veto) ОТ ПРОДОЛЬНОГО РАЗГОНА
-                let dynamicJolt = 0.0;
-                if (isDemoMode) {
-                    dynamicJolt = Math.abs(curAz - 9.81);
-                } else {
-                    const gNorm = Math.hypot(gravX, gravY, gravZ) || 9.81;
-                    dynamicJolt = Math.abs((linAx * gravX + linAy * gravY + linAz * gravZ) / gNorm);
-                }
-
-                if (dynamicJolt > 3.6) {
-                    if (!inBumpCooldown && (now - lastBumpTime > 600)) {
+                // Кочка засчитывается только тогда, когда вертикальный импульс > 3.8 м/с² И превышает горизонтальный маневр
+                if (dynamicJolt > 3.8 && dynamicJolt > activeHoriz * 1.35) {
+                    if (!inBumpCooldown && (now - lastBumpTime > 650)) {
                         inBumpCooldown = true;
                         lastBumpTime = now;
                         liveBumpsCount++;
                     }
-                } else if (dynamicJolt < 1.5 && (now - lastBumpTime > 400)) {
+                } else if (dynamicJolt < 1.6 && (now - lastBumpTime > 400)) {
                     inBumpCooldown = false;
                 }
 
                 const isBumpActive = (now - lastBumpTime < 450);
 
                 if (!isBumpActive) {
-                    // 2. ДЕТЕКЦИЯ МАНЕВРОВ И ДИНАМИЧЕСКИЙ РАСЧЕТ ПЛАВНОСТИ (LEAKY BUCKET)
-                    const activeAccelX = isDemoMode ? curAx : linAx;
-                    const activeHoriz = (typeof window.curLinAcc !== 'undefined') ? window.curLinAcc : Math.hypot(linAx, linAy);
+                    // 2. ДЕТЕКЦИЯ МАНЕВРОВ БЕЗ ДВОЙНОГО СРАБАТЫВАНИЯ СЧЕТЧИКОВ
+                    const signedLong = isDemoMode ? curAx : (window.curSignedLongAcc || 0.0);
 
-                    if (activeAccelX > 2.2 || activeHoriz > 2.4) {
+                    if (signedLong > 2.35) {
                         if (!inHarshAccel) {
                             inHarshAccel = true;
                             liveHarshAccelCount++;
                         }
-                    } else if (activeAccelX < 1.2 && activeHoriz < 1.3) {
+                    } else if (signedLong < 1.2) {
                         inHarshAccel = false;
                     }
 
-                    if (activeAccelX < -2.4 || (linAy < -2.4 && !isDemoMode)) {
+                    if (signedLong < -2.45) {
                         if (!inHarshBrake) {
                             inHarshBrake = true;
                             liveHarshBrakeCount++;
                         }
-                    } else if (activeAccelX > -1.2 && linAy > -1.2) {
+                    } else if (signedLong > -1.2) {
                         inHarshBrake = false;
                     }
 
-                    const currentAccel = isDemoMode ? Math.abs(curAx) : activeHoriz;
-                    const excessAccel = Math.max(0.0, currentAccel - 1.2);
+                    const excessAccel = Math.max(0.0, activeHoriz - 1.3);
 
                     if (excessAccel > 0.0) {
                         const instantPenalty = Math.pow(excessAccel / 1.0, 1.8) * 1.4 * dt;
@@ -1336,14 +1483,21 @@
                     }
 
                     liveSmoothScore = Math.round(Math.max(10, Math.min(100, 100.0 - penaltyAccumulator)));
-                } // Закрытие условия (!isBumpActive)
+                }
+
+                // 3. СИНХРОННЫЙ РАСЧЕТ ВЫГОДЫ И ШТРАФОВ
+                const baseLiters = liveDistanceKm * 0.018;
+                liveBasePotentialRub = baseLiters * currentFuelPrice;
+                const liveRushPenaltyRub = (liveHarshAccelCount + liveHarshBrakeCount) * 3.5;
+                liveSavingsRub = Math.max(0.0, liveBasePotentialRub - liveRushPenaltyRub);
+                liveSavedLiters = (currentFuelPrice > 0) ? (liveSavingsRub / currentFuelPrice) : baseLiters;
+                liveRangeBonusKm = (100.0 * liveSavedLiters) / baseCityFuelRate;
 
                 const elapsed = Math.floor((now - tripStartTime) / 1000);
                 const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
                 const s = String(elapsed % 60).padStart(2, '0');
                 document.getElementById('hud-timer').innerText = `${m}:${s}`;
 
-                // Вывод суммы рублей с автомасштабированием шрифта
                 const rubText = `+${liveSavingsRub.toFixed(2)} ₽`;
                 const rubEl = document.getElementById('hud-live-savings');
                 if (rubEl) {
@@ -1364,11 +1518,10 @@
                 document.getElementById('hud-smooth-val').innerText = `${liveSmoothScore} / 100`;
                 document.getElementById('hud-bumps-val').innerText = liveBumpsCount;
 
-                // Цветовая индикация HUD
                 const hudOverlay = document.getElementById('safety-hud');
                 const glowRing = document.getElementById('hud-glow-ring');
                 const hint = document.getElementById('hud-driving-hint');
-                
+
                 if (isBumpActive) {
                     hudOverlay.className = "safety-hud-overlay active glow-blue";
                     glowRing.className = "ambient-glow-circle bump";
@@ -1393,7 +1546,7 @@
             isRecording = false;
             clearInterval(sensorTimer);
 
-            if (gpsWatchId) {
+            if (gpsWatchId !== null) {
                 navigator.geolocation.clearWatch(gpsWatchId);
                 gpsWatchId = null;
             }
@@ -1409,11 +1562,10 @@
             const durationSec = (Date.now() - tripStartTime) / 1000;
             const harshManeuvers = liveHarshAccelCount + liveHarshBrakeCount;
             const rushCost = harshManeuvers * 3.5;
-            const basePotential = liveSavingsRub + rushCost;
 
             showPostTripModalData({
                 savings_rub: liveSavingsRub,
-                base_potential_rub: basePotential,
+                base_potential_rub: liveBasePotentialRub,
                 rush_cost_rub: rushCost,
                 harsh_accel: liveHarshAccelCount,
                 harsh_brake: liveHarshBrakeCount,
@@ -1448,6 +1600,8 @@
                 }
             }
 
+            const statusTag = document.getElementById('res-status-tag');
+
             try {
                 const res = await fetch('/api/v1/telemetry/session', {
                     method: 'POST',
@@ -1462,6 +1616,8 @@
                         await AutoXAKOfflineStore.removePendingTrip(payload.session_id);
                     }
 
+                    if (statusTag) statusTag.innerText = "🏆 Выгода сохранена";
+
                     if (serverData.cost_savings_rub !== undefined) {
                         document.getElementById('res-savings-num').innerText = Number(serverData.cost_savings_rub).toFixed(2);
                     }
@@ -1474,20 +1630,37 @@
                     if (serverData.distance_km !== undefined) {
                         document.getElementById('res-dist-time').innerText = `${Number(serverData.distance_km).toFixed(2)} км`;
                     }
+                    if (serverData.duration_seconds !== undefined) {
+                        document.getElementById('res-sec-sub').innerText = `${Math.round(Number(serverData.duration_seconds))} с`;
+                    }
+                    if (serverData.harsh_accel_count !== undefined) {
+                        document.getElementById('res-harsh-accel').innerText = serverData.harsh_accel_count;
+                    }
+                    if (serverData.harsh_brake_count !== undefined) {
+                        document.getElementById('res-harsh-brake').innerText = serverData.harsh_brake_count;
+                    }
+                    if (serverData.road_anomalies_count !== undefined) {
+                        document.getElementById('res-bumps').innerText = serverData.road_anomalies_count;
+                    }
+                    if (serverData.traffic_jam_seconds !== undefined) {
+                        document.getElementById('res-jam-time').innerText = `${Math.round(Number(serverData.traffic_jam_seconds) / 60)} мин`;
+                    }
 
                     showToast({ title: "Успешно", message: "Поездка зафиксирована в копилке", type: "success" });
                     await fetchDashboard();
                 } else {
                     const errText = await res.text();
                     console.error(`[API Error ${res.status}]`, errText);
+                    if (statusTag) statusTag.innerText = "⏳ В очереди синхронизации";
                     showToast({
                         title: "Сохранено локально",
-                        message: `Сервер недоступен (${res.status}). Данные в очереди.`,
+                        message: `Ответ сервера: ${res.status}. Данные в очереди.`,
                         type: "alert"
                     });
                 }
             } catch (networkErr) {
                 console.warn("[Network Offline]", networkErr);
+                if (statusTag) statusTag.innerText = "⏳ Сохранено офлайн";
                 showToast({
                     title: "Оффлайн-режим",
                     message: "Связь отсутствует. Поездка синхронизируется при появлении сети.",
@@ -1515,6 +1688,7 @@
 
         async function closePostTripModal() {
             document.getElementById('post-trip-modal').classList.remove('active');
+            await syncPendingOfflineTrips();
             await fetchDashboard();
         }
 
@@ -1530,17 +1704,17 @@
             activePointerId = e.pointerId;
             startX = e.clientX;
             maxTranslate = Math.max(0, rail.offsetWidth - thumb.offsetWidth - 8);
-            
+
             try { thumb.setPointerCapture(e.pointerId); } catch (_) {}
             thumb.style.transition = 'none';
         });
 
         window.addEventListener('pointermove', (e) => {
             if (!isDragging || e.pointerId !== activePointerId) return;
-            
+
             curTranslate = Math.max(0, Math.min(e.clientX - startX, maxTranslate));
             thumb.style.transform = `translateX(${curTranslate}px)`;
-            
+
             if (railText && maxTranslate > 0) {
                 railText.style.opacity = (1 - (curTranslate / maxTranslate) * 0.95).toFixed(2);
             }
@@ -1549,7 +1723,7 @@
         const onPointerEnd = (e) => {
             if (!isDragging || (activePointerId !== null && e.pointerId !== activePointerId)) return;
             isDragging = false;
-            
+
             try { thumb.releasePointerCapture(e.pointerId); } catch (_) {}
             activePointerId = null;
 
@@ -1557,12 +1731,12 @@
                 thumb.style.pointerEvents = 'none';
                 thumb.style.transition = 'transform 0.15s ease-out';
                 thumb.style.transform = `translateX(${maxTranslate}px)`;
-                
+
                 if (railText) {
                     railText.innerText = "Расчет выгоды...";
                     railText.style.opacity = '1';
                 }
-                
+
                 setTimeout(completeTripSession, 120);
             } else {
                 resetSwipeRail();
@@ -1577,18 +1751,24 @@
             thumb.style.transition = 'transform 0.25s ease';
             thumb.style.transform = 'translateX(0px)';
             curTranslate = 0;
-            
+
             if (railText) {
                 railText.innerText = "Свайп для завершения ❯❯";
                 railText.style.opacity = '1';
             }
         }
 
-        /* ---------------- УДЕРЖАНИЕ ЭКРАНА ПРИ ПЕРЕКЛЮЧЕНИИ ВКЛАДОК ---------------- */
+        /* ---------------- УДЕРЖАНИЕ ЭКРАНА И СИНХРОНИЗАЦИЯ СЕТИ ---------------- */
         document.addEventListener('visibilitychange', async () => {
-            if (document.visibilityState === 'visible' && isRecording) {
-                await acquireWakeLock();
+            if (document.visibilityState === 'visible') {
+                if (isRecording) await acquireWakeLock();
+                else await fetchDashboard();
             }
+        });
+
+        window.addEventListener('online', async () => {
+            await syncPendingOfflineTrips();
+            await fetchDashboard();
         });
 
         /* ---------------- ИНИЦИАЛИЗАЦИЯ СЕССИИ ПРИ ЗАПУСКЕ ---------------- */
@@ -1606,6 +1786,7 @@
                 } catch (_) {}
             }
             updateCarHeader();
+            await syncPendingOfflineTrips();
             await fetchDashboard();
         });
     </script>
