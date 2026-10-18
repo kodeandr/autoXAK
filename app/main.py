@@ -759,6 +759,37 @@ async def process_telemetry_session(
 # =====================================================================
 # Дашборд, История и Аналитика (Шаг 8 Зои)
 # =====================================================================
+@app.get("/api/v1/users/{user_id}/profile")
+async def get_user_vehicle_profile(
+    user_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Возвращает текущий профиль автомобиля и тарифы пользователя."""
+    user_stmt = select(User).where(User.id == user_id)
+    res = await db.execute(user_stmt)
+    user = res.scalar_one_or_none()
+
+    if not user:
+        return {
+            "user_id": user_id,
+            "car_id": "haval_jolion_15t_4wd",
+            "car_name": "Haval Jolion 1.5T 4WD",
+            "fuel_consumption": 8.5,
+            "fuel_price_rub": 72.40,
+            "service_cost_rub": 9500.0,
+            "current_oil_wear_percent": 0.0,
+        }
+
+    return {
+        "user_id": user.id,
+        "car_id": user.car_id or "haval_jolion_15t_4wd",
+        "car_name": getattr(user, "car_name", None),
+        "fuel_consumption": getattr(user, "fuel_consumption", None) or 8.2,
+        "fuel_price_rub": user.fuel_price_rub if user.fuel_price_rub is not None else 72.40,
+        "service_cost_rub": user.service_cost_rub if user.service_cost_rub is not None else 9500.0,
+        "current_oil_wear_percent": user.current_oil_wear_percent if user.current_oil_wear_percent is not None else 0.0,
+    }
+
 
 @app.get("/api/v1/users/{user_id}/dashboard", response_model=DashboardResponse)
 async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db)):
