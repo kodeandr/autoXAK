@@ -1,824 +1,1278 @@
 ﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
-    <link rel="manifest" href="/static/manifest.json">
-    <link rel="apple-touch-icon" href="/static/icon-192.png">
-    <link rel="icon" href="data:,">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="autoXAK">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#121417">
-    <title>autoXAK — Настройки автомобиля</title>
+    <title>autoXAK — Гараж</title>
+    <script src="/static/session.js"></script>
     <style>
         :root {
-            --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", sans-serif;
-            --font-mono: "Space Grotesk", "Geist Mono", ui-monospace, monospace;
-            --bg-screen: #121417;
-            --bg-surface: #1E2228;
-            --bg-surface-elevated: #262B33;
-            --accent-lime: #D2FA58;
-            --accent-lime-hover: #C2EA48;
-            --accent-blue: #38BDF8;
-            --accent-amber: #F59E0B;
-            --accent-danger: #EF4444;
+            --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+            --bg-root: #121316;
+            --bg-card: #1C1E22;
+            --bg-dropdown: #202329;
+            --bg-dropdown-hover: #2A2E36;
+            --bg-segment: #1C1E22;
+            --bg-segment-active: #2A2D34;
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-card: rgba(255, 255, 255, 0.08);
+            --border-focus: rgba(210, 250, 88, 0.45);
+            --lime: #D2FA58;
+            --lime-dim-bg: #262C1A;
             --text-primary: #FFFFFF;
-            --text-secondary: #8E95A2;
-            --text-muted: #5E6472;
-            --border-soft: rgba(148, 163, 184, 0.12);
-            --border-strong: rgba(148, 163, 184, 0.32);
-            --radius-btn: 16px;
-            --radius-input: 14px;
-            --radius-card: 22px;
-            --radius-pill: 9999px;
-            --shadow-card: 0 14px 36px rgba(0, 0, 0, 0.65);
-
-            /* Безопасные системные зоны экрана смартфона (Safe Area Insets) */
-            --sat: env(safe-area-inset-top, 0px);
-            --sab: env(safe-area-inset-bottom, 0px);
-            --sal: env(safe-area-inset-left, 0px);
-            --sar: env(safe-area-inset-right, 0px);
+            --text-secondary: #8C919B;
+            --text-muted: #686D76;
+            --radius-sm: 12px;
+            --radius-md: 14px;
+            --radius-lg: 22px;
         }
 
-        *, *::before, *::after {
+        * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
             font-family: var(--font-sans);
             -webkit-tap-highlight-color: transparent;
-            user-select: none;
-        }
-
-        input, select, textarea {
-            user-select: auto;
-            -webkit-user-select: auto;
-        }
-
-        html, body {
-            width: 100%;
-            height: 100%;
-            background-color: var(--bg-screen);
-            color: var(--text-primary);
-            overflow: hidden;
-            position: fixed;
-            overscroll-behavior: none;
         }
 
         body {
+            background-color: #08090B;
+            color: var(--text-primary);
             display: flex;
             justify-content: center;
-            align-items: stretch;
+            align-items: center;
+            min-height: 100vh;
+            min-height: 100dvh;
+            overflow: hidden;
+            overscroll-behavior: none;
         }
 
-        /* ОСНОВНОЙ КОНТЕЙНЕР: без рамок, 100% высоты и ширины на мобильных устройствах */
+        .mobile-container {
+            width: 100%;
+            height: 100vh;
+            height: 100dvh;
+            background-color: var(--bg-root);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        
+
+        /* ---------------- ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ (ПРОСМОТР / РЕДАКТИРОВАНИЕ) ---------------- */
+        .view-screen {
+            flex: 1;
+            display: none;
+            flex-direction: column;
+            overflow-y: auto;
+            padding: max(22px, env(safe-area-inset-top)) 16px 20px;
+            scrollbar-width: none;
+        }
+        .view-screen::-webkit-scrollbar { display: none; }
+        .view-screen.active {
+            display: flex;
+        }
+
+        /* ---------------- ЭКРАН 1: ГАРАЖ (ТЕКУЩИЙ АВТОМОБИЛЬ) ---------------- */
+        .garage-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.4px;
+            margin-top: 8px;
+            margin-bottom: 36px;
+            padding: 0 4px;
+        }
+
+        .current-car-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: var(--radius-lg);
+            padding: 22px 20px 26px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 350px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .current-car-label {
+            font-size: 14px;
+            font-weight: 400;
+            color: var(--text-secondary);
+            z-index: 2;
+        }
+
+        .car-illustration-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            height: 170px;
+            z-index: 2;
+        }
+
+        .car-illustration-circle {
+            position: absolute;
+            width: 176px;
+            height: 176px;
+            border-radius: 50%;
+            background: rgba(210, 250, 88, 0.045);
+            z-index: 1;
+        }
+
+        .car-svg {
+            width: 276px;
+            height: auto;
+            z-index: 2;
+            overflow: visible;
+        }
+
+        .current-car-name {
+            font-size: 28px;
+            font-weight: 700;
+            line-height: 1.2;
+            letter-spacing: -0.4px;
+            color: var(--text-primary);
+            z-index: 2;
+            word-break: break-word;
+        }
+
+        .bottom-cta-spacer {
+            margin-top: auto;
+            padding-top: 20px;
+        }
+
+        .btn-lime {
+            width: 100%;
+            height: 54px;
+            background: var(--lime);
+            color: #121316;
+            border: none;
+            border-radius: 16px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.1s ease, opacity 0.2s ease;
+            flex-shrink: 0;
+        }
+        .btn-lime:active {
+            transform: scale(0.99);
+        }
+
+        /* ---------------- ЭКРАН 2: ИЗМЕНИТЬ АВТОМОБИЛЬ ---------------- */
+        .back-nav-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 15px;
+            font-weight: 400;
+            cursor: pointer;
+            padding: 6px 2px;
+            margin-bottom: 18px;
+            width: fit-content;
+        }
+
+        .edit-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.4px;
+            margin-bottom: 18px;
+        }
+
+        /* Переключатель "Из реестра" / "Вручную" */
+        .segmented-control {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            background: var(--bg-segment);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--radius-md);
+            padding: 4px;
+            margin-bottom: 22px;
+            flex-shrink: 0;
+        }
+
+        .segment-btn {
+            height: 36px;
+            border: none;
+            border-radius: 10px;
+            background: transparent;
+            color: var(--text-secondary);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .segment-btn.active {
+            background: var(--bg-segment-active);
+            color: var(--lime);
+        }
+
+        /* Поля формы */
+        .tab-pane {
+            display: none;
+            flex-direction: column;
+            gap: 16px;
+            flex: 1;
+        }
+        .tab-pane.active {
+            display: flex;
+        }
+
+        .field-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+        }
+
+        .field-label {
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        /* Раздельный селектор: [ Значение ] [ ⌄ ] */
+        .split-select-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .split-select-value-box {
+            flex: 1;
+            height: 54px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 0 16px;
+            display: flex;
+            align-items: center;
+            font-size: 16px;
+            font-weight: 400;
+            color: var(--text-primary);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .split-select-arrow-box {
+            width: 48px;
+            height: 54px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-primary);
+            flex-shrink: 0;
+            transition: border-color 0.2s ease, background-color 0.2s ease;
+        }
+
+        .split-select-arrow-box svg {
+            transition: transform 0.22s ease;
+        }
+
+        /* Состояние открытого селектора */
+        .split-select-wrap.open .split-select-value-box,
+        .split-select-wrap.open .split-select-arrow-box {
+            border-color: var(--border-focus);
+            background: #22252B;
+        }
+
+        .split-select-wrap.open .split-select-arrow-box svg {
+            transform: rotate(180deg);
+            color: var(--lime);
+        }
+
+        /* Скрываем нативный select, чтобы ОС не вызывала системный белый попап */
+        .native-select-overlay {
+            display: none;
+        }
+
+        /* Кастомное выпадающее меню в стиле Зои */
+        .custom-dropdown-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: var(--bg-dropdown);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: var(--radius-md);
+            box-shadow: 0 18px 42px rgba(0, 0, 0, 0.85);
+            max-height: 224px;
+            overflow-y: auto;
+            z-index: 120;
+            display: none;
+            flex-direction: column;
+            padding: 4px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+        }
+
+        .custom-dropdown-menu::-webkit-scrollbar {
+            width: 5px;
+        }
+        .custom-dropdown-menu::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-dropdown-menu::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.18);
+            border-radius: 10px;
+        }
+
+        .split-select-wrap.open .custom-dropdown-menu {
+            display: flex;
+            animation: dropdownFadeIn 0.16s ease-out;
+        }
+
+        @keyframes dropdownFadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .custom-dropdown-item {
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 400;
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+
+        .custom-dropdown-item:hover,
+        .custom-dropdown-item:active {
+            background: var(--bg-dropdown-hover);
+        }
+
+        .custom-dropdown-item.selected {
+            background: rgba(210, 250, 88, 0.1);
+            color: var(--lime);
+            font-weight: 500;
+        }
+
+        .custom-dropdown-check {
+            width: 16px;
+            height: 16px;
+            color: var(--lime);
+            flex-shrink: 0;
+            opacity: 0;
+        }
+
+        .custom-dropdown-item.selected .custom-dropdown-check {
+            opacity: 1;
+        }
+
+        /* Поле текстового ввода названия авто */
+        .text-input-box {
+            width: 100%;
+            height: 54px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 0 16px;
+            color: var(--text-primary);
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .text-input-box::placeholder {
+            color: var(--text-secondary);
+        }
+        .text-input-box:focus {
+            border-color: var(--border-focus);
+        }
+
+        .field-hint {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: -2px;
+        }
+
+        /* ---------------- НИЖНЯЯ НАВИГАЦИЯ С ПОДПИСЯМИ ---------------- */
+        .bottom-tab-bar {
+            height: calc(68px + env(safe-area-inset-bottom));
+            padding-bottom: env(safe-area-inset-bottom);
+            border-top: 1px solid var(--border-subtle);
+            background: var(--bg-root);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            align-items: center;
+            justify-items: center;
+            flex-shrink: 0;
+            z-index: 20;
+        }
+        .bottom-tab-bar.hidden {
+            display: none;
+        }
+
+        .tab-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            text-decoration: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .tab-pill {
+            width: 48px;
+            height: 30px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .tab-link.active .tab-pill {
+            background: var(--lime-dim-bg);
+            color: var(--lime);
+        }
+
+        .tab-caption {
+            font-size: 10px;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        .tab-link.active .tab-caption {
+            color: var(--lime);
+        }
+
+        .tab-pill svg {
+            width: 19px;
+            height: 19px;
+        }
+            html, body {
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            background-color: var(--bg-root, var(--bg-screen, #121316));
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            overscroll-behavior: none;
+        }
+
         .mobile-container {
             width: 100%;
             max-width: 480px;
             height: 100%;
             height: 100dvh;
-            background-color: var(--bg-screen);
-            display: flex;
-            flex-direction: column;
-            position: relative;
-            overflow: hidden;
-            border: none;
-            border-radius: 0;
-            box-shadow: none;
+            max-height: none !important;
+            margin: 0 auto;
+            border: none !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
         }
-
-        /* ---------------- TOAST-УВЕДОМЛЕНИЯ ---------------- */
-        .inapp-toast {
-            position: absolute;
-            top: calc(var(--sat) + 14px);
-            left: calc(var(--sal) + 16px);
-            right: calc(var(--sar) + 16px);
-            background: rgba(30, 34, 40, 0.96);
-            backdrop-filter: blur(20px);
-            border: 1.5px solid var(--accent-lime);
-            border-radius: var(--radius-btn);
-            padding: 12px 14px;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            z-index: 600;
-            transform: translateY(-180%);
-            opacity: 0;
-            transition: transform 0.35s ease, opacity 0.3s ease;
-        }
-        .inapp-toast.visible { transform: translateY(0); opacity: 1; }
-        .inapp-toast.toast-alert { border-color: var(--accent-amber); }
-
-        /* ---------------- ШАПКА НАВИГАЦИИ ---------------- */
-        .top-nav {
-            flex-shrink: 0;
-            padding-top: calc(var(--sat) + 16px);
-            padding-bottom: 14px;
-            padding-left: calc(var(--sal) + 18px);
-            padding-right: calc(var(--sar) + 18px);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            border-bottom: 1px solid var(--border-soft);
-            background: var(--bg-screen);
-            z-index: 10;
-        }
-        .btn-back {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-soft);
-            border-radius: 12px;
-            color: var(--text-primary);
-            font-size: 13px;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-            text-decoration: none;
-            padding: 7px 12px;
-            transition: border-color 0.2s, color 0.2s;
-        }
-        .btn-back:active {
-            border-color: var(--accent-lime);
-            color: var(--accent-lime);
-        }
-        .nav-title {
-            font-size: 15px;
-            font-weight: 700;
-            color: var(--text-primary);
-        }
-        .nav-placeholder { width: 72px; }
-
-        /* ---------------- СКРОЛЛ-КОНТЕНТ ---------------- */
-        .content-scroll {
-            flex: 1 1 auto;
-            overflow-y: auto;
-            -webkit-overflow-scrolling: touch;
-            padding-top: 18px;
-            padding-left: calc(var(--sal) + 18px);
-            padding-right: calc(var(--sar) + 18px);
-            padding-bottom: 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            scrollbar-width: none;
-        }
-        .content-scroll::-webkit-scrollbar { display: none; }
-
-        .section-card {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-soft);
-            border-radius: var(--radius-card);
-            padding: 18px 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-            box-shadow: var(--shadow-card);
-        }
-
-        .section-header { display: flex; flex-direction: column; gap: 4px; }
-        .section-title { font-size: 15px; font-weight: 800; color: var(--text-primary); letter-spacing: -0.2px; }
-        .section-subtitle { font-size: 12px; color: var(--text-secondary); line-height: 1.45; }
-
-        .form-group { display: flex; flex-direction: column; gap: 6px; }
-        .form-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); }
-
-        /* Шрифт 16px предотвращает принудительный зум страницы в iOS Safari */
-        .custom-select {
-            width: 100%;
-            height: 50px;
-            background: var(--bg-screen);
-            border: 1.5px solid var(--border-soft);
-            border-radius: var(--radius-input);
-            padding: 0 38px 0 14px;
-            color: var(--text-primary);
-            font-size: 16px;
-            font-weight: 500;
-            outline: none;
-            cursor: pointer;
-            transition: border-color 0.2s;
-            -webkit-appearance: none;
-            appearance: none;
-            background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238E95A2' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-            background-repeat: no-repeat;
-            background-position: right 14px center;
-            background-size: 16px;
-            text-overflow: ellipsis;
-        }
-        .custom-select:focus { border-color: var(--accent-lime); }
-        .custom-select:disabled { opacity: 0.5; cursor: not-allowed; }
-        .custom-select option { background: var(--bg-surface); color: #FFFFFF; }
-
-        .input-text {
-            width: 100%;
-            height: 50px;
-            background: var(--bg-screen);
-            border: 1.5px solid var(--border-soft);
-            border-radius: var(--radius-input);
-            padding: 0 14px;
-            color: var(--text-primary);
-            font-size: 16px;
-            font-weight: 700;
-            font-family: var(--font-mono);
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        .input-text:focus { border-color: var(--accent-lime); }
-
-        /* ЧИПСЫ БЫСТРОГО ВЫБОРА ТОПЛИВА */
-        .fuel-chips {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 8px;
-        }
-        .fuel-chip {
-            height: 40px;
-            background: var(--bg-screen);
-            border: 1px solid var(--border-soft);
-            border-radius: 12px;
-            color: var(--text-secondary);
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-        }
-        .fuel-chip.active {
-            border-color: var(--accent-lime);
-            background: rgba(210, 250, 88, 0.14);
-            color: var(--accent-lime);
-        }
-
-        /* КАРТОЧКА ПАСПОРТНЫХ ДАННЫХ */
-        .specs-preview {
-            background: var(--bg-screen);
-            border: 1px solid var(--border-soft);
-            border-radius: var(--radius-input);
-            padding: 14px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-        }
-        .spec-item { display: flex; flex-direction: column; gap: 3px; }
-        .spec-item-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; }
-        .spec-item-val { font-size: 13px; font-weight: 700; color: var(--accent-lime); font-family: var(--font-mono); }
-
-        /* НИЖНЯЯ ПАНЕЛЬ С КНОПКОЙ */
-        .bottom-bar {
-            flex-shrink: 0;
-            padding: 12px calc(var(--sal) + 18px) calc(var(--sab) + 16px) calc(var(--sar) + 18px);
-            background: linear-gradient(180deg, rgba(18,20,23,0) 0%, rgba(18,20,23,0.92) 28%, var(--bg-screen) 100%);
-            z-index: 50;
-        }
-        .btn-save {
-            width: 100%;
-            height: 56px;
-            background: var(--accent-lime);
-            color: #121417;
-            border: none;
-            border-radius: var(--radius-btn);
-            font-size: 16px;
-            font-weight: 800;
-            cursor: pointer;
-            box-shadow: 0 6px 24px rgba(210, 250, 88, 0.25);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: transform 0.15s ease, background 0.2s ease, opacity 0.2s ease;
-        }
-        .btn-save:active { transform: scale(0.98); }
-        .btn-save.loading { opacity: 0.7; cursor: wait; }
     </style>
 </head>
 <body>
-    <main class="mobile-container">
-        <!-- УВЕДОМЛЕНИЕ (TOAST) -->
-        <div class="inapp-toast" id="inapp-toast" onclick="dismissToast()">
-            <div id="toast-icon">💾</div>
-            <div>
-                <div style="font-weight: 700; font-size: 13px;" id="toast-title">Уведомление</div>
-                <div style="font-size: 11px; color: var(--text-secondary);" id="toast-desc">Текст сообщения</div>
+
+<div class="mobile-container">
+
+    <!-- ================= ЭКРАН 1: ПРОСМОТР ГАРАЖА (МАКЕТЫ 1 И 4) ================= -->
+    <div class="view-screen active" id="screen-garage-view">
+        <h1 class="garage-title">Гараж</h1>
+
+        <div class="current-car-card">
+            <span class="current-car-label">Текущий автомобиль</span>
+
+            <div class="car-illustration-wrap">
+                <div class="car-illustration-circle"></div>
+                <svg class="car-svg" viewBox="0 0 280 135" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M51 96H22C18.5 96 16 93.5 16 90V71C16 63.5 21 58.5 28 57L58 51L86 20C90 15.5 95.5 13 102 13H165C172 13 178 16 182.5 21.5L210 55L251 64C259 65.8 264 72 264 80V96H227"
+                          stroke="#D2FA58" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="91" y1="96" x2="187" y2="96" stroke="#D2FA58" stroke-width="2.3" stroke-linecap="round"/>
+                    <path d="M70 50L93 23H132V50H70Z" stroke="#D2FA58" stroke-width="2.3" stroke-linejoin="round"/>
+                    <path d="M143 50V23H167L192 50H143Z" stroke="#D2FA58" stroke-width="2.3" stroke-linejoin="round"/>
+                    <circle cx="71" cy="96" r="20" fill="#1C1E22" stroke="#D2FA58" stroke-width="2.3"/>
+                    <circle cx="71" cy="96" r="11.5" stroke="#D2FA58" stroke-width="2.3"/>
+                    <circle cx="207" cy="96" r="20" fill="#1C1E22" stroke="#D2FA58" stroke-width="2.3"/>
+                    <circle cx="207" cy="96" r="11.5" stroke="#D2FA58" stroke-width="2.3"/>
+                </svg>
+            </div>
+
+            <div class="current-car-name" id="garage-current-car-name">Haval Jolion 1.5T 4WD</div>
+        </div>
+
+        <div class="bottom-cta-spacer">
+            <button class="btn-lime" type="button" onclick="openEditScreen()">Изменить автомобиль</button>
+        </div>
+    </div>
+
+    <!-- ================= ЭКРАН 2: ИЗМЕНИТЬ АВТОМОБИЛЬ (МАКЕТЫ 2 И 3) ================= -->
+    <div class="view-screen" id="screen-garage-edit">
+        <button class="back-nav-btn" type="button" onclick="closeEditScreen()">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            <span>Назад</span>
+        </button>
+
+        <h1 class="edit-title">Изменить автомобиль</h1>
+
+        <!-- Переключатель вкладок -->
+        <div class="segmented-control">
+            <button class="segment-btn active" id="tab-btn-registry" type="button" onclick="switchEditMode('registry')">Из реестра</button>
+            <button class="segment-btn" id="tab-btn-manual" type="button" onclick="switchEditMode('manual')">Вручную</button>
+        </div>
+
+        <!-- ВКЛАДКА 1: ИЗ РЕЕСТРА (МАКЕТ 2) -->
+        <div class="tab-pane active" id="pane-registry">
+            <!-- Марка -->
+            <div class="field-group">
+                <label class="field-label">Марка</label>
+                <div class="split-select-wrap" id="wrap-make">
+                    <div class="split-select-value-box" id="label-make">Haval</div>
+                    <div class="split-select-arrow-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <select class="native-select-overlay" id="select-make" onchange="onMakeChange()"></select>
+                    <div class="custom-dropdown-menu"></div>
+                </div>
+            </div>
+
+            <!-- Модель -->
+            <div class="field-group">
+                <label class="field-label">Модель</label>
+                <div class="split-select-wrap" id="wrap-model">
+                    <div class="split-select-value-box" id="label-model">Jolion</div>
+                    <div class="split-select-arrow-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <select class="native-select-overlay" id="select-model" onchange="onModelChange()"></select>
+                    <div class="custom-dropdown-menu"></div>
+                </div>
+            </div>
+
+            <!-- Модификация -->
+            <div class="field-group">
+                <label class="field-label">Модификация</label>
+                <div class="split-select-wrap" id="wrap-trim">
+                    <div class="split-select-value-box" id="label-trim">1.5T 4WD</div>
+                    <div class="split-select-arrow-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <select class="native-select-overlay" id="select-trim" onchange="onTrimChange()"></select>
+                    <div class="custom-dropdown-menu"></div>
+                </div>
+            </div>
+
+            <div class="bottom-cta-spacer">
+                <button class="btn-lime" type="button" onclick="saveRegistryVehicle()">Сохранить</button>
             </div>
         </div>
 
-        <!-- НАВИГАЦИОННАЯ ШАПКА -->
-        <header class="top-nav">
-            <a href="/" class="btn-back">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-                <span>Назад</span>
-            </a>
-            <span class="nav-title">Настройки авто</span>
-            <div class="nav-placeholder"></div>
-        </header>
+        <!-- ВКЛАДКА 2: ВРУЧНУЮ (МАКЕТ 3) -->
+        <div class="tab-pane" id="pane-manual">
+            <!-- Название автомобиля -->
+            <div class="field-group">
+                <label class="field-label" for="input-custom-name">Название автомобиля</label>
+                <input type="text" class="text-input-box" id="input-custom-name" placeholder="Введите название" maxlength="12" autocomplete="off">
+                <span class="field-hint">1–12 символов</span>
+            </div>
 
-        <!-- ОСНОВНОЙ КОНТЕНТ -->
-        <section class="content-scroll">
-            <!-- КАРТОЧКА 1: ВЫБОР АВТОМОБИЛЯ -->
-            <article class="section-card">
-                <div class="section-header">
-                    <span class="section-title">Автомобиль для поездок</span>
-                    <span class="section-subtitle">Физические параметры кузова и трансмиссии используются для расчёта тяговой динамики и экономии топлива.</span>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label" for="select-make">Марка</label>
-                    <select class="custom-select" id="select-make" onchange="onMakeChanged()">
-                        <option value="">Загрузка марок...</option>
+            <!-- Тип кузова -->
+            <div class="field-group">
+                <label class="field-label">Тип кузова</label>
+                <div class="split-select-wrap">
+                    <div class="split-select-value-box" id="label-body">Кроссовер</div>
+                    <div class="split-select-arrow-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <select class="native-select-overlay" id="select-body" onchange="syncManualLabel('select-body', 'label-body')">
+                        <option value="crossover" selected>Кроссовер</option>
+                        <option value="sedan">Седан</option>
+                        <option value="hatchback">Хэтчбек</option>
+                        <option value="wagon">Универсал</option>
+                        <option value="suv">Внедорожник</option>
+                        <option value="coupe">Купе</option>
+                        <option value="minivan">Минивэн</option>
                     </select>
+                    <div class="custom-dropdown-menu"></div>
                 </div>
+            </div>
 
-                <div class="form-group">
-                    <label class="form-label" for="select-model">Модель</label>
-                    <select class="custom-select" id="select-model" onchange="onModelChanged()" disabled>
-                        <option value="">Сначала выберите марку</option>
+            <!-- Снаряженная масса, кг -->
+            <div class="field-group">
+                <label class="field-label">Снаряженная масса, кг</label>
+                <div class="split-select-wrap">
+                    <div class="split-select-value-box" id="label-mass">1 600</div>
+                    <div class="split-select-arrow-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <select class="native-select-overlay" id="select-mass" onchange="syncManualLabel('select-mass', 'label-mass')">
+                        <option value="1100">1 100</option>
+                        <option value="1200">1 200</option>
+                        <option value="1300">1 300</option>
+                        <option value="1400">1 400</option>
+                        <option value="1500">1 500</option>
+                        <option value="1600" selected>1 600</option>
+                        <option value="1700">1 700</option>
+                        <option value="1800">1 800</option>
+                        <option value="1900">1 900</option>
+                        <option value="2000">2 000</option>
+                        <option value="2200">2 200</option>
+                        <option value="2500">2 500</option>
                     </select>
+                    <div class="custom-dropdown-menu"></div>
                 </div>
+            </div>
 
-                <div class="form-group">
-                    <label class="form-label" for="select-trim">Модификация / Двигатель</label>
-                    <select class="custom-select" id="select-trim" onchange="onTrimChanged()" disabled>
-                        <option value="">Сначала выберите модель</option>
+            <!-- Объем двигателя -->
+            <div class="field-group">
+                <label class="field-label">Объем двигателя</label>
+                <div class="split-select-wrap">
+                    <div class="split-select-value-box" id="label-engine">1.5 л</div>
+                    <div class="split-select-arrow-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </div>
+                    <select class="native-select-overlay" id="select-engine" onchange="syncManualLabel('select-engine', 'label-engine')">
+                        <option value="1.2">1.2 л</option>
+                        <option value="1.4">1.4 л</option>
+                        <option value="1.5" selected>1.5 л</option>
+                        <option value="1.6">1.6 л</option>
+                        <option value="1.8">1.8 л</option>
+                        <option value="2.0">2.0 л</option>
+                        <option value="2.4">2.4 л</option>
+                        <option value="2.5">2.5 л</option>
+                        <option value="3.0">3.0 л</option>
+                        <option value="3.5">3.5 л</option>
                     </select>
+                    <div class="custom-dropdown-menu"></div>
                 </div>
+            </div>
 
-                <!-- ПАСПОРТНЫЕ ДАННЫЕ ВЫБРАННОГО АВТО -->
-                <div class="specs-preview" id="specs-box">
-                    <div class="spec-item">
-                        <span class="spec-item-label">Мощность</span>
-                        <span class="spec-item-val" id="spec-power">150 л.с.</span>
+            <!-- Привод -->
+            <div class="field-group">
+                <label class="field-label">Привод</label>
+                <div class="split-select-wrap">
+                    <div class="split-select-value-box" id="label-drive">Полный</div>
+                    <div class="split-select-arrow-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
                     </div>
-                    <div class="spec-item">
-                        <span class="spec-item-label">Снаряженная масса</span>
-                        <span class="spec-item-val" id="spec-weight">1445 кг</span>
-                    </div>
-                    <div class="spec-item">
-                        <span class="spec-item-label">Базовый расход</span>
-                        <span class="spec-item-val" id="spec-consumption">8.5 л / 100 км</span>
-                    </div>
-                    <div class="spec-item">
-                        <span class="spec-item-label">Привод / КПП</span>
-                        <span class="spec-item-val" id="spec-drivetrain">4WD • DCT</span>
-                    </div>
+                    <select class="native-select-overlay" id="select-drive" onchange="syncManualLabel('select-drive', 'label-drive')">
+                        <option value="FWD">Передний</option>
+                        <option value="AWD" selected>Полный</option>
+                        <option value="RWD">Задний</option>
+                    </select>
+                    <div class="custom-dropdown-menu"></div>
                 </div>
-            </article>
+            </div>
 
-            <!-- КАРТОЧКА 2: ЭКОНОМИЧЕСКИЕ ПАРАМЕТРЫ -->
-            <article class="section-card">
-                <div class="section-header">
-                    <span class="section-title">Стоимость топлива</span>
-                    <span class="section-subtitle">Цена за 1 литр для расчёта фактической выгоды в рублях относительно базового агрессивного двойника.</span>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Быстрый выбор марки</label>
-                    <div class="fuel-chips">
-                        <button type="button" class="fuel-chip" onclick="selectFuelPreset(56.80, this)">АИ-92</button>
-                        <button type="button" class="fuel-chip" onclick="selectFuelPreset(62.50, this)">АИ-95</button>
-                        <button type="button" class="fuel-chip active" onclick="selectFuelPreset(72.40, this)">АИ-100</button>
-                        <button type="button" class="fuel-chip" onclick="selectFuelPreset(68.90, this)">ДТ</button>
+            <!-- Коробка передач -->
+            <div class="field-group">
+                <label class="field-label">Коробка передач</label>
+                <div class="split-select-wrap">
+                    <div class="split-select-value-box" id="label-transmission">Роботизированная</div>
+                    <div class="split-select-arrow-box">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
                     </div>
+                    <select class="native-select-overlay" id="select-transmission" onchange="syncManualLabel('select-transmission', 'label-transmission')">
+                        <option value="DCT" selected>Роботизированная</option>
+                        <option value="AT">Автоматическая</option>
+                        <option value="CVT">Вариатор</option>
+                        <option value="MT">Механическая</option>
+                    </select>
+                    <div class="custom-dropdown-menu"></div>
                 </div>
+            </div>
 
-                <div class="form-group">
-                    <label class="form-label" for="fuel-price-input">Точный тариф (₽ / литр)</label>
-                    <input type="number" step="0.10" min="20" max="250" inputmode="decimal" class="input-text" id="fuel-price-input" value="72.40" oninput="syncFuelChipsWithInput()">
-                </div>
-            </article>
-        </section>
+            <div class="bottom-cta-spacer">
+                <button class="btn-lime" type="button" onclick="saveManualVehicle()">Сохранить</button>
+            </div>
+        </div>
+    </div>
 
-        <!-- СОХРАНЕНИЕ -->
-        <footer class="bottom-bar">
-            <button class="btn-save" id="btn-save" type="button" onclick="saveVehicleSettings()">
-                <span>✓</span> Сохранить автомобиль
-            </button>
-        </footer>
-    </main>
+    <!-- Нижняя панель навигации с подписями -->
+    <nav class="bottom-tab-bar" id="bottom-tab-bar">
+        <a href="/history" class="tab-link" aria-label="История поездок">
+            <div class="tab-pill">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                    <path d="M3 3v5h5"/>
+                    <path d="M12 7v5l4 2"/>
+                </svg>
+            </div>
+            <span class="tab-caption">История поездок</span>
+        </a>
+        <a href="/" class="tab-link" aria-label="Главная">
+            <div class="tab-pill">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1V9.5z"/>
+                </svg>
+            </div>
+            <span class="tab-caption">Главная</span>
+        </a>
+        <a href="/setup" class="tab-link active" aria-label="Гараж">
+            <div class="tab-pill">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/>
+                    <circle cx="6.5" cy="16.5" r="2.5"/>
+                    <circle cx="16.5" cy="16.5" r="2.5"/>
+                </svg>
+            </div>
+            <span class="tab-caption">Гараж</span>
+        </a>
+    </nav>
 
-    <script>
-        'use strict';
+</div>
 
-        let catalogData = [];
-        let currentUserId = localStorage.getItem('autoXAK_user_id') || null;
-        let selectedTrimData = null;
-        let toastTimeoutId = null;
+<script>
+    'use strict';
 
-        function showToast({ title, message, type = 'success', duration = 3000 }) {
-            const toast = document.getElementById('inapp-toast');
-            if (!toast) return;
-            document.getElementById('toast-title').innerText = title;
-            document.getElementById('toast-desc').innerText = message;
-            document.getElementById('toast-icon').innerText = (type === 'alert') ? '⚠️' : '✅';
-            toast.className = 'inapp-toast visible' + (type === 'alert' ? ' toast-alert' : '');
-            if (toastTimeoutId) clearTimeout(toastTimeoutId);
-            toastTimeoutId = setTimeout(() => { toast.classList.remove('visible'); }, duration);
-        }
+    let currentUserId = localStorage.getItem('autoXAK_user_id') || 'test_user_01';
 
-        function dismissToast() {
-            document.getElementById('inapp-toast')?.classList.remove('visible');
-        }
-
-        function selectFuelPreset(price, btnEl) {
-            document.querySelectorAll('.fuel-chip').forEach(b => b.classList.remove('active'));
-            if (btnEl) btnEl.classList.add('active');
-            document.getElementById('fuel-price-input').value = Number(price).toFixed(2);
-        }
-
-        function syncFuelChipsWithInput() {
-            const val = parseFloat(document.getElementById('fuel-price-input').value);
-            const presets = [56.80, 62.50, 72.40, 68.90];
-            const chips = document.querySelectorAll('.fuel-chip');
-            chips.forEach((chip, idx) => {
-                if (!isNaN(val) && Math.abs(val - presets[idx]) < 0.15) {
-                    chip.classList.add('active');
-                } else {
-                    chip.classList.remove('active');
-                }
-            });
-        }
-
-        /* ---------------- ЗАГРУЗКА КАТАЛОГА АВТОМОБИЛЕЙ ---------------- */
-        async function loadCatalog() {
-            try {
-                const res = await fetch("/api/v1/vehicles/catalog");
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const raw = await res.json();
-                const items = Array.isArray(raw) ? raw : (raw.catalog || []);
-
-                if (items.length > 0 && Array.isArray(items[0].models)) {
-                    catalogData = items;
-                } else if (items.length > 0) {
-                    const makesMap = {};
-                    for (const item of items) {
-                        const mkName = item.make || item.name || "Марка";
-                        const mkId = (item.make_id || mkName).toLowerCase().replace(/[^a-z0-9]/gi, "_");
-                        if (!makesMap[mkId]) makesMap[mkId] = { id: mkId, name: mkName, models: {} };
-
-                        const mdName = item.model || "Модель";
-                        const mdId = (item.model_id || (mkId + "_" + mdName)).toLowerCase().replace(/[^a-z0-9]/gi, "_");
-                        if (!makesMap[mkId].models[mdId]) {
-                            makesMap[mkId].models[mdId] = { id: mdId, name: mdName, trims: [] };
-                        }
-
-                        const bName = item.trim || item.badge_name || item.full_name || item.id;
-                        makesMap[mkId].models[mdId].trims.push({
-                            id: item.id,
-                            badge_name: bName,
-                            curb_weight_kg: item.curb_weight_kg || 1450,
-                            rated_power_kw: item.rated_power_kw || 110,
-                            drivetrain_type: item.drivetrain_type || "FWD",
-                            transmission_type: item.transmission_type || "AT"
-                        });
-                    }
-                    catalogData = Object.values(makesMap).map(m => ({
-                        id: m.id,
-                        name: m.name,
-                        models: Object.values(m.models)
-                    }));
-                } else {
-                    populateFallbackCatalog();
-                }
-            } catch (err) {
-                console.warn("Используется встроенный каталог:", err);
-                populateFallbackCatalog();
-            }
-
-            populateMakeSelector();
-            await loadCurrentUserSettings();
-        }
-
-        function populateFallbackCatalog() {
-            catalogData = [
+    const FALLBACK_CATALOG = [
+        {
+            id: 'haval',
+            name: 'Haval',
+            models: [
                 {
-                    id: "haval",
-                    name: "Haval",
-                    models: [
-                        {
-                            id: "haval_jolion",
-                            name: "Jolion",
-                            trims: [
-                                { id: "haval_jolion_15t", badge_name: "1.5T 4WD (150 л.с.)", curb_weight_kg: 1445, rated_power_kw: 110, drivetrain_type: "4WD", transmission_type: "DCT" },
-                                { id: "haval_jolion_15t_4wd", badge_name: "1.5T 4WD Elite (150 л.с.)", curb_weight_kg: 1445, rated_power_kw: 110, drivetrain_type: "4WD", transmission_type: "DCT" },
-                                { id: "haval_jolion_15t_fwd", badge_name: "1.5T 2WD (143 л.с.)", curb_weight_kg: 1370, rated_power_kw: 105, drivetrain_type: "FWD", transmission_type: "DCT" }
-                            ]
-                        }
+                    id: 'haval_jolion',
+                    name: 'Jolion',
+                    trims: [
+                        { id: 'haval_jolion_15t_4wd', badge_name: '1.5T 4WD', fuel_rate: 8.5, mass_kg: 1505 },
+                        { id: 'haval_jolion_15t_fwd', badge_name: '1.5T 2WD', fuel_rate: 8.1, mass_kg: 1425 }
                     ]
                 },
                 {
-                    id: "skoda",
-                    name: "Skoda",
-                    models: [
-                        {
-                            id: "skoda_octavia",
-                            name: "Octavia",
-                            trims: [
-                                { id: "skoda_octavia_14tsi_dsg", badge_name: "1.4 TSI DSG (150 л.с.)", curb_weight_kg: 1320, rated_power_kw: 110, drivetrain_type: "FWD", transmission_type: "DSG" },
-                                { id: "skoda_octavia_14tsi", badge_name: "1.4 TSI (150 л.с.)", curb_weight_kg: 1305, rated_power_kw: 110, drivetrain_type: "FWD", transmission_type: "AT" },
-                                { id: "skoda_octavia_16mpi_mt", badge_name: "1.6 MPI MT (110 л.с.)", curb_weight_kg: 1225, rated_power_kw: 81, drivetrain_type: "FWD", transmission_type: "MT" },
-                                { id: "skoda_octavia_20tsi_dsg_4wd", badge_name: "2.0 TSI 4WD (190 л.с.)", curb_weight_kg: 1470, rated_power_kw: 140, drivetrain_type: "4WD", transmission_type: "DSG" }
-                            ]
-                        }
+                    id: 'haval_f7',
+                    name: 'F7',
+                    trims: [
+                        { id: 'haval_f7_15t_4wd', badge_name: '1.5T 4WD', fuel_rate: 8.9, mass_kg: 1680 },
+                        { id: 'haval_f7_20t_4wd', badge_name: '2.0T 4WD', fuel_rate: 9.4, mass_kg: 1735 }
+                    ]
+                }
+            ]
+        },
+        {
+            id: 'chery',
+            name: 'Chery',
+            models: [
+                {
+                    id: 'chery_tiggo_7pro',
+                    name: 'Tiggo 7 Pro',
+                    trims: [
+                        { id: 'chery_tiggo_7pro', badge_name: '1.5T CVT', fuel_rate: 8.8, mass_kg: 1465 },
+                        { id: 'chery_tiggo_7pro_16t_awd', badge_name: '1.6T AWD', fuel_rate: 8.6, mass_kg: 1580 }
+                    ]
+                }
+            ]
+        },
+        {
+            id: 'geely',
+            name: 'Geely',
+            models: [
+                {
+                    id: 'geely_coolray',
+                    name: 'Coolray',
+                    trims: [
+                        { id: 'geely_coolray_15t', badge_name: '1.5T DCT', fuel_rate: 7.9, mass_kg: 1390 }
                     ]
                 },
                 {
-                    id: "geely",
-                    name: "Geely",
-                    models: [
-                        {
-                            id: "geely_coolray",
-                            name: "Coolray",
-                            trims: [
-                                { id: "geely_coolray_15t_fwd", badge_name: "1.5T DCT (150 л.с.)", curb_weight_kg: 1400, rated_power_kw: 110, drivetrain_type: "FWD", transmission_type: "DCT" },
-                                { id: "geely_coolray_15t", badge_name: "1.5T Flagship (150 л.с.)", curb_weight_kg: 1415, rated_power_kw: 110, drivetrain_type: "FWD", transmission_type: "DCT" }
-                            ]
-                        }
+                    id: 'geely_monjaro',
+                    name: 'Monjaro',
+                    trims: [
+                        { id: 'geely_monjaro_20t_4wd', badge_name: '2.0T 4WD', fuel_rate: 9.5, mass_kg: 1855 }
                     ]
-                },
+                }
+            ]
+        },
+        {
+            id: 'skoda',
+            name: 'Skoda',
+            models: [
                 {
-                    id: "chery",
-                    name: "Chery",
-                    models: [
-                        {
-                            id: "chery_tiggo_7",
-                            name: "Tiggo 7 Pro",
-                            trims: [
-                                { id: "chery_tiggo_7pro", badge_name: "1.5T CVT (147 л.с.)", curb_weight_kg: 1465, rated_power_kw: 108, drivetrain_type: "FWD", transmission_type: "CVT" },
-                                { id: "chery_tiggo_7pro_16t_awd", badge_name: "Max 1.6T AWD (150 л.с.)", curb_weight_kg: 1580, rated_power_kw: 110, drivetrain_type: "AWD", transmission_type: "DCT" }
-                            ]
-                        }
+                    id: 'skoda_octavia',
+                    name: 'Octavia',
+                    trims: [
+                        { id: 'skoda_octavia_14tsi', badge_name: '1.4 TSI DSG', fuel_rate: 6.9, mass_kg: 1280 },
+                        { id: 'skoda_octavia_20tsi_dsg_4wd', badge_name: '2.0 TSI 4WD', fuel_rate: 7.8, mass_kg: 1450 },
+                        { id: 'skoda_octavia_16mpi_mt', badge_name: '1.6 MPI MT', fuel_rate: 7.5, mass_kg: 1245 }
                     ]
-                },
+                }
+            ]
+        },
+        {
+            id: 'audi',
+            name: 'Audi',
+            models: [
                 {
-                    id: "lada",
-                    name: "LADA",
-                    models: [
-                        {
-                            id: "lada_vesta",
-                            name: "Vesta",
-                            trims: [
-                                { id: "lada_vesta_16_mt", badge_name: "1.6 MT (106 л.с.)", curb_weight_kg: 1230, rated_power_kw: 78, drivetrain_type: "FWD", transmission_type: "MT" },
-                                { id: "lada_vesta_18_cvt", badge_name: "1.8 CVT (122 л.с.)", curb_weight_kg: 1280, rated_power_kw: 90, drivetrain_type: "FWD", transmission_type: "CVT" }
-                            ]
-                        }
+                    id: 'audi_q3',
+                    name: 'Q3',
+                    trims: [
+                        { id: 'audi_q3_20tfsi_180_culb', badge_name: '2.0 TFSI quattro', fuel_rate: 8.6, mass_kg: 1590 }
                     ]
-                },
+                }
+            ]
+        },
+        {
+            id: 'lada',
+            name: 'LADA',
+            models: [
                 {
-                    id: "audi",
-                    name: "Audi",
-                    models: [
-                        {
-                            id: "audi_q3",
-                            name: "Q3",
-                            trims: [
-                                { id: "audi_q3_20tfsi_180_culb", badge_name: "2.0 TFSI quattro (180 л.с.)", curb_weight_kg: 1540, rated_power_kw: 132, drivetrain_type: "AWD", transmission_type: "S-Tronic" }
-                            ]
-                        }
+                    id: 'lada_vesta',
+                    name: 'Vesta',
+                    trims: [
+                        { id: 'lada_vesta_16_mt', badge_name: '1.6 MT', fuel_rate: 7.5, mass_kg: 1230 },
+                        { id: 'lada_vesta_18_cvt', badge_name: '1.8 CVT', fuel_rate: 7.8, mass_kg: 1280 }
                     ]
                 }
-            ];
+            ]
         }
+    ];
 
-        function populateMakeSelector() {
-            const makeSelect = document.getElementById('select-make');
-            makeSelect.innerHTML = '<option value="">Выберите марку</option>';
-            catalogData.forEach(m => {
-                const opt = document.createElement('option');
-                opt.value = m.id;
-                opt.textContent = m.name;
-                makeSelect.appendChild(opt);
-            });
-        }
+    let catalogTree = [];
 
-        function onMakeChanged() {
-            const makeId = document.getElementById('select-make').value;
-            const modelSelect = document.getElementById('select-model');
-            const trimSelect = document.getElementById('select-trim');
-
-            modelSelect.innerHTML = '<option value="">Выберите модель</option>';
-            trimSelect.innerHTML = '<option value="">Сначала выберите модель</option>';
-            trimSelect.disabled = true;
-
-            const make = catalogData.find(m => m.id === makeId);
-            if (!make || !make.models || !make.models.length) {
-                modelSelect.disabled = true;
-                return;
-            }
-
-            make.models.forEach(md => {
-                const opt = document.createElement('option');
-                opt.value = md.id;
-                opt.textContent = md.name;
-                modelSelect.appendChild(opt);
-            });
-            modelSelect.disabled = false;
-
-            if (make.models.length > 0) {
-                modelSelect.value = make.models[0].id;
-                onModelChanged();
-            }
-        }
-
-        function onModelChanged() {
-            const makeId = document.getElementById('select-make').value;
-            const modelId = document.getElementById('select-model').value;
-            const trimSelect = document.getElementById('select-trim');
-
-            trimSelect.innerHTML = '<option value="">Выберите модификацию</option>';
-
-            const make = catalogData.find(m => m.id === makeId);
-            const model = make ? make.models.find(md => md.id === modelId) : null;
-
-            if (!model || !model.trims || !model.trims.length) {
-                trimSelect.disabled = true;
-                return;
-            }
-
-            model.trims.forEach(tr => {
-                const opt = document.createElement('option');
-                opt.value = tr.id;
-                opt.textContent = tr.badge_name || tr.name || tr.id;
-                trimSelect.appendChild(opt);
-            });
-            trimSelect.disabled = false;
-
-            if (model.trims.length > 0) {
-                trimSelect.value = model.trims[0].id;
-                onTrimChanged();
-            }
-        }
-
-        function onTrimChanged() {
-            const trimId = document.getElementById('select-trim').value;
-            for (const mk of catalogData) {
-                for (const md of mk.models) {
-                    const tr = md.trims.find(t => t.id === trimId);
-                    if (tr) {
-                        selectedTrimData = { ...tr, make_name: mk.name, model_name: md.name };
-                        updateSpecsCard(selectedTrimData);
-                        return;
-                    }
-                }
-            }
-        }
-
-        function updateSpecsCard(trim) {
-            if (!trim) return;
-            const hp = trim.rated_power_kw ? Math.round(trim.rated_power_kw * 1.36) : 150;
-            const weight = trim.curb_weight_kg || 1445;
-            const drive = (trim.drivetrain_type || "FWD").toUpperCase();
-            const trans = trim.transmission_type || "AT";
-
-            const baseConsumption = (7.0 + (weight - 1200) * 0.0035 + (drive === "4WD" || drive === "AWD" ? 0.7 : 0.0)).toFixed(1);
-
-            document.getElementById('spec-power').innerText = `${hp} л.с.`;
-            document.getElementById('spec-weight').innerText = `${weight} кг`;
-            document.getElementById('spec-consumption').innerText = `${baseConsumption} л / 100 км`;
-            document.getElementById('spec-drivetrain').innerText = `${drive} • ${trans}`;
-        }
-
-        function buildCleanCarName(trimData) {
-            if (!trimData) return 'Мой автомобиль';
-            const make = (trimData.make_name || '').trim();
-            const model = (trimData.model_name || '').trim();
-            let badge = (trimData.badge_name || '').replace(/\s*\([^)]*\)/g, '').trim();
-
-            if (badge.toLowerCase().startsWith(make.toLowerCase())) {
-                return badge;
-            }
-            if (badge.toLowerCase().startsWith(model.toLowerCase())) {
-                return `${make} ${badge}`.trim();
-            }
-            return `${make} ${model} ${badge}`.replace(/\s+/g, ' ').trim();
-        }
-
-        /* ---------------- СИНХРОНИЗАЦИЯ С ПОЛЬЗОВАТЕЛЕМ ---------------- */
-        async function loadCurrentUserSettings() {
-            let activeCarId = localStorage.getItem('autoXAK_car_id') || 'haval_jolion_15t_4wd';
-            let activeFuelPrice = parseFloat(localStorage.getItem('autoXAK_fuel_price')) || 72.40;
-
-            const savedProfile = localStorage.getItem('autoXAK_profile');
-            if (savedProfile) {
-                try {
-                    const parsed = JSON.parse(savedProfile);
-                    if (parsed.car_id) activeCarId = parsed.car_id;
-                    if (parsed.fuel_price_rub) activeFuelPrice = Number(parsed.fuel_price_rub);
-                } catch (_) {}
-            }
-
-            if (currentUserId) {
-                try {
-                    const res = await fetch(`/api/v1/users/${encodeURIComponent(currentUserId)}/dashboard`);
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data.car_id) activeCarId = data.car_id;
-                        if (data.fuel_price_rub) activeFuelPrice = Number(data.fuel_price_rub);
-                    }
-                } catch (_) {}
-            }
-
-            document.getElementById('fuel-price-input').value = activeFuelPrice.toFixed(2);
-            syncFuelChipsWithInput();
-
-            for (const mk of catalogData) {
-                for (const md of mk.models) {
-                    const tr = md.trims.find(t => t.id === activeCarId || t.id.startsWith(activeCarId));
-                    if (tr) {
-                        document.getElementById('select-make').value = mk.id;
-                        onMakeChanged();
-                        document.getElementById('select-model').value = md.id;
-                        onModelChanged();
-                        document.getElementById('select-trim').value = tr.id;
-                        onTrimChanged();
-                        return;
-                    }
-                }
-            }
-
-            if (catalogData.length > 0 && catalogData[0].models.length > 0) {
-                document.getElementById('select-make').value = catalogData[0].id;
-                onMakeChanged();
-            }
-        }
-
-        /* ---------------- СОХРАНЕНИЕ НАСТРОЕК ---------------- */
-        async function saveVehicleSettings() {
-            const trimSelect = document.getElementById('select-trim');
-            const trimId = trimSelect.value;
-            const rawPrice = parseFloat(document.getElementById('fuel-price-input').value);
-            const fuelPrice = (!isNaN(rawPrice) && rawPrice >= 20 && rawPrice <= 300) ? rawPrice : 72.40;
-
-            if (!trimId) {
-                showToast({ title: "Выберите авто", message: "Укажите марку, модель и модификацию", type: "alert" });
-                return;
-            }
-
-            const btn = document.getElementById('btn-save');
-            btn.classList.add('loading');
-            btn.innerHTML = '<span>⏳</span> Сохранение...';
-
-            const carName = buildCleanCarName(selectedTrimData);
-
-            const profileObj = {
-                user_id: currentUserId || 'guest',
-                car_id: trimId,
-                car_name: carName,
-                fuel_price_rub: fuelPrice
-            };
-
-            // 1. Синхронизация со всеми ключами, которые читает главная страница index.html
-            localStorage.setItem('autoXAK_car_id', trimId);
-            localStorage.setItem('autoXAK_car_name', carName);
-            localStorage.setItem('autoXAK_fuel_price', fuelPrice.toFixed(2));
-            localStorage.setItem('autoXAK_profile', JSON.stringify(profileObj));
-
-            // 2. Если сессии еще нет, создаем гостевую для сохранения в БД
-            if (!currentUserId) {
-                try {
-                    const guestRes = await fetch('/api/v1/auth/guest', { method: 'POST' });
-                    if (guestRes.ok) {
-                        const guestData = await guestRes.json();
-                        currentUserId = guestData.user_id;
-                        localStorage.setItem('autoXAK_user_id', currentUserId);
-                        localStorage.setItem('autoXAK_is_guest', 'true');
-                    }
-                } catch (_) {}
-            }
-
-            // 3. Персистентное сохранение на сервере
-            try {
-                if (currentUserId) {
-                    const res = await fetch(`/api/v1/users/${encodeURIComponent(currentUserId)}/profile`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            user_id: currentUserId,
-                            car_id: trimId,
-                            fuel_price_rub: fuelPrice
-                        })
-                    });
-
-                    if (!res.ok) {
-                        console.warn("Статус ответа профиля:", res.status);
-                    }
-                }
-
-                showToast({ title: "Сохранено", message: `${carName} установлен`, type: "success" });
-                setTimeout(() => { window.location.href = "/"; }, 550);
-            } catch (err) {
-                showToast({ title: "Сохранено локально", message: `${carName} применен на устройстве`, type: "success" });
-                setTimeout(() => { window.location.href = "/"; }, 550);
-            } finally {
-                btn.classList.remove('loading');
-                btn.innerHTML = '<span>✓</span> Сохранить автомобиль';
-            }
-        }
-
-        window.addEventListener('DOMContentLoaded', () => {
-            loadCatalog();
+    // ---------------- КАСТОМНЫЙ ДВИЖОК ВЫПАДАЮЩИХ СПИСКОВ ----------------
+    function closeAllCustomDropdowns() {
+        document.querySelectorAll('.split-select-wrap.open').forEach(wrap => {
+            wrap.classList.remove('open');
         });
-    </script>
+    }
+
+    function buildCustomDropdownMenu(wrap) {
+        const selectEl = wrap.querySelector('select.native-select-overlay');
+        const menuEl = wrap.querySelector('.custom-dropdown-menu');
+        if (!selectEl || !menuEl) return;
+
+        menuEl.innerHTML = '';
+        const options = Array.from(selectEl.options);
+
+        options.forEach((opt, idx) => {
+            const item = document.createElement('div');
+            item.className = 'custom-dropdown-item' + (idx === selectEl.selectedIndex ? ' selected' : '');
+            item.innerHTML = `
+                <span>${opt.text}</span>
+                <svg class="custom-dropdown-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="20 6 9 17 4 12"></polyline>
+                </svg>
+            `;
+            item.addEventListener('click', (e) => {
+                e.stopPropagation();
+                selectEl.selectedIndex = idx;
+                selectEl.value = opt.value;
+                selectEl.dispatchEvent(new Event('change'));
+                closeAllCustomDropdowns();
+            });
+            menuEl.appendChild(item);
+        });
+    }
+
+    function initCustomDropdowns() {
+        document.querySelectorAll('.split-select-wrap').forEach(wrap => {
+            wrap.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const isAlreadyOpen = wrap.classList.contains('open');
+                closeAllCustomDropdowns();
+
+                if (!isAlreadyOpen) {
+                    buildCustomDropdownMenu(wrap);
+                    wrap.classList.add('open');
+                    const menuEl = wrap.querySelector('.custom-dropdown-menu');
+                    if (menuEl) {
+                        const selectedItem = menuEl.querySelector('.custom-dropdown-item.selected');
+                        if (selectedItem) {
+                            selectedItem.scrollIntoView({ block: 'nearest' });
+                        }
+                        setTimeout(() => {
+                            menuEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                        }, 60);
+                    }
+                }
+            });
+        });
+
+        document.addEventListener('click', () => {
+            closeAllCustomDropdowns();
+        });
+    }
+
+    // ---------------- НАВИГАЦИЯ МЕЖДУ ЭКРАНАМИ ГАРАЖА ----------------
+    function openEditScreen() {
+        closeAllCustomDropdowns();
+        document.getElementById('screen-garage-view').classList.remove('active');
+        document.getElementById('screen-garage-edit').classList.add('active');
+        document.getElementById('bottom-tab-bar').classList.add('hidden');
+    }
+
+    function closeEditScreen() {
+        closeAllCustomDropdowns();
+        document.getElementById('screen-garage-edit').classList.remove('active');
+        document.getElementById('screen-garage-view').classList.add('active');
+        document.getElementById('bottom-tab-bar').classList.remove('hidden');
+    }
+
+    function switchEditMode(mode) {
+        closeAllCustomDropdowns();
+        const isRegistry = mode === 'registry';
+        document.getElementById('tab-btn-registry').classList.toggle('active', isRegistry);
+        document.getElementById('tab-btn-manual').classList.toggle('active', !isRegistry);
+        document.getElementById('pane-registry').classList.toggle('active', isRegistry);
+        document.getElementById('pane-manual').classList.toggle('active', !isRegistry);
+    }
+
+    function syncManualLabel(selectId, labelId) {
+        const sel = document.getElementById(selectId);
+        const lbl = document.getElementById(labelId);
+        if (sel && lbl && sel.options[sel.selectedIndex]) {
+            lbl.innerText = sel.options[sel.selectedIndex].text;
+        }
+    }
+
+    // ---------------- ОЧИСТКА МОДИФИКАЦИИ ОТ ПОВТОРА МАРКИ/МОДЕЛИ ----------------
+    function cleanTrimBadge(rawBadge, makeName, modelName) {
+        if (!rawBadge) return 'Базовая';
+        let cleaned = String(rawBadge).trim();
+        if (makeName) {
+            const reMake = new RegExp('^' + makeName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'i');
+            cleaned = cleaned.replace(reMake, '');
+        }
+        if (modelName) {
+            const reModel = new RegExp('^' + modelName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'i');
+            cleaned = cleaned.replace(reModel, '');
+        }
+        cleaned = cleaned.replace(/\s*\(\d+\s*л\.?с\.?\)/i, '').trim();
+        return cleaned || rawBadge;
+    }
+
+    // ---------------- ЗАГРУЗКА И ПАРСИНГ КАТАЛОГА ----------------
+    function normalizeCatalogData(raw) {
+        const items = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.catalog) ? raw.catalog : []);
+        if (!items.length) return FALLBACK_CATALOG;
+
+        if (items[0] && Array.isArray(items[0].models)) {
+            return items.map(mk => ({
+                id: mk.id || mk.name,
+                name: mk.name || mk.id,
+                models: (mk.models || []).map(md => ({
+                    id: md.id || md.name,
+                    name: md.name || md.id,
+                    trims: (md.trims || []).map(tr => ({
+                        id: tr.id,
+                        badge_name: cleanTrimBadge(tr.badge_name || tr.name || tr.id, mk.name, md.name),
+                        fuel_rate: Number(tr.base_city_fuel_rate_l100km || tr.fuel_city_l100km || 8.2),
+                        mass_kg: Number(tr.curb_weight_kg || 1500)
+                    }))
+                }))
+            }));
+        }
+
+        const makesMap = {};
+        for (const item of items) {
+            const mkName = item.make || item.brand || item.name || 'Марка';
+            const mdName = item.model || 'Модель';
+            if (!makesMap[mkName]) {
+                makesMap[mkName] = { id: mkName.toLowerCase(), name: mkName, models: {} };
+            }
+            if (!makesMap[mkName].models[mdName]) {
+                makesMap[mkName].models[mdName] = { id: mdName.toLowerCase(), name: mdName, trims: [] };
+            }
+            const rawTrimName = item.trim || item.badge_name || item.full_name || item.id;
+            makesMap[mkName].models[mdName].trims.push({
+                id: item.id,
+                badge_name: cleanTrimBadge(rawTrimName, mkName, mdName),
+                fuel_rate: Number(item.base_city_fuel_rate_l100km || item.fuel_city_l100km || 8.2),
+                mass_kg: Number(item.curb_weight_kg || 1500)
+            });
+        }
+
+        const tree = Object.values(makesMap).map(mk => ({
+            id: mk.id,
+            name: mk.name,
+            models: Object.values(mk.models)
+        }));
+
+        return tree.length > 0 ? tree : FALLBACK_CATALOG;
+    }
+
+    async function initCatalog() {
+        try {
+            const res = await fetch('/api/v1/vehicles/catalog');
+            if (res.ok) {
+                const raw = await res.json();
+                catalogTree = normalizeCatalogData(raw);
+            } else {
+                catalogTree = FALLBACK_CATALOG;
+            }
+        } catch (e) {
+            catalogTree = FALLBACK_CATALOG;
+        }
+        populateMakes();
+    }
+
+    function populateMakes() {
+        const makeSel = document.getElementById('select-make');
+        makeSel.innerHTML = catalogTree.map(mk => `<option value="${mk.id}">${mk.name}</option>`).join('');
+        onMakeChange();
+    }
+
+    function onMakeChange() {
+        const makeSel = document.getElementById('select-make');
+        const makeId = makeSel.value;
+        const makeObj = catalogTree.find(m => String(m.id) === String(makeId)) || catalogTree[0];
+
+        document.getElementById('label-make').innerText = makeObj ? makeObj.name : '';
+
+        const modelSel = document.getElementById('select-model');
+        const models = makeObj ? makeObj.models : [];
+        modelSel.innerHTML = models.map(md => `<option value="${md.id}">${md.name}</option>`).join('');
+        onModelChange();
+    }
+
+    function onModelChange() {
+        const makeId = document.getElementById('select-make').value;
+        const modelId = document.getElementById('select-model').value;
+        const makeObj = catalogTree.find(m => String(m.id) === String(makeId)) || catalogTree[0];
+        const modelObj = makeObj ? (makeObj.models.find(md => String(md.id) === String(modelId)) || makeObj.models[0]) : null;
+
+        document.getElementById('label-model').innerText = modelObj ? modelObj.name : '';
+
+        const trimSel = document.getElementById('select-trim');
+        const trims = modelObj ? modelObj.trims : [];
+        trimSel.innerHTML = trims.map(tr => `<option value="${tr.id}">${tr.badge_name}</option>`).join('');
+        onTrimChange();
+    }
+
+    function onTrimChange() {
+        const trimSel = document.getElementById('select-trim');
+        const opt = trimSel.options[trimSel.selectedIndex];
+        document.getElementById('label-trim').innerText = opt ? opt.text : '';
+    }
+
+    function selectTrimInDropdowns(targetCarId) {
+        if (!targetCarId) return false;
+        for (const mk of catalogTree) {
+            for (const md of mk.models) {
+                const foundTrim = md.trims.find(t => String(t.id) === String(targetCarId));
+                if (foundTrim) {
+                    document.getElementById('select-make').value = mk.id;
+                    onMakeChange();
+                    document.getElementById('select-model').value = md.id;
+                    onModelChange();
+                    document.getElementById('select-trim').value = foundTrim.id;
+                    onTrimChange();
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    // ---------------- ЗАГРУЗКА ТЕКУЩЕГО АВТОМОБИЛЯ ПОЛЬЗОВАТЕЛЯ ----------------
+    async function loadUserGarageState() {
+        if (window.AutoXAKSession && typeof window.AutoXAKSession.getUserId === 'function') {
+            const sid = window.AutoXAKSession.getUserId();
+            if (sid) currentUserId = sid;
+        }
+
+        let carName = localStorage.getItem('autoXAK_car_name') || '';
+        let carId = localStorage.getItem('autoXAK_car_id') || '';
+
+        const savedProfile = localStorage.getItem('autoXAK_profile');
+        if (savedProfile) {
+            try {
+                const parsed = JSON.parse(savedProfile);
+                if (!carName && parsed.car_name) carName = parsed.car_name;
+                if (!carId && parsed.car_id) carId = parsed.car_id;
+            } catch (_) {}
+        }
+
+        try {
+            const headers = (window.AutoXAKSession && typeof window.AutoXAKSession.getAuthHeaders === 'function')
+                ? window.AutoXAKSession.getAuthHeaders()
+                : {};
+            const res = await fetch(`/api/v1/users/${encodeURIComponent(currentUserId)}/profile`, { headers });
+            if (res.ok) {
+                const prof = await res.json();
+                if (prof.car_name && !carName) carName = prof.car_name;
+                if (prof.car_id && !carId) carId = prof.car_id;
+            }
+        } catch (_) {}
+
+        if (carId) {
+            selectTrimInDropdowns(carId);
+        }
+
+        if (!carName) {
+            const mk = document.getElementById('label-make').innerText;
+            const md = document.getElementById('label-model').innerText;
+            const tr = document.getElementById('label-trim').innerText;
+            carName = (mk && md) ? `${mk} ${md} ${tr}`.trim() : 'Haval Jolion 1.5T 4WD';
+        }
+
+        document.getElementById('garage-current-car-name').innerText = carName;
+    }
+
+    // ---------------- СОХРАНЕНИЕ: ИЗ РЕЕСТРА (МАКЕТ 2) ----------------
+    async function saveRegistryVehicle() {
+        const makeName = document.getElementById('label-make').innerText.trim();
+        const modelName = document.getElementById('label-model').innerText.trim();
+        const trimBadge = document.getElementById('label-trim').innerText.trim();
+        const trimId = document.getElementById('select-trim').value || 'haval_jolion_15t_4wd';
+
+        const fullCarName = `${makeName} ${modelName} ${trimBadge}`.replace(/\s+/g, ' ').trim();
+
+        let fuelPass = 8.2;
+        for (const mk of catalogTree) {
+            for (const md of mk.models) {
+                const tr = md.trims.find(x => String(x.id) === String(trimId));
+                if (tr && tr.fuel_rate) {
+                    fuelPass = tr.fuel_rate;
+                }
+            }
+        }
+
+        await persistVehicleSelection({
+            car_id: trimId,
+            car_name: fullCarName,
+            fuel_consumption: fuelPass
+        });
+    }
+
+    // ---------------- СОХРАНЕНИЕ: ВРУЧНУЮ (МАКЕТ 3) ----------------
+    async function saveManualVehicle() {
+        const rawInputName = document.getElementById('input-custom-name').value.trim();
+        const customCarName = rawInputName.length > 0 ? rawInputName.slice(0, 12) : 'Мой автомобиль';
+
+        const bodyType = document.getElementById('select-body').value;
+        const massKg = parseInt(document.getElementById('select-mass').value, 10) || 1600;
+        const engineL = parseFloat(document.getElementById('select-engine').value) || 1.5;
+        const driveType = document.getElementById('select-drive').value;
+        const transType = document.getElementById('select-transmission').value;
+
+        const driveAddon = driveType === 'AWD' ? 0.6 : 0.0;
+        const estimatedFuelRate = Number((4.2 + (massKg / 1000) * 1.8 + engineL * 0.9 + driveAddon).toFixed(1));
+        let synthesizedCarId = `custom_${bodyType}_${Math.round(engineL * 10)}_${driveType.toLowerCase()}`;
+
+        try {
+            const synRes = await fetch('/api/v1/vehicles/synthesize', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    custom_name: customCarName,
+                    body_type: bodyType,
+                    curb_weight_kg: massKg,
+                    engine_displacement_l: engineL,
+                    drivetrain_type: driveType,
+                    transmission_type: transType
+                })
+            });
+            if (synRes.ok) {
+                const synData = await synRes.json();
+                if (synData.car_id || synData.id) {
+                    synthesizedCarId = synData.car_id || synData.id;
+                }
+            }
+        } catch (_) {}
+
+        await persistVehicleSelection({
+            car_id: synthesizedCarId,
+            car_name: customCarName,
+            fuel_consumption: estimatedFuelRate,
+            curb_weight_kg: massKg,
+            engine_displacement_l: engineL,
+            drivetrain_type: driveType,
+            transmission_type: transType
+        });
+    }
+
+    // ---------------- ЕДИНАЯ ФУНКЦИЯ СОХРАНЕНИЯ И СИНХРОНИЗАЦИИ ----------------
+    async function persistVehicleSelection(vehicleData) {
+        const fuelPrice = parseFloat(localStorage.getItem('autoXAK_fuel_price')) || 62.0;
+
+        localStorage.setItem('autoXAK_car_id', vehicleData.car_id);
+        localStorage.setItem('autoXAK_car_name', vehicleData.car_name);
+        localStorage.setItem('autoXAK_fuel_pass', String(vehicleData.fuel_consumption || 8.2));
+
+        const profilePayload = {
+            user_id: currentUserId,
+            car_id: vehicleData.car_id,
+            car_name: vehicleData.car_name,
+            fuel_consumption: vehicleData.fuel_consumption || 8.2,
+            fuel_price_rub: fuelPrice,
+            service_cost_rub: 9500.0,
+            current_oil_wear_percent: 0.0
+        };
+        localStorage.setItem('autoXAK_profile', JSON.stringify(profilePayload));
+
+        document.getElementById('garage-current-car-name').innerText = vehicleData.car_name;
+
+        try {
+            const headers = (window.AutoXAKSession && typeof window.AutoXAKSession.getAuthHeaders === 'function')
+                ? window.AutoXAKSession.getAuthHeaders()
+                : {};
+            await fetch(`/api/v1/users/${encodeURIComponent(currentUserId)}/profile`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...headers
+                },
+                body: JSON.stringify(profilePayload)
+            });
+        } catch (e) {
+            console.warn('Профиль сохранен локально (оффлайн-режим):', e);
+        }
+
+        closeEditScreen();
+    }
+
+    window.addEventListener('DOMContentLoaded', async () => {
+        initCustomDropdowns();
+        await initCatalog();
+        await loadUserGarageState();
+
+        if (window.location.search.includes('edit=1')) {
+            openEditScreen();
+        }
+    });
+</script>
 </body>
 </html>
