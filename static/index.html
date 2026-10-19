@@ -4,8 +4,72 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>autoXAK — Контроль экономии</title>
-    <script src="/static/session.js"></script>
-    <script src="/static/offline_store.js"></script>
+    <script src="/static/session.js">        // --- Управление профилем в шапке и выходом ---
+        async function initHeaderProfile() {
+            try {
+                if (typeof AutoXAKSession !== 'undefined' && typeof AutoXAKSession.ensureAuthenticated === 'function') {
+                    const session = await AutoXAKSession.ensureAuthenticated();
+                    const labelEl = document.getElementById('header-username-label');
+                    if (labelEl) {
+                        labelEl.textContent = session.isGuest ? "Гость" : (session.name || "Яндекс ID");
+                    }
+                }
+            } catch (e) {
+                console.error("[Header] Ошибка инициализации профиля:", e);
+            }
+        }
+
+        async function handleHeaderLogout() {
+            // Очищаем локальные данные сессии
+            localStorage.removeItem("autoXAK_jwt_token");
+            localStorage.removeItem("autoXAK_user_id");
+            localStorage.removeItem("autoXAK_is_guest");
+            localStorage.removeItem("autoXAK_user_name");
+            localStorage.removeItem("autoXAK_auth_provider");
+            localStorage.removeItem("autoXAK_welcome_seen");
+
+            // Перенаправляем на главную страницу для сброса сессии
+            window.location.href = "/";
+        }
+
+        // Запускаем при загрузке DOM
+        window.addEventListener('DOMContentLoaded', () => {
+            initHeaderProfile();
+        });
+</script>
+    <script src="/static/offline_store.js">        // --- Управление профилем в шапке и выходом ---
+        async function initHeaderProfile() {
+            try {
+                if (typeof AutoXAKSession !== 'undefined' && typeof AutoXAKSession.ensureAuthenticated === 'function') {
+                    const session = await AutoXAKSession.ensureAuthenticated();
+                    const labelEl = document.getElementById('header-username-label');
+                    if (labelEl) {
+                        labelEl.textContent = session.isGuest ? "Гость" : (session.name || "Яндекс ID");
+                    }
+                }
+            } catch (e) {
+                console.error("[Header] Ошибка инициализации профиля:", e);
+            }
+        }
+
+        async function handleHeaderLogout() {
+            // Очищаем локальные данные сессии
+            localStorage.removeItem("autoXAK_jwt_token");
+            localStorage.removeItem("autoXAK_user_id");
+            localStorage.removeItem("autoXAK_is_guest");
+            localStorage.removeItem("autoXAK_user_name");
+            localStorage.removeItem("autoXAK_auth_provider");
+            localStorage.removeItem("autoXAK_welcome_seen");
+
+            // Перенаправляем на главную страницу для сброса сессии
+            window.location.href = "/";
+        }
+
+        // Запускаем при загрузке DOM
+        window.addEventListener('DOMContentLoaded', () => {
+            initHeaderProfile();
+        });
+</script>
     <style>
         :root {
             --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
@@ -896,6 +960,65 @@
     </style>
 </head>
 <body>
+<!-- ОВЕРЛЕЙ АВТОРИЗАЦИИ: ЯНДЕКС ID + ГОСТЕВОЙ РЕЖИМ -->
+        <div id="auth-flow-overlay" class="auth-flow-overlay" style="display: none; position: fixed; inset: 0; z-index: 9999; background: rgba(5, 7, 12, 0.96); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px); align-items: center; justify-content: center; padding: 20px;">
+            <div style="width: 100%; max-width: 374px; background: #121417; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 28px; padding: 32px 22px 24px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.85); text-align: center; position: relative;">
+                <button type="button" onclick="AuthFlow.close()" title="Закрыть" style="position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.05); color: #9CA3AF; cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center;">✕</button>
+
+                <!-- Фирменный векторный логотип autoXAK -->
+                <svg width="88" height="88" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin: 0 auto 12px; display: block;">
+                    <path d="M22 64C22 43.0132 39.0132 26 60 26C80.9868 26 98 43.0132 98 64" stroke="#D2FA58" stroke-width="4.5" stroke-linecap="round"/>
+                    <line x1="28" y1="64" x2="35" y2="64" stroke="#D2FA58" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="40" y1="38" x2="45" y2="43" stroke="#D2FA58" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="60" y1="30" x2="60" y2="37" stroke="#D2FA58" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="80" y1="38" x2="75" y2="43" stroke="#D2FA58" stroke-width="3" stroke-linecap="round"/>
+                    <line x1="92" y1="64" x2="85" y2="64" stroke="#D2FA58" stroke-width="3" stroke-linecap="round"/>
+                    <circle cx="60" cy="64" r="5" fill="#D2FA58"/>
+                    <line x1="60" y1="64" x2="74" y2="50" stroke="#D2FA58" stroke-width="3.5" stroke-linecap="round"/>
+                    <path d="M24 74H36L48 83H60" stroke="#D2FA58" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M55 77L63 83L55 89" stroke="#D2FA58" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="82" cy="83" r="16" stroke="#D2FA58" stroke-width="3.5"/>
+                    <text x="82" y="89" fill="#D2FA58" font-size="16" font-weight="bold" text-anchor="middle" font-family="sans-serif">₽</text>
+                </svg>
+
+                <h2 style="margin: 0 0 6px; font-size: 26px; font-weight: 800; color: #FFFFFF; letter-spacing: -0.5px;">autoXAK</h2>
+                <p style="margin: 0 0 24px; font-size: 13px; color: #9CA3AF; line-height: 1.45;">
+                    Сохраняйте копилку сбережений и настройки автомобиля через обезличенный профиль
+                </p>
+
+                <!-- Кнопки входа (для гостя или нового пользователя) -->
+                <div id="auth-guest-actions" style="display: flex; flex-direction: column; gap: 12px;">
+                    <button type="button" onclick="AuthFlow.loginWithYandex()" style="width: 100%; height: 52px; background: #000000; border: 1.5px solid rgba(255, 255, 255, 0.24); border-radius: 16px; color: #FFFFFF; font-weight: 700; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; box-shadow: 0 6px 20px rgba(0,0,0,0.5);">
+                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; background: #FC3F1D; color: #FFFFFF; border-radius: 50%; font-weight: 900; font-size: 14px; font-family: sans-serif;">Я</span>
+                        <span>Войти с Яндекс ID</span>
+                    </button>
+
+                    <button type="button" onclick="AuthFlow.continueAsGuest()" style="width: 100%; height: 52px; background: #D2FA58; border: none; border-radius: 16px; color: #121417; font-weight: 800; font-size: 15px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                        <span>Продолжить как гость</span>
+                    </button>
+                </div>
+
+                <!-- Блок активного профиля Яндекс ID -->
+                <div id="auth-yandex-profile" style="display: none;">
+                    <div style="background: #1E2228; border: 1px solid rgba(210,250,88,0.3); border-radius: 16px; padding: 14px; margin-bottom: 14px; text-align: left;">
+                        <div style="font-size: 11px; color: #9CA3AF; text-transform: uppercase; margin-bottom: 4px;">Статус синхронизации</div>
+                        <div style="font-size: 14px; font-weight: 700; color: #D2FA58; margin-bottom: 4px;">✓ Яндекс ID подключен</div>
+                        <div id="auth-profile-id-label" style="font-size: 12px; color: #9CA3AF; font-family: monospace;">Токен: ya_...</div>
+                    </div>
+                    <button type="button" onclick="AuthFlow.logout()" style="width: 100%; height: 48px; background: rgba(239, 68, 68, 0.14); border: 1px solid rgba(239, 68, 68, 0.4); border-radius: 16px; color: #F87171; font-weight: 700; font-size: 14px; cursor: pointer;">
+                        Выйти в гостевой режим
+                    </button>
+                </div>
+
+                <div style="margin-top: 18px; font-size: 11px; color: #6B7280; line-height: 1.4;">
+                    Используется только обезличенный хеш-ключ.<br>ФИО, почта и телефон не запрашиваются (вне 152-ФЗ).
+                </div>
+            </div>
+        </div>
+
+<!-- Оверлей авторизации: Яндекс ID + Гостевой режим (без ПДн) -->
+    
+
 
 <div class="mobile-container">
 
@@ -1166,7 +1289,12 @@
                     <path d="M40 72L60 44L80 72" stroke="#D2FA58" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
                     <text x="60" y="96" text-anchor="middle" fill="#D2FA58" font-size="22" font-weight="800">₽</text>
                 </svg>
-                <div class="auth-brand-title">autoXAK</div>
+                <div class="auth-brand-title">autoXAK</div><!-- USER_WIDGET_START -->
+<div id="user-profile-widget" style="display: inline-flex; align-items: center; gap: 8px; margin-left: 10px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); padding: 4px 10px; border-radius: 10px; vertical-align: middle;">
+    <span id="header-username-label" style="font-size: 12px; color: #E5E7EB; font-weight: 600;">Гость</span>
+    <button type="button" onclick="handleHeaderLogout(event)" style="background: rgba(239, 68, 68, 0.18); border: 1px solid rgba(239, 68, 68, 0.45); color: #F87171; border-radius: 6px; padding: 3px 8px; font-size: 11px; font-weight: 600; cursor: pointer;">Выйти</button>
+</div>
+<!-- USER_WIDGET_END -->
             </div>
             <div class="auth-splash-actions">
                 <button class="btn-auth-primary" onclick="loginAsGuest()">Продолжить как гость</button>
@@ -1952,6 +2080,251 @@
         loadDashboardState();
         syncPendingOfflineTrips();
     });
+        // --- Управление профилем в шапке и выходом ---
+        async function initHeaderProfile() {
+            try {
+                if (typeof AutoXAKSession !== 'undefined' && typeof AutoXAKSession.ensureAuthenticated === 'function') {
+                    const session = await AutoXAKSession.ensureAuthenticated();
+                    const labelEl = document.getElementById('header-username-label');
+                    if (labelEl) {
+                        labelEl.textContent = session.isGuest ? "Гость" : (session.name || "Яндекс ID");
+                    }
+                }
+            } catch (e) {
+                console.error("[Header] Ошибка инициализации профиля:", e);
+            }
+        }
+
+        async function handleHeaderLogout() {
+            // Очищаем локальные данные сессии
+            localStorage.removeItem("autoXAK_jwt_token");
+            localStorage.removeItem("autoXAK_user_id");
+            localStorage.removeItem("autoXAK_is_guest");
+            localStorage.removeItem("autoXAK_user_name");
+            localStorage.removeItem("autoXAK_auth_provider");
+            localStorage.removeItem("autoXAK_welcome_seen");
+
+            // Перенаправляем на главную страницу для сброса сессии
+            window.location.href = "/";
+        }
+
+        // Запускаем при загрузке DOM
+        window.addEventListener('DOMContentLoaded', () => {
+            initHeaderProfile();
+        });
 </script>
+
+<script id="autoxak-yandex-auth-controller">
+(function() {
+    function syncHeaderBadge() {
+        const userId = localStorage.getItem('autoXAK_user_id') || '';
+        const isGuest = localStorage.getItem('autoXAK_is_guest') !== 'false';
+        const badgeText = document.getElementById('user-badge-text');
+        if (badgeText) {
+            badgeText.textContent = (!isGuest && userId.startsWith('ya_')) ? 'Яндекс ID' : 'Войти';
+        }
+    }
+
+    const YandexAuthController = {
+        open() {
+            const overlay = document.getElementById('auth-flow-overlay');
+            if (!overlay) return;
+            const userId = localStorage.getItem('autoXAK_user_id') || '';
+            const isGuest = localStorage.getItem('autoXAK_is_guest') !== 'false';
+
+            const guestActions = document.getElementById('auth-guest-actions');
+            const yandexProfile = document.getElementById('auth-yandex-profile');
+            const idLabel = document.getElementById('auth-profile-id-label');
+
+            if (!isGuest && userId.startsWith('ya_')) {
+                if (guestActions) guestActions.style.display = 'none';
+                if (yandexProfile) yandexProfile.style.display = 'block';
+                if (idLabel) idLabel.textContent = 'Токен: ' + userId;
+            } else {
+                if (guestActions) guestActions.style.display = 'flex';
+                if (yandexProfile) yandexProfile.style.display = 'none';
+            }
+            overlay.style.display = 'flex';
+            overlay.classList.add('active');
+        },
+
+        close() {
+            const overlay = document.getElementById('auth-flow-overlay');
+            if (overlay) {
+                overlay.style.display = 'none';
+                overlay.classList.remove('active');
+            }
+        },
+
+        goTo() { this.open(); },
+        showScreen() { this.open(); },
+
+        loginWithYandex() {
+            const existingId = localStorage.getItem('autoXAK_user_id') || '';
+            window.location.href = '/api/v1/auth/yandex/login?guest_id=' + encodeURIComponent(existingId);
+        },
+
+        async continueAsGuest() {
+            localStorage.setItem('autoXAK_welcome_seen', 'true');
+            const existingId = localStorage.getItem('autoXAK_user_id');
+            if (existingId) {
+                window.currentUserId = existingId;
+                this.close();
+                syncHeaderBadge();
+                if (typeof window.fetchDashboard === 'function') await window.fetchDashboard();
+                return;
+            }
+            try {
+                const res = await fetch('/api/v1/auth/guest', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('autoXAK_user_id', data.user_id);
+                    localStorage.setItem('autoXAK_jwt_token', data.token);
+                    localStorage.setItem('autoXAK_is_guest', 'true');
+                    localStorage.setItem('autoXAK_user_name', 'Гость');
+                    window.currentUserId = data.user_id;
+                }
+            } catch (e) {
+                console.error(e);
+            }
+            syncHeaderBadge();
+            this.close();
+            if (typeof window.fetchDashboard === 'function') await window.fetchDashboard();
+        },
+
+        async logout() {
+            localStorage.removeItem('autoXAK_user_id');
+            localStorage.removeItem('autoXAK_jwt_token');
+            localStorage.removeItem('autoXAK_is_guest');
+            localStorage.removeItem('autoXAK_user_name');
+            localStorage.removeItem('autoXAK_auth_provider');
+            localStorage.removeItem('autoXAK_welcome_seen');
+            await this.continueAsGuest();
+            this.open();
+        }
+    };
+
+    window.AuthFlow = YandexAuthController;
+    window.AuthManager = YandexAuthController;
+
+    window.addEventListener('DOMContentLoaded', () => {
+        syncHeaderBadge();
+        const userId = localStorage.getItem('autoXAK_user_id') || '';
+        const isYandex = userId.startsWith('ya_') && localStorage.getItem('autoXAK_is_guest') === 'false';
+        const welcomeSeen = localStorage.getItem('autoXAK_welcome_seen') === 'true';
+
+        // Если пользователь еще не вошел через Яндекс ID и не нажал "Продолжить как гость" — сразу показываем экран выбора
+        if (!isYandex && !welcomeSeen) {
+            YandexAuthController.open();
+        }
+    });
+})();
+        // --- Управление профилем в шапке и выходом ---
+        async function initHeaderProfile() {
+            try {
+                if (typeof AutoXAKSession !== 'undefined' && typeof AutoXAKSession.ensureAuthenticated === 'function') {
+                    const session = await AutoXAKSession.ensureAuthenticated();
+                    const labelEl = document.getElementById('header-username-label');
+                    if (labelEl) {
+                        labelEl.textContent = session.isGuest ? "Гость" : (session.name || "Яндекс ID");
+                    }
+                }
+            } catch (e) {
+                console.error("[Header] Ошибка инициализации профиля:", e);
+            }
+        }
+
+        async function handleHeaderLogout() {
+            // Очищаем локальные данные сессии
+            localStorage.removeItem("autoXAK_jwt_token");
+            localStorage.removeItem("autoXAK_user_id");
+            localStorage.removeItem("autoXAK_is_guest");
+            localStorage.removeItem("autoXAK_user_name");
+            localStorage.removeItem("autoXAK_auth_provider");
+            localStorage.removeItem("autoXAK_welcome_seen");
+
+            // Перенаправляем на главную страницу для сброса сессии
+            window.location.href = "/";
+        }
+
+        // Запускаем при загрузке DOM
+        window.addEventListener('DOMContentLoaded', () => {
+            initHeaderProfile();
+        });
+</script>
+
+
+
+
+<!-- USER_WIDGET_JS_START -->
+<script>
+async function initHeaderProfile() {
+    try {
+        const labelEl = document.getElementById('header-username-label');
+        if (!labelEl) return;
+
+        // Проверяем данные из localStorage и AutoXAKSession
+        const isGuest = localStorage.getItem('autoXAK_is_guest');
+        const savedName = localStorage.getItem('autoXAK_user_name');
+        const userId = localStorage.getItem('autoXAK_user_id');
+
+        if (typeof AutoXAKSession !== 'undefined' && typeof AutoXAKSession.ensureAuthenticated === 'function') {
+            const session = await AutoXAKSession.ensureAuthenticated();
+            if (session && !session.isGuest && session.name) {
+                labelEl.textContent = session.name;
+                return;
+            }
+        }
+
+        if (savedName && isGuest === 'false') {
+            labelEl.textContent = savedName;
+        } else if (userId && !userId.startsWith('guest_') && !userId.startsWith('dev_') && isGuest === 'false') {
+            labelEl.textContent = savedName || 'Яндекс ID';
+        } else {
+            labelEl.textContent = 'Гость';
+        }
+    } catch (e) {
+        console.error('[HeaderProfile] Ошибка:', e);
+    }
+}
+
+async function handleHeaderLogout(e) {
+    if (e) e.stopPropagation();
+
+    // 1. Полностью очищаем данные сессии в localStorage
+    const keysToRemove = [
+        'autoXAK_jwt_token',
+        'autoXAK_user_id',
+        'autoXAK_is_guest',
+        'autoXAK_user_name',
+        'autoXAK_auth_provider',
+        'autoXAK_welcome_seen',
+        'autoXAK_auth_done'
+    ];
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    sessionStorage.clear();
+
+    // 2. Если на странице есть оверлей входа (#auth-flow-overlay) — показываем его сразу
+    const authOverlay = document.getElementById('auth-flow-overlay');
+    if (authOverlay) {
+        authOverlay.style.display = 'flex';
+        authOverlay.classList.remove('hidden');
+        return;
+    }
+
+    // 3. Иначе перезагружаем главную страницу с параметром сброса кэша
+    window.location.href = '/?logout=' + Date.now();
+}
+
+document.addEventListener('DOMContentLoaded', initHeaderProfile);
+window.addEventListener('load', initHeaderProfile);
+setTimeout(initHeaderProfile, 500);
+</script>
+<!-- USER_WIDGET_JS_END -->
+
 </body>
 </html>

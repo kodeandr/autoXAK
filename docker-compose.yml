@@ -14,6 +14,10 @@ services:
       - REDIS_PORT=6379
       - DGIS_API_KEY=1069d305-b706-4819-840a-b8a191fda6c8
       - DGIS_USE_MOCK=false
+      - YANDEX_CLIENT_ID=${YANDEX_CLIENT_ID:-7057190c0d2249d2bff2da749f474e93}
+      - YANDEX_CLIENT_SECRET=${YANDEX_CLIENT_SECRET:-7d4a9608d5894e6eb6466c0201d2a51a}
+      - YANDEX_REDIRECT_URI=${YANDEX_REDIRECT_URI:-https://autoxak.ru/api/v1/auth/yandex/callback}     
+
     depends_on:
       postgres:
         condition: service_healthy

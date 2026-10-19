@@ -3453,3 +3453,784 @@ name
 2026-10-18 14:46:27 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:37422 - "GET /api/v1/users/dev_4a96eeee705840dc/profile HTTP/1.1" 405
 2026-10-18 14:46:27 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [83aeac42] FINISH GET /static/sw.js Status=200 (5.75ms)
 2026-10-18 14:46:27 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:37424 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-18 15:11:04 | INFO     | [uvicorn.error] server.py:253 (shutdown) -> Shutting down
+2026-10-18 15:11:05 | INFO     | [uvicorn.error] on.py:67 (shutdown) -> Waiting for application shutdown.
+2026-10-18 15:11:05 | INFO     | [uvicorn.error] on.py:76 (shutdown) -> Application shutdown complete.
+2026-10-18 15:11:05 | INFO     | [uvicorn.error] server.py:87 (serve) -> Finished server process [8]
+2026-10-18 15:11:06 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [59]
+2026-10-18 15:11:06 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-18 15:11:06 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-18 15:15:56 | INFO     | [uvicorn.error] server.py:253 (shutdown) -> Shutting down
+2026-10-18 15:15:57 | INFO     | [uvicorn.error] on.py:67 (shutdown) -> Waiting for application shutdown.
+2026-10-18 15:15:57 | INFO     | [uvicorn.error] on.py:76 (shutdown) -> Application shutdown complete.
+2026-10-18 15:15:57 | INFO     | [uvicorn.error] server.py:87 (serve) -> Finished server process [59]
+2026-10-18 15:15:58 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [109]
+2026-10-18 15:15:58 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-18 15:15:58 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-18 15:17:23 | INFO     | [uvicorn.error] server.py:253 (shutdown) -> Shutting down
+2026-10-18 15:17:23 | INFO     | [uvicorn.error] on.py:67 (shutdown) -> Waiting for application shutdown.
+2026-10-18 15:17:23 | INFO     | [uvicorn.error] on.py:76 (shutdown) -> Application shutdown complete.
+2026-10-18 15:17:23 | INFO     | [uvicorn.error] server.py:87 (serve) -> Finished server process [109]
+2026-10-18 15:17:24 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [159]
+2026-10-18 15:17:24 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-18 15:17:24 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-18 15:22:12 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [ff7bb7a6] START GET /setup
+2026-10-18 15:22:12 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [ff7bb7a6] FINISH GET /setup Status=200 (5.10ms)
+2026-10-18 15:22:12 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "GET /setup HTTP/1.1" 200
+2026-10-18 15:22:12 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [e6123187] START GET /api/v1/vehicles/catalog
+2026-10-18 15:22:12 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [e6123187] FINISH GET /api/v1/vehicles/catalog Status=200 (14.17ms)
+2026-10-18 15:22:12 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "GET /api/v1/vehicles/catalog HTTP/1.1" 200
+2026-10-18 15:22:12 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [698b9ef4] START GET /api/v1/users/dev_4a96eeee705840dc/profile
+2026-10-18 15:22:12 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [698b9ef4] FINISH GET /api/v1/users/dev_4a96eeee705840dc/profile Status=200 (3.88ms)
+2026-10-18 15:22:12 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "GET /api/v1/users/dev_4a96eeee705840dc/profile HTTP/1.1" 200
+2026-10-18 15:22:13 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [ddb9d3b5] START GET /setup
+2026-10-18 15:22:13 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [ddb9d3b5] FINISH GET /setup Status=200 (3.94ms)
+2026-10-18 15:22:13 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "GET /setup HTTP/1.1" 200
+2026-10-18 15:22:13 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [e98fa6b2] START GET /api/v1/vehicles/catalog
+2026-10-18 15:22:13 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [e98fa6b2] FINISH GET /api/v1/vehicles/catalog Status=200 (2.81ms)
+2026-10-18 15:22:13 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "GET /api/v1/vehicles/catalog HTTP/1.1" 200
+2026-10-18 15:22:13 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [cebee8d6] START GET /api/v1/users/dev_4a96eeee705840dc/profile
+2026-10-18 15:22:13 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [cebee8d6] FINISH GET /api/v1/users/dev_4a96eeee705840dc/profile Status=200 (3.21ms)
+2026-10-18 15:22:13 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "GET /api/v1/users/dev_4a96eeee705840dc/profile HTTP/1.1" 200
+2026-10-18 15:22:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [72bc8628] START GET /
+2026-10-18 15:22:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [72bc8628] FINISH GET / Status=200 (4.19ms)
+2026-10-18 15:22:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "GET / HTTP/1.1" 200
+2026-10-18 15:22:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [881b189c] START GET /static/offline_store.js
+2026-10-18 15:22:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [881b189c] FINISH GET /static/offline_store.js Status=200 (5.19ms)
+2026-10-18 15:22:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "GET /static/offline_store.js HTTP/1.1" 200
+2026-10-18 15:22:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [645f6d91] START GET /api/v1/users/dev_4a96eeee705840dc/profile
+2026-10-18 15:22:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [645f6d91] FINISH GET /api/v1/users/dev_4a96eeee705840dc/profile Status=200 (4.20ms)
+2026-10-18 15:22:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "GET /api/v1/users/dev_4a96eeee705840dc/profile HTTP/1.1" 200
+2026-10-18 15:22:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [035291d2] START GET /api/v1/users/dev_4a96eeee705840dc/analytics/period
+2026-10-18 15:22:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [2effb713] START POST /api/v1/trips/complete
+2026-10-18 15:22:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [2effb713] FINISH POST /api/v1/trips/complete Status=404 (1.54ms)
+2026-10-18 15:22:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54208 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:22:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [035291d2] FINISH GET /api/v1/users/dev_4a96eeee705840dc/analytics/period Status=200 (11.04ms)
+2026-10-18 15:22:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54198 - "GET /api/v1/users/dev_4a96eeee705840dc/analytics/period HTTP/1.1" 200
+2026-10-18 15:22:16 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [a0153a56] START GET /history
+2026-10-18 15:22:16 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [a0153a56] FINISH GET /history Status=200 (3.76ms)
+2026-10-18 15:22:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54208 - "GET /history HTTP/1.1" 200
+2026-10-18 15:22:16 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [b1d63553] START GET /api/v1/users/dev_4a96eeee705840dc/analytics/period
+2026-10-18 15:22:16 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [b1d63553] FINISH GET /api/v1/users/dev_4a96eeee705840dc/analytics/period Status=200 (4.42ms)
+2026-10-18 15:22:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54208 - "GET /api/v1/users/dev_4a96eeee705840dc/analytics/period HTTP/1.1" 200
+2026-10-18 15:22:16 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [d908023a] START GET /static/sw.js
+2026-10-18 15:22:16 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [d908023a] FINISH GET /static/sw.js Status=200 (5.11ms)
+2026-10-18 15:22:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54208 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [57ee78dd] START GET /
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [57ee78dd] FINISH GET / Status=200 (3.92ms)
+2026-10-18 15:22:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "GET / HTTP/1.1" 200
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [9f4bb723] START GET /api/v1/users/dev_4a96eeee705840dc/profile
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [d2a110b0] START POST /api/v1/trips/complete
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [d2a110b0] FINISH POST /api/v1/trips/complete Status=404 (1.73ms)
+2026-10-18 15:22:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [9f4bb723] FINISH GET /api/v1/users/dev_4a96eeee705840dc/profile Status=200 (5.53ms)
+2026-10-18 15:22:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54198 - "GET /api/v1/users/dev_4a96eeee705840dc/profile HTTP/1.1" 200
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [b23708de] START GET /api/v1/users/dev_4a96eeee705840dc/analytics/period
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [cbc107a9] START GET /static/sw.js
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [b23708de] FINISH GET /api/v1/users/dev_4a96eeee705840dc/analytics/period Status=200 (5.65ms)
+2026-10-18 15:22:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54198 - "GET /api/v1/users/dev_4a96eeee705840dc/analytics/period HTTP/1.1" 200
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [cbc107a9] FINISH GET /static/sw.js Status=200 (6.11ms)
+2026-10-18 15:22:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54226 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [2add3b55] START GET /setup
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [2add3b55] FINISH GET /setup Status=200 (3.68ms)
+2026-10-18 15:22:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "GET /setup HTTP/1.1" 200
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [a064b96a] START GET /api/v1/vehicles/catalog
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [a064b96a] FINISH GET /api/v1/vehicles/catalog Status=200 (2.71ms)
+2026-10-18 15:22:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "GET /api/v1/vehicles/catalog HTTP/1.1" 200
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [ca820119] START GET /static/sw.js
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [1e11c882] START GET /api/v1/users/dev_4a96eeee705840dc/profile
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [1e11c882] FINISH GET /api/v1/users/dev_4a96eeee705840dc/profile Status=200 (2.04ms)
+2026-10-18 15:22:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "GET /api/v1/users/dev_4a96eeee705840dc/profile HTTP/1.1" 200
+2026-10-18 15:22:17 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [ca820119] FINISH GET /static/sw.js Status=200 (5.03ms)
+2026-10-18 15:22:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54226 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-18 15:22:18 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [db5098db] START GET /history
+2026-10-18 15:22:18 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [db5098db] FINISH GET /history Status=200 (3.59ms)
+2026-10-18 15:22:18 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "GET /history HTTP/1.1" 200
+2026-10-18 15:22:18 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [f0fa3a75] START GET /api/v1/users/dev_4a96eeee705840dc/analytics/period
+2026-10-18 15:22:18 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [f0fa3a75] FINISH GET /api/v1/users/dev_4a96eeee705840dc/analytics/period Status=200 (4.92ms)
+2026-10-18 15:22:18 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "GET /api/v1/users/dev_4a96eeee705840dc/analytics/period HTTP/1.1" 200
+2026-10-18 15:22:18 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [f99b25d5] START GET /static/sw.js
+2026-10-18 15:22:18 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [f99b25d5] FINISH GET /static/sw.js Status=200 (4.60ms)
+2026-10-18 15:22:18 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54198 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-18 15:22:19 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [3e2690d9] START GET /
+2026-10-18 15:22:19 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [3e2690d9] FINISH GET / Status=200 (3.93ms)
+2026-10-18 15:22:19 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "GET / HTTP/1.1" 200
+2026-10-18 15:22:19 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [c880eb04] START GET /api/v1/users/dev_4a96eeee705840dc/profile
+2026-10-18 15:22:19 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [c880eb04] FINISH GET /api/v1/users/dev_4a96eeee705840dc/profile Status=200 (4.16ms)
+2026-10-18 15:22:19 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54154 - "GET /api/v1/users/dev_4a96eeee705840dc/profile HTTP/1.1" 200
+2026-10-18 15:22:19 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8931d8cc] START POST /api/v1/trips/complete
+2026-10-18 15:22:19 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [b1677340] START GET /api/v1/users/dev_4a96eeee705840dc/analytics/period
+2026-10-18 15:22:19 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8931d8cc] FINISH POST /api/v1/trips/complete Status=404 (2.62ms)
+2026-10-18 15:22:19 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54276 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:22:19 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [b1677340] FINISH GET /api/v1/users/dev_4a96eeee705840dc/analytics/period Status=200 (5.67ms)
+2026-10-18 15:22:19 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54292 - "GET /api/v1/users/dev_4a96eeee705840dc/analytics/period HTTP/1.1" 200
+2026-10-18 15:22:25 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8e44e48b] START POST /api/v1/trips/complete
+2026-10-18 15:22:25 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8e44e48b] FINISH POST /api/v1/trips/complete Status=404 (0.89ms)
+2026-10-18 15:22:25 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43232 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:22:30 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [f12b1524] START POST /api/v1/trips/complete
+2026-10-18 15:22:30 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [f12b1524] FINISH POST /api/v1/trips/complete Status=404 (0.75ms)
+2026-10-18 15:22:30 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43256 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:22:35 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [1d84b477] START POST /api/v1/trips/complete
+2026-10-18 15:22:35 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [1d84b477] FINISH POST /api/v1/trips/complete Status=404 (0.83ms)
+2026-10-18 15:22:35 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43256 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:22:39 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [9ef70774] START POST /api/v1/trips/complete
+2026-10-18 15:22:39 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [9ef70774] FINISH POST /api/v1/trips/complete Status=404 (0.81ms)
+2026-10-18 15:22:39 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43256 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:22:44 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [9347ca24] START POST /api/v1/trips/complete
+2026-10-18 15:22:44 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [9347ca24] FINISH POST /api/v1/trips/complete Status=404 (0.76ms)
+2026-10-18 15:22:44 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56328 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:22:50 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [27c0199e] START POST /api/v1/trips/complete
+2026-10-18 15:22:50 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [27c0199e] FINISH POST /api/v1/trips/complete Status=404 (0.78ms)
+2026-10-18 15:22:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56344 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:22:55 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [c62d8997] START POST /api/v1/trips/complete
+2026-10-18 15:22:55 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [c62d8997] FINISH POST /api/v1/trips/complete Status=404 (0.74ms)
+2026-10-18 15:22:55 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48472 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:23:00 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [2683b059] START POST /api/v1/trips/complete
+2026-10-18 15:23:00 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [2683b059] FINISH POST /api/v1/trips/complete Status=404 (0.78ms)
+2026-10-18 15:23:00 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48472 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:23:05 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [36a9039a] START POST /api/v1/trips/complete
+2026-10-18 15:23:05 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [36a9039a] FINISH POST /api/v1/trips/complete Status=404 (1.06ms)
+2026-10-18 15:23:05 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48472 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:23:10 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [0fb10dc4] START POST /api/v1/trips/complete
+2026-10-18 15:23:10 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [0fb10dc4] FINISH POST /api/v1/trips/complete Status=404 (0.85ms)
+2026-10-18 15:23:10 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48472 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:23:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [7b53ec7d] START POST /api/v1/trips/complete
+2026-10-18 15:23:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [7b53ec7d] FINISH POST /api/v1/trips/complete Status=404 (1.17ms)
+2026-10-18 15:23:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48472 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:23:20 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [38e18b8b] START POST /api/v1/trips/complete
+2026-10-18 15:23:20 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [38e18b8b] FINISH POST /api/v1/trips/complete Status=404 (0.86ms)
+2026-10-18 15:23:20 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48472 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:23:25 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [b1340b38] START POST /api/v1/trips/complete
+2026-10-18 15:23:25 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [b1340b38] FINISH POST /api/v1/trips/complete Status=404 (0.77ms)
+2026-10-18 15:23:25 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42882 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:23:30 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [f455d875] START POST /api/v1/trips/complete
+2026-10-18 15:23:30 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [f455d875] FINISH POST /api/v1/trips/complete Status=404 (0.89ms)
+2026-10-18 15:23:30 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42882 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:23:35 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [63bd46b8] START POST /api/v1/trips/complete
+2026-10-18 15:23:35 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [63bd46b8] FINISH POST /api/v1/trips/complete Status=404 (0.69ms)
+2026-10-18 15:23:35 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56980 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:23:40 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8ce2d6ca] START POST /api/v1/trips/complete
+2026-10-18 15:23:40 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8ce2d6ca] FINISH POST /api/v1/trips/complete Status=404 (0.94ms)
+2026-10-18 15:23:40 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56980 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:23:45 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [73aed7e6] START POST /api/v1/trips/complete
+2026-10-18 15:23:45 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [73aed7e6] FINISH POST /api/v1/trips/complete Status=404 (0.82ms)
+2026-10-18 15:23:45 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56980 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:24:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [ba84bda7] START POST /api/v1/trips/complete
+2026-10-18 15:24:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [ba84bda7] FINISH POST /api/v1/trips/complete Status=404 (0.73ms)
+2026-10-18 15:24:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:53382 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:25:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [58acb808] START POST /api/v1/trips/complete
+2026-10-18 15:25:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [58acb808] FINISH POST /api/v1/trips/complete Status=404 (0.81ms)
+2026-10-18 15:25:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:44418 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:26:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [4b55c51c] START POST /api/v1/trips/complete
+2026-10-18 15:26:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [4b55c51c] FINISH POST /api/v1/trips/complete Status=404 (0.96ms)
+2026-10-18 15:26:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:50218 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:27:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [ccb92b34] START POST /api/v1/trips/complete
+2026-10-18 15:27:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [ccb92b34] FINISH POST /api/v1/trips/complete Status=404 (0.80ms)
+2026-10-18 15:27:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:35210 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:28:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [a92f2765] START POST /api/v1/trips/complete
+2026-10-18 15:28:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [a92f2765] FINISH POST /api/v1/trips/complete Status=404 (0.79ms)
+2026-10-18 15:28:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:46130 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:29:11 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [5126be5e] START POST /api/v1/trips/complete
+2026-10-18 15:29:11 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [5126be5e] FINISH POST /api/v1/trips/complete Status=404 (1.23ms)
+2026-10-18 15:29:11 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:35048 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:29:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [fac22bfe] START POST /api/v1/trips/complete
+2026-10-18 15:29:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [fac22bfe] FINISH POST /api/v1/trips/complete Status=404 (0.90ms)
+2026-10-18 15:29:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:35048 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:29:20 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [bd9a0709] START POST /api/v1/trips/complete
+2026-10-18 15:29:20 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [bd9a0709] FINISH POST /api/v1/trips/complete Status=404 (1.01ms)
+2026-10-18 15:29:20 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:35048 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:29:25 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [ea9ccf3d] START POST /api/v1/trips/complete
+2026-10-18 15:29:25 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [ea9ccf3d] FINISH POST /api/v1/trips/complete Status=404 (0.86ms)
+2026-10-18 15:29:25 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:35048 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:29:30 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8b14ea55] START POST /api/v1/trips/complete
+2026-10-18 15:29:30 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8b14ea55] FINISH POST /api/v1/trips/complete Status=404 (0.74ms)
+2026-10-18 15:29:30 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:33790 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:29:35 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [4dd2f36d] START POST /api/v1/trips/complete
+2026-10-18 15:29:35 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [4dd2f36d] FINISH POST /api/v1/trips/complete Status=404 (0.79ms)
+2026-10-18 15:29:35 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:33790 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:29:40 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [78f04159] START POST /api/v1/trips/complete
+2026-10-18 15:29:40 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [78f04159] FINISH POST /api/v1/trips/complete Status=404 (0.72ms)
+2026-10-18 15:29:40 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47582 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:29:45 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [15e0d293] START POST /api/v1/trips/complete
+2026-10-18 15:29:45 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [15e0d293] FINISH POST /api/v1/trips/complete Status=404 (0.83ms)
+2026-10-18 15:29:45 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47582 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:29:50 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [51ed11af] START POST /api/v1/trips/complete
+2026-10-18 15:29:50 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [51ed11af] FINISH POST /api/v1/trips/complete Status=404 (0.79ms)
+2026-10-18 15:29:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:52118 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:29:55 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [fc2e0c2d] START POST /api/v1/trips/complete
+2026-10-18 15:29:55 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [fc2e0c2d] FINISH POST /api/v1/trips/complete Status=404 (0.75ms)
+2026-10-18 15:29:55 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:52118 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:30:00 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [14de2bba] START POST /api/v1/trips/complete
+2026-10-18 15:30:00 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [14de2bba] FINISH POST /api/v1/trips/complete Status=404 (0.82ms)
+2026-10-18 15:30:00 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:52118 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:30:05 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [76b22c08] START POST /api/v1/trips/complete
+2026-10-18 15:30:05 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [76b22c08] FINISH POST /api/v1/trips/complete Status=404 (0.75ms)
+2026-10-18 15:30:05 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39984 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:30:10 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [819d54db] START POST /api/v1/trips/complete
+2026-10-18 15:30:10 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [819d54db] FINISH POST /api/v1/trips/complete Status=404 (0.92ms)
+2026-10-18 15:30:10 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39984 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:30:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [276362b3] START POST /api/v1/trips/complete
+2026-10-18 15:30:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [276362b3] FINISH POST /api/v1/trips/complete Status=404 (1.05ms)
+2026-10-18 15:30:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39984 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:30:47 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [ec6bc5d5] START POST /api/v1/trips/complete
+2026-10-18 15:30:47 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [ec6bc5d5] FINISH POST /api/v1/trips/complete Status=404 (0.90ms)
+2026-10-18 15:30:47 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:59404 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:30:49 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [75cf9010] START POST /api/v1/trips/complete
+2026-10-18 15:30:49 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [75cf9010] FINISH POST /api/v1/trips/complete Status=404 (0.83ms)
+2026-10-18 15:30:49 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:59404 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:30:55 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [93291f38] START POST /api/v1/trips/complete
+2026-10-18 15:30:55 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [93291f38] FINISH POST /api/v1/trips/complete Status=404 (0.74ms)
+2026-10-18 15:30:55 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49910 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:31:00 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [be26f268] START POST /api/v1/trips/complete
+2026-10-18 15:31:00 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [be26f268] FINISH POST /api/v1/trips/complete Status=404 (0.81ms)
+2026-10-18 15:31:00 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49910 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:31:05 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [4727206e] START POST /api/v1/trips/complete
+2026-10-18 15:31:05 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [4727206e] FINISH POST /api/v1/trips/complete Status=404 (0.96ms)
+2026-10-18 15:31:05 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49910 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:31:10 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [1f4be45f] START POST /api/v1/trips/complete
+2026-10-18 15:31:10 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [1f4be45f] FINISH POST /api/v1/trips/complete Status=404 (0.81ms)
+2026-10-18 15:31:10 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49910 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:31:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [366b7cc1] START POST /api/v1/trips/complete
+2026-10-18 15:31:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [366b7cc1] FINISH POST /api/v1/trips/complete Status=404 (1.00ms)
+2026-10-18 15:31:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49910 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:31:20 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [70999869] START POST /api/v1/trips/complete
+2026-10-18 15:31:20 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [70999869] FINISH POST /api/v1/trips/complete Status=404 (0.75ms)
+2026-10-18 15:31:20 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:33044 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:31:25 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [82713d3c] START POST /api/v1/trips/complete
+2026-10-18 15:31:25 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [82713d3c] FINISH POST /api/v1/trips/complete Status=404 (0.82ms)
+2026-10-18 15:31:25 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:33044 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:31:30 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [dd6f44c7] START POST /api/v1/trips/complete
+2026-10-18 15:31:30 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [dd6f44c7] FINISH POST /api/v1/trips/complete Status=404 (0.70ms)
+2026-10-18 15:31:30 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:33044 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:31:35 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [85c7469e] START POST /api/v1/trips/complete
+2026-10-18 15:31:35 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [85c7469e] FINISH POST /api/v1/trips/complete Status=404 (0.73ms)
+2026-10-18 15:31:35 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:46524 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:31:40 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [a35f9891] START POST /api/v1/trips/complete
+2026-10-18 15:31:40 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [a35f9891] FINISH POST /api/v1/trips/complete Status=404 (0.90ms)
+2026-10-18 15:31:40 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:46530 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:31:45 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [2608010f] START POST /api/v1/trips/complete
+2026-10-18 15:31:45 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [2608010f] FINISH POST /api/v1/trips/complete Status=404 (1.08ms)
+2026-10-18 15:31:45 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:46530 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:32:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [1d38a145] START POST /api/v1/trips/complete
+2026-10-18 15:32:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [1d38a145] FINISH POST /api/v1/trips/complete Status=404 (0.92ms)
+2026-10-18 15:32:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:59716 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:33:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [a4130c4c] START POST /api/v1/trips/complete
+2026-10-18 15:33:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [a4130c4c] FINISH POST /api/v1/trips/complete Status=404 (0.85ms)
+2026-10-18 15:33:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56186 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:34:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [e9ed442e] START POST /api/v1/trips/complete
+2026-10-18 15:34:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [e9ed442e] FINISH POST /api/v1/trips/complete Status=404 (0.73ms)
+2026-10-18 15:34:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:33100 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:35:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [90504ece] START POST /api/v1/trips/complete
+2026-10-18 15:35:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [90504ece] FINISH POST /api/v1/trips/complete Status=404 (0.95ms)
+2026-10-18 15:35:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56596 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:36:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [88f002db] START POST /api/v1/trips/complete
+2026-10-18 15:36:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [88f002db] FINISH POST /api/v1/trips/complete Status=404 (0.79ms)
+2026-10-18 15:36:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39768 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:37:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [d861c26d] START POST /api/v1/trips/complete
+2026-10-18 15:37:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [d861c26d] FINISH POST /api/v1/trips/complete Status=404 (0.84ms)
+2026-10-18 15:37:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:40830 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:38:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [181f60fb] START POST /api/v1/trips/complete
+2026-10-18 15:38:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [181f60fb] FINISH POST /api/v1/trips/complete Status=404 (0.83ms)
+2026-10-18 15:38:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43994 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:39:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [3a8cabc5] START POST /api/v1/trips/complete
+2026-10-18 15:39:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [3a8cabc5] FINISH POST /api/v1/trips/complete Status=404 (0.77ms)
+2026-10-18 15:39:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:58320 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:40:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [c8477b5d] START POST /api/v1/trips/complete
+2026-10-18 15:40:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [c8477b5d] FINISH POST /api/v1/trips/complete Status=404 (0.72ms)
+2026-10-18 15:40:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:50936 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:41:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [7ae60119] START POST /api/v1/trips/complete
+2026-10-18 15:41:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [7ae60119] FINISH POST /api/v1/trips/complete Status=404 (0.83ms)
+2026-10-18 15:41:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:50166 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:42:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [5a01d5b1] START POST /api/v1/trips/complete
+2026-10-18 15:42:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [5a01d5b1] FINISH POST /api/v1/trips/complete Status=404 (1.15ms)
+2026-10-18 15:42:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:50946 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:43:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [16e1bb08] START POST /api/v1/trips/complete
+2026-10-18 15:43:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [16e1bb08] FINISH POST /api/v1/trips/complete Status=404 (0.89ms)
+2026-10-18 15:43:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:58040 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:44:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [28662fcb] START POST /api/v1/trips/complete
+2026-10-18 15:44:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [28662fcb] FINISH POST /api/v1/trips/complete Status=404 (0.81ms)
+2026-10-18 15:44:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:58078 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:45:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [2029ba8a] START POST /api/v1/trips/complete
+2026-10-18 15:45:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [2029ba8a] FINISH POST /api/v1/trips/complete Status=404 (0.89ms)
+2026-10-18 15:45:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43132 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:46:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [54f7fc99] START POST /api/v1/trips/complete
+2026-10-18 15:46:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [54f7fc99] FINISH POST /api/v1/trips/complete Status=404 (1.48ms)
+2026-10-18 15:46:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:53186 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:47:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [fbd41651] START POST /api/v1/trips/complete
+2026-10-18 15:47:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [fbd41651] FINISH POST /api/v1/trips/complete Status=404 (0.94ms)
+2026-10-18 15:47:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54408 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:48:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [d2d941f8] START POST /api/v1/trips/complete
+2026-10-18 15:48:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [d2d941f8] FINISH POST /api/v1/trips/complete Status=404 (0.77ms)
+2026-10-18 15:48:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:43480 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:49:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [3ee18fa3] START POST /api/v1/trips/complete
+2026-10-18 15:49:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [3ee18fa3] FINISH POST /api/v1/trips/complete Status=404 (0.84ms)
+2026-10-18 15:49:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:50584 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:50:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [4aab8b24] START POST /api/v1/trips/complete
+2026-10-18 15:50:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [4aab8b24] FINISH POST /api/v1/trips/complete Status=404 (0.77ms)
+2026-10-18 15:50:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:53480 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:51:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [c236f467] START POST /api/v1/trips/complete
+2026-10-18 15:51:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [c236f467] FINISH POST /api/v1/trips/complete Status=404 (0.88ms)
+2026-10-18 15:51:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:33030 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:52:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [53dcc9e8] START POST /api/v1/trips/complete
+2026-10-18 15:52:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [53dcc9e8] FINISH POST /api/v1/trips/complete Status=404 (0.79ms)
+2026-10-18 15:52:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39692 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:53:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [4c4a41f4] START POST /api/v1/trips/complete
+2026-10-18 15:53:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [4c4a41f4] FINISH POST /api/v1/trips/complete Status=404 (0.81ms)
+2026-10-18 15:53:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:59830 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:54:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [725f1e2f] START POST /api/v1/trips/complete
+2026-10-18 15:54:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [725f1e2f] FINISH POST /api/v1/trips/complete Status=404 (0.87ms)
+2026-10-18 15:54:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49662 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:55:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [7095d4a4] START POST /api/v1/trips/complete
+2026-10-18 15:55:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [7095d4a4] FINISH POST /api/v1/trips/complete Status=404 (0.80ms)
+2026-10-18 15:55:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:59814 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:56:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [3840797c] START POST /api/v1/trips/complete
+2026-10-18 15:56:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [3840797c] FINISH POST /api/v1/trips/complete Status=404 (0.87ms)
+2026-10-18 15:56:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49876 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:57:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [06707459] START POST /api/v1/trips/complete
+2026-10-18 15:57:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [06707459] FINISH POST /api/v1/trips/complete Status=404 (0.92ms)
+2026-10-18 15:57:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:37368 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:58:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [035795ed] START POST /api/v1/trips/complete
+2026-10-18 15:58:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [035795ed] FINISH POST /api/v1/trips/complete Status=404 (1.22ms)
+2026-10-18 15:58:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:33876 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 15:59:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [6e3e81a0] START POST /api/v1/trips/complete
+2026-10-18 15:59:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [6e3e81a0] FINISH POST /api/v1/trips/complete Status=404 (0.92ms)
+2026-10-18 15:59:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49366 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:00:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [6500de3d] START POST /api/v1/trips/complete
+2026-10-18 16:00:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [6500de3d] FINISH POST /api/v1/trips/complete Status=404 (1.03ms)
+2026-10-18 16:00:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42158 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:01:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [042f3eec] START POST /api/v1/trips/complete
+2026-10-18 16:01:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [042f3eec] FINISH POST /api/v1/trips/complete Status=404 (0.82ms)
+2026-10-18 16:01:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:55944 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:02:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [d6077809] START POST /api/v1/trips/complete
+2026-10-18 16:02:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [d6077809] FINISH POST /api/v1/trips/complete Status=404 (0.91ms)
+2026-10-18 16:02:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:59254 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:03:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [569a7f43] START POST /api/v1/trips/complete
+2026-10-18 16:03:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [569a7f43] FINISH POST /api/v1/trips/complete Status=404 (0.89ms)
+2026-10-18 16:03:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47890 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:03:24 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [f10d1964] START POST /api/v1/trips/complete
+2026-10-18 16:03:24 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [f10d1964] FINISH POST /api/v1/trips/complete Status=404 (0.80ms)
+2026-10-18 16:03:24 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41674 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:03:30 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [4ddad0c2] START POST /api/v1/trips/complete
+2026-10-18 16:03:30 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [4ddad0c2] FINISH POST /api/v1/trips/complete Status=404 (0.74ms)
+2026-10-18 16:03:30 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41700 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:03:35 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [c2ec1170] START POST /api/v1/trips/complete
+2026-10-18 16:03:35 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [c2ec1170] FINISH POST /api/v1/trips/complete Status=404 (0.82ms)
+2026-10-18 16:03:35 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41700 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:03:40 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8aa9d8fb] START POST /api/v1/trips/complete
+2026-10-18 16:03:40 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8aa9d8fb] FINISH POST /api/v1/trips/complete Status=404 (0.75ms)
+2026-10-18 16:03:40 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41700 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:03:45 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [6512da33] START POST /api/v1/trips/complete
+2026-10-18 16:03:45 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [6512da33] FINISH POST /api/v1/trips/complete Status=404 (0.80ms)
+2026-10-18 16:03:45 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41700 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:03:50 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [18205cd8] START POST /api/v1/trips/complete
+2026-10-18 16:03:50 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [18205cd8] FINISH POST /api/v1/trips/complete Status=404 (0.76ms)
+2026-10-18 16:03:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41700 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:03:55 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [85ec4d6f] START POST /api/v1/trips/complete
+2026-10-18 16:03:55 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [85ec4d6f] FINISH POST /api/v1/trips/complete Status=404 (0.74ms)
+2026-10-18 16:03:55 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41700 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:04:00 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [65216ee1] START POST /api/v1/trips/complete
+2026-10-18 16:04:00 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [65216ee1] FINISH POST /api/v1/trips/complete Status=404 (0.98ms)
+2026-10-18 16:04:00 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41700 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:04:05 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [040a2c37] START POST /api/v1/trips/complete
+2026-10-18 16:04:05 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [040a2c37] FINISH POST /api/v1/trips/complete Status=404 (0.72ms)
+2026-10-18 16:04:05 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41700 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:04:10 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [3fe67737] START POST /api/v1/trips/complete
+2026-10-18 16:04:10 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [3fe67737] FINISH POST /api/v1/trips/complete Status=404 (1.01ms)
+2026-10-18 16:04:10 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41700 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:04:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [445106f5] START POST /api/v1/trips/complete
+2026-10-18 16:04:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [445106f5] FINISH POST /api/v1/trips/complete Status=404 (0.79ms)
+2026-10-18 16:04:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41700 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:04:20 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [413cc79d] START POST /api/v1/trips/complete
+2026-10-18 16:04:20 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [413cc79d] FINISH POST /api/v1/trips/complete Status=404 (0.80ms)
+2026-10-18 16:04:20 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41700 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:04:25 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [4dc971c3] START POST /api/v1/trips/complete
+2026-10-18 16:04:25 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [4dc971c3] FINISH POST /api/v1/trips/complete Status=404 (0.74ms)
+2026-10-18 16:04:25 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41700 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:05:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [3097c83c] START POST /api/v1/trips/complete
+2026-10-18 16:05:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [3097c83c] FINISH POST /api/v1/trips/complete Status=404 (0.82ms)
+2026-10-18 16:05:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:60428 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:06:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [4935a81a] START POST /api/v1/trips/complete
+2026-10-18 16:06:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [4935a81a] FINISH POST /api/v1/trips/complete Status=404 (1.02ms)
+2026-10-18 16:06:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:36874 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:06:47 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [2b01c188] START POST /api/v1/trips/complete
+2026-10-18 16:06:47 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [2b01c188] FINISH POST /api/v1/trips/complete Status=404 (0.80ms)
+2026-10-18 16:06:47 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41748 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:06:50 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [c5523aee] START POST /api/v1/trips/complete
+2026-10-18 16:06:50 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [c5523aee] FINISH POST /api/v1/trips/complete Status=404 (0.81ms)
+2026-10-18 16:06:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41748 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:06:55 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [41ff0a87] START POST /api/v1/trips/complete
+2026-10-18 16:06:55 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [41ff0a87] FINISH POST /api/v1/trips/complete Status=404 (0.80ms)
+2026-10-18 16:06:55 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41748 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:07:00 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [3448b71c] START POST /api/v1/trips/complete
+2026-10-18 16:07:00 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [3448b71c] FINISH POST /api/v1/trips/complete Status=404 (0.95ms)
+2026-10-18 16:07:00 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41748 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:07:05 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [c4533541] START POST /api/v1/trips/complete
+2026-10-18 16:07:05 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [c4533541] FINISH POST /api/v1/trips/complete Status=404 (0.81ms)
+2026-10-18 16:07:05 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41748 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:07:10 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [7dc0a5dc] START POST /api/v1/trips/complete
+2026-10-18 16:07:10 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [7dc0a5dc] FINISH POST /api/v1/trips/complete Status=404 (0.84ms)
+2026-10-18 16:07:10 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41748 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:07:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [f568b52d] START POST /api/v1/trips/complete
+2026-10-18 16:07:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [f568b52d] FINISH POST /api/v1/trips/complete Status=404 (1.13ms)
+2026-10-18 16:07:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41748 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:07:20 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [28eaa190] START POST /api/v1/trips/complete
+2026-10-18 16:07:20 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [28eaa190] FINISH POST /api/v1/trips/complete Status=404 (0.80ms)
+2026-10-18 16:07:20 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41748 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:07:25 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [4e9c732a] START POST /api/v1/trips/complete
+2026-10-18 16:07:25 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [4e9c732a] FINISH POST /api/v1/trips/complete Status=404 (0.91ms)
+2026-10-18 16:07:25 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41748 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:07:30 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [4a2ec0c7] START POST /api/v1/trips/complete
+2026-10-18 16:07:30 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [4a2ec0c7] FINISH POST /api/v1/trips/complete Status=404 (0.75ms)
+2026-10-18 16:07:30 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41748 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:07:35 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [1db17de6] START POST /api/v1/trips/complete
+2026-10-18 16:07:35 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [1db17de6] FINISH POST /api/v1/trips/complete Status=404 (0.81ms)
+2026-10-18 16:07:35 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41748 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:07:40 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [b93d0368] START POST /api/v1/trips/complete
+2026-10-18 16:07:40 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [b93d0368] FINISH POST /api/v1/trips/complete Status=404 (1.08ms)
+2026-10-18 16:07:40 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41748 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:07:45 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [ccd26d7c] START POST /api/v1/trips/complete
+2026-10-18 16:07:45 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [ccd26d7c] FINISH POST /api/v1/trips/complete Status=404 (0.86ms)
+2026-10-18 16:07:45 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41748 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:08:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [180ee0eb] START POST /api/v1/trips/complete
+2026-10-18 16:08:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [180ee0eb] FINISH POST /api/v1/trips/complete Status=404 (0.79ms)
+2026-10-18 16:08:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45188 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:09:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [08763c0b] START POST /api/v1/trips/complete
+2026-10-18 16:09:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [08763c0b] FINISH POST /api/v1/trips/complete Status=404 (0.83ms)
+2026-10-18 16:09:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:57930 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:10:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [357bb9cb] START POST /api/v1/trips/complete
+2026-10-18 16:10:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [357bb9cb] FINISH POST /api/v1/trips/complete Status=404 (0.79ms)
+2026-10-18 16:10:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:37848 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:11:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [3cbb4f73] START POST /api/v1/trips/complete
+2026-10-18 16:11:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [3cbb4f73] FINISH POST /api/v1/trips/complete Status=404 (0.94ms)
+2026-10-18 16:11:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:60428 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:12:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [547cfd80] START POST /api/v1/trips/complete
+2026-10-18 16:12:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [547cfd80] FINISH POST /api/v1/trips/complete Status=404 (0.80ms)
+2026-10-18 16:12:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:39568 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:13:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [1f6bea0f] START POST /api/v1/trips/complete
+2026-10-18 16:13:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [1f6bea0f] FINISH POST /api/v1/trips/complete Status=404 (0.78ms)
+2026-10-18 16:13:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48794 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:13:35 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8c45fb96] START POST /api/v1/trips/complete
+2026-10-18 16:13:35 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8c45fb96] FINISH POST /api/v1/trips/complete Status=404 (0.84ms)
+2026-10-18 16:13:35 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:13:40 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [2d168442] START POST /api/v1/trips/complete
+2026-10-18 16:13:40 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [2d168442] FINISH POST /api/v1/trips/complete Status=404 (0.78ms)
+2026-10-18 16:13:40 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:13:45 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [ce4349b2] START POST /api/v1/trips/complete
+2026-10-18 16:13:45 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [ce4349b2] FINISH POST /api/v1/trips/complete Status=404 (0.80ms)
+2026-10-18 16:13:45 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:13:50 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [2aff564a] START POST /api/v1/trips/complete
+2026-10-18 16:13:50 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [2aff564a] FINISH POST /api/v1/trips/complete Status=404 (0.85ms)
+2026-10-18 16:13:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:13:55 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [09360a2e] START POST /api/v1/trips/complete
+2026-10-18 16:13:55 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [09360a2e] FINISH POST /api/v1/trips/complete Status=404 (0.77ms)
+2026-10-18 16:13:55 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:14:00 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [6469fe55] START POST /api/v1/trips/complete
+2026-10-18 16:14:00 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [6469fe55] FINISH POST /api/v1/trips/complete Status=404 (0.76ms)
+2026-10-18 16:14:00 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:14:05 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8f85a13e] START POST /api/v1/trips/complete
+2026-10-18 16:14:05 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8f85a13e] FINISH POST /api/v1/trips/complete Status=404 (0.87ms)
+2026-10-18 16:14:05 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:14:10 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [1053c44a] START POST /api/v1/trips/complete
+2026-10-18 16:14:10 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [1053c44a] FINISH POST /api/v1/trips/complete Status=404 (0.80ms)
+2026-10-18 16:14:10 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:14:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [18a64c1e] START POST /api/v1/trips/complete
+2026-10-18 16:14:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [18a64c1e] FINISH POST /api/v1/trips/complete Status=404 (1.00ms)
+2026-10-18 16:14:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:14:20 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [29168950] START POST /api/v1/trips/complete
+2026-10-18 16:14:20 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [29168950] FINISH POST /api/v1/trips/complete Status=404 (0.85ms)
+2026-10-18 16:14:20 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:14:25 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [86b1e525] START POST /api/v1/trips/complete
+2026-10-18 16:14:25 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [86b1e525] FINISH POST /api/v1/trips/complete Status=404 (0.80ms)
+2026-10-18 16:14:25 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:14:30 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [fb3a8a5b] START POST /api/v1/trips/complete
+2026-10-18 16:14:30 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [fb3a8a5b] FINISH POST /api/v1/trips/complete Status=404 (0.79ms)
+2026-10-18 16:14:30 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:14:35 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [d9638ae9] START POST /api/v1/trips/complete
+2026-10-18 16:14:35 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [d9638ae9] FINISH POST /api/v1/trips/complete Status=404 (0.78ms)
+2026-10-18 16:14:35 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:14:40 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [a323f215] START POST /api/v1/trips/complete
+2026-10-18 16:14:40 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [a323f215] FINISH POST /api/v1/trips/complete Status=404 (0.78ms)
+2026-10-18 16:14:40 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:14:45 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [cc96fca6] START POST /api/v1/trips/complete
+2026-10-18 16:14:45 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [cc96fca6] FINISH POST /api/v1/trips/complete Status=404 (0.80ms)
+2026-10-18 16:14:45 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:14:50 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8da1da7c] START POST /api/v1/trips/complete
+2026-10-18 16:14:50 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8da1da7c] FINISH POST /api/v1/trips/complete Status=404 (0.77ms)
+2026-10-18 16:14:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:14:55 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [9dd248fc] START POST /api/v1/trips/complete
+2026-10-18 16:14:55 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [9dd248fc] FINISH POST /api/v1/trips/complete Status=404 (0.81ms)
+2026-10-18 16:14:55 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:15:00 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [7a8a44e4] START POST /api/v1/trips/complete
+2026-10-18 16:15:00 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [7a8a44e4] FINISH POST /api/v1/trips/complete Status=404 (0.82ms)
+2026-10-18 16:15:00 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:15:05 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [772123f0] START POST /api/v1/trips/complete
+2026-10-18 16:15:05 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [772123f0] FINISH POST /api/v1/trips/complete Status=404 (0.76ms)
+2026-10-18 16:15:05 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:15:10 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [1efd3138] START POST /api/v1/trips/complete
+2026-10-18 16:15:10 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [1efd3138] FINISH POST /api/v1/trips/complete Status=404 (0.85ms)
+2026-10-18 16:15:10 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:15:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [079f4eef] START POST /api/v1/trips/complete
+2026-10-18 16:15:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [079f4eef] FINISH POST /api/v1/trips/complete Status=404 (0.88ms)
+2026-10-18 16:15:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:15:20 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8854aa27] START POST /api/v1/trips/complete
+2026-10-18 16:15:20 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8854aa27] FINISH POST /api/v1/trips/complete Status=404 (0.88ms)
+2026-10-18 16:15:20 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45954 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:16:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [3034c9d3] START POST /api/v1/trips/complete
+2026-10-18 16:16:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [3034c9d3] FINISH POST /api/v1/trips/complete Status=404 (0.87ms)
+2026-10-18 16:16:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:47790 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:17:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [7a953be3] START POST /api/v1/trips/complete
+2026-10-18 16:17:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [7a953be3] FINISH POST /api/v1/trips/complete Status=404 (1.03ms)
+2026-10-18 16:17:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:33480 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:18:15 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [0a81e34c] START POST /api/v1/trips/complete
+2026-10-18 16:18:15 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [0a81e34c] FINISH POST /api/v1/trips/complete Status=404 (0.84ms)
+2026-10-18 16:18:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41976 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:18:53 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [884d7ced] START POST /api/v1/trips/complete
+2026-10-18 16:18:53 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [884d7ced] FINISH POST /api/v1/trips/complete Status=404 (0.87ms)
+2026-10-18 16:18:53 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:60112 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-18 16:18:54 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [99c3e78f] START POST /api/v1/trips/complete
+2026-10-18 16:18:54 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [99c3e78f] FINISH POST /api/v1/trips/complete Status=404 (0.71ms)
+2026-10-18 16:18:54 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:60112 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-19 17:51:38 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-19 17:51:38 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-19 17:51:38 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-19 17:51:52 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-19 17:51:52 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-19 17:51:52 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-19 17:52:02 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [2c49a8e5] START GET /
+2026-10-19 17:52:02 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [2c49a8e5] FINISH GET / Status=200 (5.82ms)
+2026-10-19 17:52:02 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41934 - "GET / HTTP/1.1" 200
+2026-10-19 17:52:02 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [25fd52b7] START GET /static/session.js
+2026-10-19 17:52:02 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [25fd52b7] FINISH GET /static/session.js Status=200 (6.11ms)
+2026-10-19 17:52:02 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41934 - "GET /static/session.js HTTP/1.1" 200
+2026-10-19 17:52:02 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [69e8220b] START GET /static/offline_store.js
+2026-10-19 17:52:02 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [69e8220b] FINISH GET /static/offline_store.js Status=200 (5.26ms)
+2026-10-19 17:52:02 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41934 - "GET /static/offline_store.js HTTP/1.1" 200
+2026-10-19 17:52:02 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8470eb69] START GET /api/v1/users/guest_42afe3d046bd/profile
+2026-10-19 17:52:02 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8470eb69] FINISH GET /api/v1/users/guest_42afe3d046bd/profile Status=200 (17.44ms)
+2026-10-19 17:52:02 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8f7e9b1e] START GET /api/v1/users/guest_42afe3d046bd/analytics/period
+2026-10-19 17:52:02 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41934 - "GET /api/v1/users/guest_42afe3d046bd/profile HTTP/1.1" 200
+2026-10-19 17:52:02 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [fa22e514] START GET /favicon.ico
+2026-10-19 17:52:02 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [fa22e514] FINISH GET /favicon.ico Status=404 (0.90ms)
+2026-10-19 17:52:02 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41990 - "GET /favicon.ico HTTP/1.1" 404
+2026-10-19 17:52:02 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8f7e9b1e] FINISH GET /api/v1/users/guest_42afe3d046bd/analytics/period Status=200 (13.51ms)
+2026-10-19 17:52:02 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41986 - "GET /api/v1/users/guest_42afe3d046bd/analytics/period HTTP/1.1" 200
+2026-10-19 17:52:07 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [e02cd679] START GET /history
+2026-10-19 17:52:07 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [e02cd679] FINISH GET /history Status=200 (3.23ms)
+2026-10-19 17:52:07 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:52554 - "GET /history HTTP/1.1" 200
+2026-10-19 17:52:07 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [55be4500] START GET /api/v1/users/guest_42afe3d046bd/analytics/period
+2026-10-19 17:52:07 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [55be4500] FINISH GET /api/v1/users/guest_42afe3d046bd/analytics/period Status=200 (3.94ms)
+2026-10-19 17:52:07 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:52554 - "GET /api/v1/users/guest_42afe3d046bd/analytics/period HTTP/1.1" 200
+2026-10-19 17:52:09 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [58cf480b] START GET /
+2026-10-19 17:52:09 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [58cf480b] FINISH GET / Status=200 (3.63ms)
+2026-10-19 17:52:09 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:52554 - "GET / HTTP/1.1" 200
+2026-10-19 17:52:09 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [eadef244] START GET /api/v1/users/guest_42afe3d046bd/profile
+2026-10-19 17:52:09 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [eadef244] FINISH GET /api/v1/users/guest_42afe3d046bd/profile Status=200 (2.99ms)
+2026-10-19 17:52:09 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:52554 - "GET /api/v1/users/guest_42afe3d046bd/profile HTTP/1.1" 200
+2026-10-19 17:52:09 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [5a35e019] START GET /api/v1/users/guest_42afe3d046bd/analytics/period
+2026-10-19 17:52:09 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [5a35e019] FINISH GET /api/v1/users/guest_42afe3d046bd/analytics/period Status=200 (3.75ms)
+2026-10-19 17:52:09 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:52580 - "GET /api/v1/users/guest_42afe3d046bd/analytics/period HTTP/1.1" 200
+2026-10-19 17:52:14 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [bdf2ab94] START GET /
+2026-10-19 17:52:14 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [bdf2ab94] FINISH GET / Status=200 (3.24ms)
+2026-10-19 17:52:14 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:52614 - "GET / HTTP/1.1" 200
+2026-10-19 17:52:14 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [0fe2e1b0] START GET /static/session.js
+2026-10-19 17:52:14 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [0fe2e1b0] FINISH GET /static/session.js Status=200 (4.90ms)
+2026-10-19 17:52:14 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:52614 - "GET /static/session.js HTTP/1.1" 200
+2026-10-19 17:52:14 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [019e134f] START GET /static/offline_store.js
+2026-10-19 17:52:14 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [019e134f] FINISH GET /static/offline_store.js Status=200 (4.76ms)
+2026-10-19 17:52:14 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:52630 - "GET /static/offline_store.js HTTP/1.1" 200
+2026-10-19 17:52:14 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [58ef1229] START GET /static/sw.js
+2026-10-19 17:52:14 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [58ef1229] FINISH GET /static/sw.js Status=200 (4.01ms)
+2026-10-19 17:52:14 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:52630 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-19 17:52:29 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [19d22985] START POST /api/v1/auth/guest
+2026-10-19 17:52:29 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [19d22985] FINISH POST /api/v1/auth/guest Status=200 (5.59ms)
+2026-10-19 17:52:29 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42630 - "POST /api/v1/auth/guest HTTP/1.1" 200
+2026-10-19 17:52:29 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [fc997e3a] START GET /api/v1/users/guest_e2eeb3ff54/profile
+2026-10-19 17:52:29 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [fc997e3a] FINISH GET /api/v1/users/guest_e2eeb3ff54/profile Status=200 (2.91ms)
+2026-10-19 17:52:29 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42630 - "GET /api/v1/users/guest_e2eeb3ff54/profile HTTP/1.1" 200
+2026-10-19 17:52:29 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8cde6759] START GET /api/v1/users/guest_e2eeb3ff54/analytics/period
+2026-10-19 17:52:29 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8cde6759] FINISH GET /api/v1/users/guest_e2eeb3ff54/analytics/period Status=200 (3.04ms)
+2026-10-19 17:52:29 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42646 - "GET /api/v1/users/guest_e2eeb3ff54/analytics/period HTTP/1.1" 200
+2026-10-19 17:56:46 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-19 17:56:46 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-19 17:56:46 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-19 17:56:47 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [bacfa7db] START GET /
+2026-10-19 17:56:47 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [bacfa7db] FINISH GET / Status=200 (4.54ms)
+2026-10-19 17:56:47 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:58418 - "GET / HTTP/1.1" 200
+2026-10-19 17:57:03 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [73b0b6ee] START GET /
+2026-10-19 17:57:03 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [73b0b6ee] FINISH GET / Status=200 (3.41ms)
+2026-10-19 17:57:03 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54928 - "GET / HTTP/1.1" 200
+2026-10-19 17:57:03 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [23e1c8ce] START GET /static/session.js
+2026-10-19 17:57:03 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [23e1c8ce] FINISH GET /static/session.js Status=200 (7.06ms)
+2026-10-19 17:57:03 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54928 - "GET /static/session.js HTTP/1.1" 200
+2026-10-19 17:57:03 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [a017f1ac] START GET /static/offline_store.js
+2026-10-19 17:57:03 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [a017f1ac] FINISH GET /static/offline_store.js Status=200 (5.13ms)
+2026-10-19 17:57:03 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54956 - "GET /static/offline_store.js HTTP/1.1" 200
+2026-10-19 17:57:03 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [3943569f] START GET /api/v1/users/guest_42afe3d046bd/profile
+2026-10-19 17:57:03 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [99cdb03d] START GET /api/v1/users/guest_42afe3d046bd/analytics/period
+2026-10-19 17:57:03 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [3943569f] FINISH GET /api/v1/users/guest_42afe3d046bd/profile Status=200 (24.48ms)
+2026-10-19 17:57:03 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54956 - "GET /api/v1/users/guest_42afe3d046bd/profile HTTP/1.1" 200
+2026-10-19 17:57:03 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [1f88aa22] START GET /favicon.ico
+2026-10-19 17:57:03 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [005955ac] START GET /static/sw.js
+2026-10-19 17:57:03 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [1f88aa22] FINISH GET /favicon.ico Status=404 (1.62ms)
+2026-10-19 17:57:03 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54974 - "GET /favicon.ico HTTP/1.1" 404
+2026-10-19 17:57:03 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [005955ac] FINISH GET /static/sw.js Status=200 (8.44ms)
+2026-10-19 17:57:03 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54984 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-19 17:57:03 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [99cdb03d] FINISH GET /api/v1/users/guest_42afe3d046bd/analytics/period Status=200 (39.47ms)
+2026-10-19 17:57:03 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54928 - "GET /api/v1/users/guest_42afe3d046bd/analytics/period HTTP/1.1" 200
+2026-10-19 17:57:07 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8db70c0b] START GET /api/v1/auth/yandex/login
+2026-10-19 17:57:07 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8db70c0b] FINISH GET /api/v1/auth/yandex/login Status=307 (0.87ms)
+2026-10-19 17:57:07 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54928 - "GET /api/v1/auth/yandex/login?guest_id=guest_42afe3d046bd HTTP/1.1" 307
+2026-10-19 17:57:22 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [a5acd2b2] START GET /
+2026-10-19 17:57:22 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [a5acd2b2] FINISH GET / Status=200 (3.10ms)
+2026-10-19 17:57:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54280 - "GET / HTTP/1.1" 200
+2026-10-19 17:57:22 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [c2f2e361] START GET /static/session.js
+2026-10-19 17:57:22 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [c2f2e361] FINISH GET /static/session.js Status=200 (4.78ms)
+2026-10-19 17:57:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54280 - "GET /static/session.js HTTP/1.1" 200
+2026-10-19 17:57:22 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [31325f50] START GET /static/offline_store.js
+2026-10-19 17:57:22 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [31325f50] FINISH GET /static/offline_store.js Status=200 (4.95ms)
+2026-10-19 17:57:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54308 - "GET /static/offline_store.js HTTP/1.1" 200
+2026-10-19 17:57:22 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [f78c5f78] START GET /api/v1/users/dev_4a96eeee705840dc/analytics/period
+2026-10-19 17:57:22 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [57323629] START GET /api/v1/users/dev_4a96eeee705840dc/profile
+2026-10-19 17:57:22 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [57323629] FINISH GET /api/v1/users/dev_4a96eeee705840dc/profile Status=200 (5.64ms)
+2026-10-19 17:57:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54308 - "GET /api/v1/users/dev_4a96eeee705840dc/profile HTTP/1.1" 200
+2026-10-19 17:57:22 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8b083ccf] START POST /api/v1/trips/complete
+2026-10-19 17:57:22 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8b083ccf] FINISH POST /api/v1/trips/complete Status=404 (0.91ms)
+2026-10-19 17:57:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54320 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-19 17:57:22 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [f78c5f78] FINISH GET /api/v1/users/dev_4a96eeee705840dc/analytics/period Status=200 (11.36ms)
+2026-10-19 17:57:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54280 - "GET /api/v1/users/dev_4a96eeee705840dc/analytics/period HTTP/1.1" 200
+2026-10-19 17:57:22 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [f6e15a86] START GET /favicon.ico
+2026-10-19 17:57:22 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [f6e15a86] FINISH GET /favicon.ico Status=404 (1.03ms)
+2026-10-19 17:57:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54280 - "GET /favicon.ico HTTP/1.1" 404
+2026-10-19 17:57:27 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [81e69515] START POST /api/v1/trips/complete
+2026-10-19 17:57:27 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [81e69515] FINISH POST /api/v1/trips/complete Status=404 (0.87ms)
+2026-10-19 17:57:27 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:54280 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-19 17:57:32 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [71c1b5a5] START POST /api/v1/trips/complete
+2026-10-19 17:57:32 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [71c1b5a5] FINISH POST /api/v1/trips/complete Status=404 (0.70ms)
+2026-10-19 17:57:32 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41416 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-19 17:57:37 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [cdd61540] START POST /api/v1/trips/complete
+2026-10-19 17:57:37 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [cdd61540] FINISH POST /api/v1/trips/complete Status=404 (0.73ms)
+2026-10-19 17:57:37 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41416 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-19 17:57:41 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [080e7647] START GET /api/v1/auth/yandex/login
+2026-10-19 17:57:41 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [080e7647] FINISH GET /api/v1/auth/yandex/login Status=307 (1.38ms)
+2026-10-19 17:57:41 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:41416 - "GET /api/v1/auth/yandex/login?guest_id=dev_4a96eeee705840dc HTTP/1.1" 307
+2026-10-19 18:00:50 | INFO     | [uvicorn.error] server.py:253 (shutdown) -> Shutting down
+2026-10-19 18:00:50 | INFO     | [uvicorn.error] on.py:67 (shutdown) -> Waiting for application shutdown.
+2026-10-19 18:00:50 | INFO     | [uvicorn.error] on.py:76 (shutdown) -> Application shutdown complete.
+2026-10-19 18:00:50 | INFO     | [uvicorn.error] server.py:87 (serve) -> Finished server process [8]
+2026-10-19 18:00:51 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-19 18:00:51 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-19 18:00:51 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-19 18:09:59 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [262a5ee4] START GET /
+2026-10-19 18:09:59 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [262a5ee4] FINISH GET / Status=200 (5.58ms)
+2026-10-19 18:09:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:36702 - "GET / HTTP/1.1" 200
+2026-10-19 18:09:59 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [eed9a624] START GET /static/session.js
+2026-10-19 18:09:59 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [eed9a624] FINISH GET /static/session.js Status=200 (6.52ms)
+2026-10-19 18:09:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:36702 - "GET /static/session.js HTTP/1.1" 200
+2026-10-19 18:09:59 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [159ef16a] START GET /static/offline_store.js
+2026-10-19 18:09:59 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [159ef16a] FINISH GET /static/offline_store.js Status=200 (4.78ms)
+2026-10-19 18:09:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:36702 - "GET /static/offline_store.js HTTP/1.1" 200
+2026-10-19 18:09:59 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [f32847f9] START GET /api/v1/users/guest_42afe3d046bd/profile
+2026-10-19 18:09:59 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [f32847f9] FINISH GET /api/v1/users/guest_42afe3d046bd/profile Status=200 (13.79ms)
+2026-10-19 18:09:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:36702 - "GET /api/v1/users/guest_42afe3d046bd/profile HTTP/1.1" 200
+2026-10-19 18:09:59 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [2540c480] START GET /api/v1/users/guest_42afe3d046bd/analytics/period
+2026-10-19 18:09:59 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [3859617e] START GET /favicon.ico
+2026-10-19 18:09:59 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [3859617e] FINISH GET /favicon.ico Status=404 (2.48ms)
+2026-10-19 18:09:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:36758 - "GET /favicon.ico HTTP/1.1" 404
+2026-10-19 18:09:59 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [2540c480] FINISH GET /api/v1/users/guest_42afe3d046bd/analytics/period Status=200 (14.12ms)
+2026-10-19 18:09:59 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:36728 - "GET /api/v1/users/guest_42afe3d046bd/analytics/period HTTP/1.1" 200
+2026-10-19 18:10:00 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [e266007f] START GET /api/v1/auth/yandex/login
+2026-10-19 18:10:00 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [e266007f] FINISH GET /api/v1/auth/yandex/login Status=307 (1.00ms)
+2026-10-19 18:10:00 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:36758 - "GET /api/v1/auth/yandex/login?guest_id=guest_42afe3d046bd HTTP/1.1" 307
+2026-10-19 19:41:46 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-19 19:41:46 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-19 19:41:46 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-19 19:42:08 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-19 19:42:08 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-19 19:42:08 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-19 19:42:17 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-19 19:42:17 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-19 19:42:17 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-19 19:42:54 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-19 19:42:54 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-19 19:42:54 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-19 19:50:41 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [3b543371] START GET /
+2026-10-19 19:50:41 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [3b543371] FINISH GET / Status=200 (5.06ms)
+2026-10-19 19:50:41 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48938 - "GET / HTTP/1.1" 200
+2026-10-19 19:50:42 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [6da8bb19] START GET /static/session.js
+2026-10-19 19:50:42 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [6da8bb19] FINISH GET /static/session.js Status=200 (4.95ms)
+2026-10-19 19:50:42 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48938 - "GET /static/session.js HTTP/1.1" 200
+2026-10-19 19:50:42 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [188d97d4] START GET /static/offline_store.js
+2026-10-19 19:50:42 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [188d97d4] FINISH GET /static/offline_store.js Status=200 (3.86ms)
+2026-10-19 19:50:42 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48948 - "GET /static/offline_store.js HTTP/1.1" 200
+2026-10-19 19:50:42 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [bd219e0d] START POST /api/v1/auth/handshake
+2026-10-19 19:50:42 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [af63cd97] START POST /api/v1/auth/handshake
+2026-10-19 19:50:42 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [7745e875] START POST /api/v1/auth/handshake
+2026-10-19 19:50:42 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8d52df13] START GET /favicon.ico
+2026-10-19 19:50:42 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [326a8be4] START POST /api/v1/auth/handshake
+2026-10-19 19:50:42 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [ac2514a7] START GET /static/sw.js
+2026-10-19 19:50:42 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8d52df13] FINISH GET /favicon.ico Status=404 (2.92ms)
+2026-10-19 19:50:42 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49002 - "GET /favicon.ico HTTP/1.1" 404
+2026-10-19 19:50:42 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [bd219e0d] FINISH POST /api/v1/auth/handshake Status=200 (54.64ms)
+2026-10-19 19:50:42 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48938 - "POST /api/v1/auth/handshake HTTP/1.1" 200
+2026-10-19 19:50:42 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [326a8be4] FINISH POST /api/v1/auth/handshake Status=200 (6.80ms)
+2026-10-19 19:50:42 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49010 - "POST /api/v1/auth/handshake HTTP/1.1" 200
+2026-10-19 19:50:42 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [ac2514a7] FINISH GET /static/sw.js Status=200 (6.87ms)
+2026-10-19 19:50:42 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:49024 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-19 19:50:42 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [af63cd97] FINISH POST /api/v1/auth/handshake Status=200 (59.26ms)
+2026-10-19 19:50:42 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48948 - "POST /api/v1/auth/handshake HTTP/1.1" 200
+2026-10-19 19:50:42 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [7745e875] FINISH POST /api/v1/auth/handshake Status=200 (47.49ms)
+2026-10-19 19:50:42 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48970 - "POST /api/v1/auth/handshake HTTP/1.1" 200
+2026-10-19 19:50:44 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [749fda0b] START GET /api/v1/auth/yandex/login
+2026-10-19 19:50:44 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [749fda0b] FINISH GET /api/v1/auth/yandex/login Status=307 (1.03ms)
+2026-10-19 19:50:44 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48948 - "GET /api/v1/auth/yandex/login?guest_id=dev_189d14f045114eba HTTP/1.1" 307
+2026-10-19 19:51:01 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [0375f6ca] START GET /
+2026-10-19 19:51:01 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [0375f6ca] FINISH GET / Status=200 (3.27ms)
+2026-10-19 19:51:01 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48610 - "GET / HTTP/1.1" 200
+2026-10-19 19:51:02 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [ed04df5d] START GET /static/session.js
+2026-10-19 19:51:02 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [ed04df5d] FINISH GET /static/session.js Status=200 (5.24ms)
+2026-10-19 19:51:02 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48610 - "GET /static/session.js HTTP/1.1" 200
+2026-10-19 19:51:02 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [b45e3c35] START GET /static/offline_store.js
+2026-10-19 19:51:02 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [b45e3c35] FINISH GET /static/offline_store.js Status=200 (6.20ms)
+2026-10-19 19:51:02 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48610 - "GET /static/offline_store.js HTTP/1.1" 200
+2026-10-19 19:51:02 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [e5460131] START GET /api/v1/users/dev_4a96eeee705840dc/profile
+2026-10-19 19:51:02 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [e5460131] FINISH GET /api/v1/users/dev_4a96eeee705840dc/profile Status=200 (4.06ms)
+2026-10-19 19:51:02 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48610 - "GET /api/v1/users/dev_4a96eeee705840dc/profile HTTP/1.1" 200
+2026-10-19 19:51:02 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [f7743164] START GET /api/v1/users/dev_4a96eeee705840dc/analytics/period
+2026-10-19 19:51:02 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [8f625920] START POST /api/v1/trips/complete
+2026-10-19 19:51:02 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [8f625920] FINISH POST /api/v1/trips/complete Status=404 (0.89ms)
+2026-10-19 19:51:02 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48664 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-19 19:51:02 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [f7743164] FINISH GET /api/v1/users/dev_4a96eeee705840dc/analytics/period Status=200 (11.35ms)
+2026-10-19 19:51:02 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48650 - "GET /api/v1/users/dev_4a96eeee705840dc/analytics/period HTTP/1.1" 200
+2026-10-19 19:51:02 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [67f8a771] START GET /static/sw.js
+2026-10-19 19:51:02 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [67f8a771] FINISH GET /static/sw.js Status=200 (4.66ms)
+2026-10-19 19:51:02 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48650 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-19 19:51:03 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [23078b64] START GET /api/v1/auth/yandex/login
+2026-10-19 19:51:03 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [23078b64] FINISH GET /api/v1/auth/yandex/login Status=307 (1.33ms)
+2026-10-19 19:51:03 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48664 - "GET /api/v1/auth/yandex/login?guest_id=dev_4a96eeee705840dc HTTP/1.1" 307
+2026-10-19 19:58:20 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [420ca1e3] START GET /api/v1/auth/yandex/callback
+2026-10-19 19:58:20 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [420ca1e3] FINISH GET /api/v1/auth/yandex/callback Status=307 (548.81ms)
+2026-10-19 19:58:20 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56132 - "GET /api/v1/auth/yandex/callback?state=dev_4a96eeee705840dc&code=idady2t2yguibgqo&cid=4u8tz6591pwftthdp2zdq7f5v0 HTTP/1.1" 307
+2026-10-19 19:58:20 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [92d56fe2] START GET /
+2026-10-19 19:58:20 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [92d56fe2] FINISH GET / Status=200 (2.63ms)
+2026-10-19 19:58:20 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56132 - "GET /?auth_error=%28sqlalchemy.dialects.postgresql.asyncpg.IntegrityError%29%20%3Cclass%20%27asyncpg.exceptions.ForeignKeyViolationError%27%3E%3A%20insert%20or%20update%20on%20table%20%22trips%22%20violates%20foreign%20key%20constraint%20%22trips_user_id_fkey%22%0ADETAIL%3A%20%20Key%20%28user_id%29%3D%28ya_c9ede451468ef451%29%20is%20not%20present%20in%20table%20%22users%22.%0A%5BSQL%3A%20UPDATE%20trips%20SET%20user_id%3D%241%3A%3AVARCHAR%20WHERE%20trips.user_id%20%3D%20%242%3A%3AVARCHAR%5D%0A%5Bparameters%3A%20%28%27ya_c9ede451468ef451%27%2C%20%27dev_4a96eeee705840dc%27%29%5D%0A%28Background%20on%20this%20error%20at%3A%20https%3A//sqlalche.me/e/20/gkpj%29 HTTP/1.1" 200
+2026-10-19 19:58:20 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [6e2ef07e] START GET /static/session.js
+2026-10-19 19:58:20 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [6e2ef07e] FINISH GET /static/session.js Status=200 (4.37ms)
+2026-10-19 19:58:20 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56132 - "GET /static/session.js HTTP/1.1" 200
+2026-10-19 19:58:20 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [d8d49eb9] START GET /static/offline_store.js
+2026-10-19 19:58:20 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [d8d49eb9] FINISH GET /static/offline_store.js Status=200 (4.84ms)
+2026-10-19 19:58:20 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56132 - "GET /static/offline_store.js HTTP/1.1" 200
+2026-10-19 19:58:20 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [13fede70] START GET /api/v1/users/dev_4a96eeee705840dc/profile
+2026-10-19 19:58:20 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [13fede70] FINISH GET /api/v1/users/dev_4a96eeee705840dc/profile Status=200 (4.91ms)
+2026-10-19 19:58:20 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56132 - "GET /api/v1/users/dev_4a96eeee705840dc/profile HTTP/1.1" 200
+2026-10-19 19:58:20 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [bbf80ae8] START GET /api/v1/users/dev_4a96eeee705840dc/analytics/period
+2026-10-19 19:58:20 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [ec8ce2d6] START POST /api/v1/trips/complete
+2026-10-19 19:58:20 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [ec8ce2d6] FINISH POST /api/v1/trips/complete Status=404 (1.89ms)
+2026-10-19 19:58:20 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56184 - "POST /api/v1/trips/complete HTTP/1.1" 404
+2026-10-19 19:58:20 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [bbf80ae8] FINISH GET /api/v1/users/dev_4a96eeee705840dc/analytics/period Status=200 (7.52ms)
+2026-10-19 19:58:20 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56168 - "GET /api/v1/users/dev_4a96eeee705840dc/analytics/period HTTP/1.1" 200
+2026-10-19 19:58:20 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [dea8920b] START GET /static/sw.js
+2026-10-19 19:58:20 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [dea8920b] FINISH GET /static/sw.js Status=200 (5.20ms)
+2026-10-19 19:58:20 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56168 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-19 19:58:22 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [16f447b3] START GET /api/v1/auth/yandex/login
+2026-10-19 19:58:22 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [16f447b3] FINISH GET /api/v1/auth/yandex/login Status=307 (1.25ms)
+2026-10-19 19:58:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56184 - "GET /api/v1/auth/yandex/login?guest_id=dev_4a96eeee705840dc HTTP/1.1" 307
