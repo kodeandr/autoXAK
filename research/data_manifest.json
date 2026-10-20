@@ -1,0 +1,10 @@
+{
+  "repository": "https://github.com/gsoh/VED",
+  "retrieved_on": "2026-10-18",
+  "license": "Apache-2.0 according to source repository",
+  "files": [
+    {"local": "ved_static_ice_hev.xlsx", "remote": "Data/VED_Static_Data_ICE%26HEV.xlsx", "bytes": 21193, "git_blob_sha1": "337898103e1239aa3c1a46200d823e5d20a42039"},
+    {"local": "VED_DynamicData_Part1.7z", "remote": "Data/VED_DynamicData_Part1.7z", "bytes": 82723769, "git_blob_sha1": "047f71f8e9d7282d14bb3b94a2113b663e3c2b15"},
+    {"local": "VED_DynamicData_Part2.7z", "remote": "Data/VED_DynamicData_Part2.7z", "bytes": 93662910, "git_blob_sha1": "100798b2149fcd0d6f7ab555361001def7e36f91"}
+  ]
+}

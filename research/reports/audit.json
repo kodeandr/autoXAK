@@ -1,0 +1,57 @@
+{
+  "seed": 20261018,
+  "files": 54,
+  "counts": {
+    "all_dynamic_rows": 22436808,
+    "eligible_rows": 12607348,
+    "duplicate_timestamps_removed": 0,
+    "recorded_fragments": 18140,
+    "raw_intervals": 12589208,
+    "intervals_over_10s": 1218,
+    "intervals_under_1s": 8670183,
+    "candidate_windows": 321136,
+    "rejected_motion_windows": 17393,
+    "rejected_label_windows": 82331
+  },
+  "static_ice": 264,
+  "excluded_diesel_ids": [
+    119
+  ],
+  "static_eligible": 247,
+  "retained_windows": 232932,
+  "retained_vehicles": 184,
+  "retained_fragments": 14055,
+  "retained_hours": 1899.9522222222222,
+  "label_source_seconds": {
+    "oem_fuel_rate": 0.0,
+    "maf_full_trim": 5590264.0,
+    "maf_partial_trim": 499003.0,
+    "maf_no_trim": 750561.0
+  },
+  "split_vehicles": {
+    "test": 29,
+    "train": 130,
+    "validation": 25
+  },
+  "split_windows": {
+    "test": 34565,
+    "train": 166664,
+    "validation": 31703
+  },
+  "missing_ice_fields": {
+    "Vehicle Class": 260,
+    "Transmission": 185,
+    "Drive Wheels": 264,
+    "Generalized_Weight": 16
+  },
+  "constants": {
+    "afr": 14.08,
+    "density_g_l": 745.0,
+    "max_gap_s": 10.0,
+    "crr": 0.012,
+    "cda_m2": 0.65,
+    "rho_air": 1.225,
+    "gravity": 9.80665
+  },
+  "target": "OEM estimated fuel rate or MAF-based proxy; not measured tank fuel"
+}

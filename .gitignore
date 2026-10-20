@@ -6,4 +6,15 @@ venv/
 data/*.json
 data/*.csv
 .coverage
+.venv/
+*.db
+*.sqlite*
+catboost_info/
+playwright-artifacts/
+.env.*
+!.env.example
+logs/*.log
+key.pem
+cert.pem
+.pytest-tmp*/
 

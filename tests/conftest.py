@@ -6,6 +6,8 @@ from httpx import AsyncClient, ASGITransport
 from unittest.mock import AsyncMock, patch
 
 from app.main import app
+from app.core.database import Base, get_db
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 from app.models.vehicle_profiles import get_default_profile, VehiclePhysicalProfile
 
 
@@ -61,9 +63,21 @@ def synthetic_telemetry_batch() -> Dict[str, Any]:
 
 @pytest.fixture
 async def async_client() -> AsyncGenerator[AsyncClient, None]:
+    engine = create_async_engine("sqlite+aiosqlite:///:memory:")
+    sessions = async_sessionmaker(engine, expire_on_commit=False)
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
+    async def test_db():
+        async with sessions() as session:
+            yield session
+    app.dependency_overrides[get_db] = test_db
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://testserver") as client:
-        yield client
+    try:
+        async with AsyncClient(transport=transport, base_url="http://testserver") as client:
+            yield client
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+        await engine.dispose()
 
 
 @pytest.fixture(autouse=True)

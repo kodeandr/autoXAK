@@ -1,92 +1,66 @@
-﻿import pytest
-import uuid
-from httpx import AsyncClient
-from datetime import datetime, timezone, timedelta
+"""Public app contracts and explicit retirement of the synthetic savings pipeline."""
+import pytest
 
 
-async def test_health_check_endpoint(async_client: AsyncClient):
-    """GET /health: проверка жизнеспособности сервиса."""
+async def test_health_and_pages(async_client):
     response = await async_client.get("/health")
     assert response.status_code == 200
-    data = response.json()
-    assert data["status"] in ["ok", "healthy"]
+    assert response.json()["version"] == "2.0.0"
+    for path in ("/", "/setup", "/history"):
+        response = await async_client.get(path)
+        assert response.status_code == 200
+        assert "text/html" in response.headers["content-type"]
+    response = await async_client.get("/sw.js")
+    assert response.headers["service-worker-allowed"] == "/"
 
 
-async def test_process_telemetry_session(async_client: AsyncClient, synthetic_telemetry_batch: dict):
-    """POST /api/v1/telemetry/session: сквозной прием, расчет и сохранение сессии."""
-    response = await async_client.post(
-        "/api/v1/telemetry/session",
-        json=synthetic_telemetry_batch
-    )
-    assert response.status_code == 200
-    data = response.json()
-
-    assert "session_id" in data
-    assert uuid.UUID(data["session_id"])
-    assert data["status"] == "PROCESSED"
-    assert data["distance_km"] > 0.0
-    assert data["duration_seconds"] == 60.0
+async def test_handshake_idempotency_and_owner_isolation(async_client):
+    payload = {"device_id": "a"*32}
+    first = (await async_client.post("/api/v1/auth/handshake", json=payload)).json()
+    repeated = (await async_client.post("/api/v1/auth/handshake", json=payload)).json()
+    # Identical prefix must not allow impersonation, unlike the previous truncated ID.
+    other = (await async_client.post("/api/v1/auth/handshake", json={"device_id": "a"*16+"b"*16})).json()
+    assert first["user_id"] == repeated["user_id"] != other["user_id"]
+    assert first["is_new_user"] is True and repeated["is_new_user"] is False
+    assert (await async_client.get("/api/v1/users/me")).status_code == 401
+    me = await async_client.get("/api/v1/users/me", headers={"Authorization": "Bearer "+first["token"]})
+    assert me.json()["user_id"] == first["user_id"]
+    assert me.headers["cache-control"] == "no-store"
 
 
-async def test_user_dashboard_aggregates(async_client: AsyncClient, synthetic_telemetry_batch: dict):
-    """GET /api/v1/users/{user_id}/dashboard: виртуальная копилка и ресурс масла."""
-    await async_client.post("/api/v1/telemetry/session", json=synthetic_telemetry_batch)
-    response = await async_client.get("/api/v1/users/test_user_coverage/dashboard")
-    assert response.status_code == 200
-    data = response.json()
-
-    assert "month_savings_rub" in data
-    assert "oil_remaining_percent" in data
-    assert 0.0 <= data["oil_remaining_percent"] <= 100.0
+async def test_auth_returns_token_and_guest_upgrade_checks_owner(async_client):
+    one = (await async_client.post("/api/v1/auth/guest")).json()
+    two = (await async_client.post("/api/v1/auth/guest")).json()
+    headers = {"Authorization": "Bearer "+one["token"]}
+    response = await async_client.post("/api/v1/auth/upgrade-guest", headers=headers,
+        json={"guest_user_id": two["user_id"], "email": "person@example.test", "password": "testpass123"})
+    assert response.status_code == 403
+    assert (await async_client.get("/api/v1/auth/me", params={"user_id": two["user_id"]}, headers=headers)).status_code == 403
 
 
-async def test_user_trips_history(async_client: AsyncClient, synthetic_telemetry_batch: dict):
-    """GET /api/v1/users/{user_id}/trips: получение списка заездов пользователя."""
-    await async_client.post("/api/v1/telemetry/session", json=synthetic_telemetry_batch)
-    response = await async_client.get("/api/v1/users/test_user_coverage/trips")
-    assert response.status_code == 200
-    data = response.json()
-
-    assert "trips" in data
-    assert len(data["trips"]) > 0
+@pytest.mark.parametrize("path", ["/api/v1/telemetry/session", "/api/v1/trips/complete", "/api/v1/analytics/verify-run"])
+async def test_legacy_calculation_cannot_record_fake_savings(async_client, path):
+    response = await async_client.post(path, json={"total_savings_rub": 1000})
+    assert response.status_code == 410
+    assert response.json()["status"] == "legacy_endpoint_retired"
 
 
-async def test_period_analytics_empty_and_valid_ranges(async_client: AsyncClient, synthetic_telemetry_batch: dict):
-    """GET /api/v1/users/{user_id}/analytics/period: фильтрация и устойчивость к 0."""
-    await async_client.post("/api/v1/telemetry/session", json=synthetic_telemetry_batch)
-    
-    now = datetime.now(timezone.utc)
-    start_str = (now - timedelta(days=7)).isoformat()
-    end_str = (now + timedelta(minutes=10)).isoformat()
-
-    # 1. Запрос диапазона с поездками
-    response = await async_client.get(
-        "/api/v1/users/test_user_coverage/analytics/period",
-        params={"start_date": start_str, "end_date": end_str}
-    )
-    assert response.status_code == 200
-    payload = response.json()
-    assert "summary" in payload
-    assert "trips" in payload
-    assert payload["summary"]["total_trips"] > 0
-    assert payload["summary"]["avg_speed_kmh"] >= 0.0
-
-    # 2. Пустой исторический диапазон (проверка деления на 0 при расчете скорости)
-    past_start = (now - timedelta(days=365)).isoformat()
-    past_end = (now - timedelta(days=360)).isoformat()
-    empty_resp = await async_client.get(
-        "/api/v1/users/test_user_coverage/analytics/period",
-        params={"start_date": past_start, "end_date": past_end}
-    )
-    assert empty_resp.status_code == 200
-    empty_summary = empty_resp.json()["summary"]
-    assert empty_summary["total_trips"] == 0
-    assert empty_summary["avg_speed_kmh"] == 0.0
+async def test_legacy_dashboard_does_not_expose_old_oil_totals(async_client):
+    response = await async_client.get("/api/v1/users/someone/dashboard")
+    assert response.status_code == 410
+    assert "total_savings_rub" not in response.json()
 
 
-async def test_static_pages_availability(async_client: AsyncClient):
-    """Проверка отдачи HTML-страниц интерфейса."""
-    for path in ["/", "/setup", "/history"]:
-        res = await async_client.get(path)
-        assert res.status_code == 200
-        assert "text/html" in res.headers.get("content-type", "")
+async def test_email_constraint_race_returns_conflict(async_client):
+    from unittest.mock import AsyncMock, patch
+    from sqlalchemy.exc import IntegrityError
+    guest = (await async_client.post('/api/v1/auth/guest')).json()
+    collision = IntegrityError('insert/update', {}, Exception('unique email'))
+    with patch('app.api.auth.AsyncSession.commit', new=AsyncMock(side_effect=collision)):
+        response = await async_client.post('/api/v1/auth/register', json={
+            'email': 'concurrent@example.test', 'password': 'testpass123'})
+        assert response.status_code == 409
+        response = await async_client.post('/api/v1/auth/upgrade-guest',
+            headers={'Authorization': 'Bearer ' + guest['token']}, json={
+                'guest_user_id': guest['user_id'], 'email': 'concurrent@example.test', 'password': 'testpass123'})
+        assert response.status_code == 409

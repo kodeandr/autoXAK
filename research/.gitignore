@@ -1,0 +1,8 @@
+.venv/
+data/
+models/
+.matplotlib/
+__pycache__/
+catboost_info/
+reports/predictions_*.csv.gz
+reports/fragment_predictions.csv
