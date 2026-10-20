@@ -8,7 +8,12 @@ import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional, Dict, Any, Union
 
-SECRET_KEY = os.getenv("SECRET_KEY", "autoXAK_telemetry_secret_key_prod_salt")
+_configured_secret = os.getenv("SECRET_KEY")
+if _configured_secret and len(_configured_secret) < 32:
+    raise RuntimeError("SECRET_KEY must contain at least 32 characters")
+if os.getenv("AUTOXAK_ENV") == "production" and not _configured_secret:
+    raise RuntimeError("Set a stable SECRET_KEY before starting production workers")
+SECRET_KEY = _configured_secret or secrets.token_hex(32)
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_SECONDS = int(os.getenv("ACCESS_TOKEN_EXPIRE_SECONDS", 60 * 60 * 24 * 365))  # 1 год по умолчанию
 
@@ -94,6 +99,9 @@ def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
             return None
 
         encoded_header, encoded_payload, encoded_signature = parts
+        header = json.loads(_base64url_decode(encoded_header))
+        if header.get("alg") != ALGORITHM or header.get("typ") != "JWT":
+            return None
 
         signature_input = f"{encoded_header}.{encoded_payload}".encode("utf-8")
         expected_sig = hmac.new(SECRET_KEY.encode("utf-8"), signature_input, hashlib.sha256).digest()
@@ -105,7 +113,7 @@ def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
         payload_bytes = _base64url_decode(encoded_payload)
         payload = json.loads(payload_bytes.decode("utf-8"))
 
-        if payload.get("exp") and int(payload["exp"]) < int(time.time()):
+        if not payload.get("sub") or not payload.get("exp") or int(payload["exp"]) <= int(time.time()):
             return None
 
         return payload

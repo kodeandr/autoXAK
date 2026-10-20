@@ -1,0 +1,27 @@
+{
+  "recorded_at_utc": "2026-10-18T15:57:43.425312+00:00",
+  "sha256": {
+    "bootstrap_data.py": "d6f71617d3d9711318d4b8cde32acbf0f03e59ade738ca73c535ea122ee0ede8",
+    "fuel_model.py": "6c39c2db489a94f8d7fc496ebbcfd1f3494b3333d8a8a130b586ff89101b72e2",
+    "predict_trip.py": "1eab8b8d66fdfb680cf8872923ca62c50b4c5e7559078e566ef6313f5bd0b462",
+    "prepare_dataset.py": "dfc5476e285f95e9c5a8d406f0e8e43d84aeb3ee80276a21b30e8a17eb3d83dc",
+    "test_pipeline.py": "7b5b3c57efabc06fe3e2cd4390deed06d658cbea0042237c8ba2ad2097eaf194",
+    "train_models.py": "ff73353087110b2541efecb24b0d222734beedf5ae79a134d10d0fa2eaa73a37",
+    "verify_saved_models.py": "eb290b3a073a9829072e466395d74a1a9c7413c03c4b29859a293f0140d98a73",
+    "models\\catboost_direct.cbm": "58053987735ffcae735c5c18b3de77ef589c888b7fc5fdf82eb801625d9fc60e",
+    "models\\catboost_residual.cbm": "e59dd7925bc35376d86fc145c51342bfe46098c0df7530b60feda0125a575c98",
+    "models\\model_card.json": "de5af37438922124b29e501901b0703a5100400d86aef492e401ecfbae2e1ea9",
+    "requirements.txt": "b24ed08760ec0cc75dceab172e508ff6e539b66e1b4260969a86dbe72599abb5",
+    "data_manifest.json": "60f156129b4b4e8d9cfb470204d5684c9e903b8d3fff9ae047f05280a104b97c"
+  },
+  "packages": {
+    "numpy": "2.5.4",
+    "pandas": "3.0.6",
+    "scipy": "1.18.1",
+    "catboost": "1.2.10",
+    "openpyxl": "3.1.5",
+    "py7zr": "1.1.4",
+    "scikit-learn": "1.9.1",
+    "matplotlib": "3.11.2"
+  }
+}

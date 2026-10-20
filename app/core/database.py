@@ -4,16 +4,11 @@ from sqlalchemy.orm import declarative_base
 
 DATABASE_URL = os.getenv(
     "DATABASE_URL", 
-    "postgresql+asyncpg://autoXAK_user:autoXAK_secret_2026@postgres:5432/autoXAK_db"
+    "sqlite+aiosqlite:///./autoxak.db"
 )
 
-engine = create_async_engine(
-    DATABASE_URL,
-    echo=False,
-    future=True,
-    pool_size=10,
-    max_overflow=20
-)
+pool_options = {} if DATABASE_URL.startswith("sqlite") else {"pool_size": 10, "max_overflow": 20}
+engine = create_async_engine(DATABASE_URL, echo=False, **pool_options)
 
 async_session_factory = async_sessionmaker(
     bind=engine,

@@ -6,18 +6,19 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --ssl-keyfile /app/key.pem --ssl-certfile /app/cert.pem --reload
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     environment:
       - PYTHONPATH=/app
       - DATABASE_URL=postgresql+asyncpg://autoXAK_user:autoXAK_pass@postgres:5432/autoXAK_db
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - DGIS_API_KEY=1069d305-b706-4819-840a-b8a191fda6c8
+      - SECRET_KEY=${SECRET_KEY:?Set a random SECRET_KEY in .env (at least 32 characters)}
+      - AUTOXAK_ENV=production
+      - DGIS_API_KEY=${DGIS_API_KEY:-}
       - DGIS_USE_MOCK=false
-      - YANDEX_CLIENT_ID=${YANDEX_CLIENT_ID:-7057190c0d2249d2bff2da749f474e93}
-      - YANDEX_CLIENT_SECRET=${YANDEX_CLIENT_SECRET:-7d4a9608d5894e6eb6466c0201d2a51a}
-      - YANDEX_REDIRECT_URI=${YANDEX_REDIRECT_URI:-https://autoxak.ru/api/v1/auth/yandex/callback}     
-
+      - YANDEX_CLIENT_ID=${YANDEX_CLIENT_ID:-}
+      - YANDEX_CLIENT_SECRET=${YANDEX_CLIENT_SECRET:-}
+      - YANDEX_REDIRECT_URI=${YANDEX_REDIRECT_URI:-}
     depends_on:
       postgres:
         condition: service_healthy

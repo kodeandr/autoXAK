@@ -1,0 +1,9 @@
+{
+  "method": "paired vehicle-cluster bootstrap, 2000 resamples, fixed trained models",
+  "hybrid_wape_reduction_vs_physics_95pct_interval_pp": [
+    0.04725492756174182,
+    2.0937871492379614
+  ],
+  "vehicles": 28,
+  "seed": 20261018
+}

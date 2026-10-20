@@ -1,7 +1,7 @@
 ﻿{
   "name": "autoXAK — Бортовой помощник",
   "short_name": "autoXAK",
-  "description": "Предиктивная телеметрия износа масла и экономия топлива",
+  "description": "Запись поездок и оценка расхода бензина",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
