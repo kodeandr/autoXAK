@@ -18,6 +18,9 @@ from sqlalchemy import select, func, and_
 
 from app.core.logger import logger
 from app.api.auth import router as auth_router
+from app.api.recordings import router as recordings_router
+from app.models import recordings as recording_tables
+
 from app.core.database import engine, Base, get_db
 from app.models.telemetry import TripSessionPayload
 from app.models.results import (
@@ -310,6 +313,7 @@ app = FastAPI(
 )
 
 app.include_router(auth_router)
+app.include_router(recordings_router)
 
 app.add_middleware(
     CORSMiddleware,

@@ -4234,3 +4234,9 @@ name
 2026-10-19 19:58:22 | INFO     | [autoxak] main.py:357 (log_requests_middleware) -> [16f447b3] START GET /api/v1/auth/yandex/login
 2026-10-19 19:58:22 | INFO     | [autoxak] main.py:362 (log_requests_middleware) -> [16f447b3] FINISH GET /api/v1/auth/yandex/login Status=307 (1.25ms)
 2026-10-19 19:58:22 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:56184 - "GET /api/v1/auth/yandex/login?guest_id=dev_4a96eeee705840dc HTTP/1.1" 307
+2026-10-20 18:03:12 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-20 18:03:12 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-20 18:03:12 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-20 18:04:35 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-20 18:04:35 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-20 18:04:35 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.

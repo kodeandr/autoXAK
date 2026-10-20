@@ -5,3 +5,10 @@ __pycache__/
 .git/
 .pytest_cache/
 pgdata/
+.env
+*.db
+.pytest-tmp*/
+logs/
+key.pem
+cert.pem
+research/data/
