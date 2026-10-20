@@ -7295,3 +7295,25 @@ WHERE trips.user_id = $1::VARCHAR AND trips.created_at >= $2::TIMESTAMP WITH TIM
 2026-10-20 20:20:17 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [dd2fb707] START GET /static/icon-192.png
 2026-10-20 20:20:17 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [dd2fb707] FINISH GET /static/icon-192.png Status=200 (4.36ms)
 2026-10-20 20:20:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45468 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-20 20:50:51 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [8da966c8] START GET /login
+2026-10-20 20:50:51 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [8da966c8] FINISH GET /login Status=200 (3.20ms)
+2026-10-20 20:50:51 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42864 - "GET /login HTTP/1.1" 200
+2026-10-20 20:50:51 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [9ddb183f] START GET /static/sw.js
+2026-10-20 20:50:51 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [963c203a] START GET /static/manifest.json
+2026-10-20 20:50:51 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [44824bc4] START GET /static/manifest.json
+2026-10-20 20:50:51 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [9ddb183f] FINISH GET /static/sw.js Status=200 (6.96ms)
+2026-10-20 20:50:51 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42864 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-20 20:50:51 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [963c203a] FINISH GET /static/manifest.json Status=200 (5.33ms)
+2026-10-20 20:50:51 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42894 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-20 20:50:51 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [44824bc4] FINISH GET /static/manifest.json Status=200 (4.44ms)
+2026-10-20 20:50:51 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42900 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-20 20:50:51 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [9063c8d1] START GET /static/icon-192.png
+2026-10-20 20:50:51 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [9063c8d1] FINISH GET /static/icon-192.png Status=200 (4.03ms)
+2026-10-20 20:50:51 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:42920 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-20 20:59:27 | INFO     | [uvicorn.error] server.py:253 (shutdown) -> Shutting down
+2026-10-20 20:59:27 | INFO     | [uvicorn.error] on.py:67 (shutdown) -> Waiting for application shutdown.
+2026-10-20 20:59:27 | INFO     | [uvicorn.error] on.py:76 (shutdown) -> Application shutdown complete.
+2026-10-20 20:59:27 | INFO     | [uvicorn.error] server.py:87 (serve) -> Finished server process [393]
+2026-10-20 20:59:29 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [8]
+2026-10-20 20:59:29 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-20 20:59:29 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.

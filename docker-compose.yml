@@ -12,7 +12,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://autoXAK_user:autoXAK_pass@postgres:5432/autoXAK_db
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - DGIS_API_KEY=1069d305-b706-4819-840a-b8a191fda6c8
+      - DGIS_API_KEY=a74637ec-409b-4a19-848b-cf09b21e1f28
       - DGIS_USE_MOCK=false
       - YANDEX_CLIENT_ID=${YANDEX_CLIENT_ID:-7057190c0d2249d2bff2da749f474e93}
       - YANDEX_CLIENT_SECRET=${YANDEX_CLIENT_SECRET:-7d4a9608d5894e6eb6466c0201d2a51a}
