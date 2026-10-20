@@ -1,0 +1,238 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>autoXAK — Вход</title>
+    <link rel="manifest" href="/static/manifest.json">
+    <meta name="theme-color" content="#121316">
+    <script src="/static/session.js"></script>
+    <style>
+        :root {
+            --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+            --bg-root: #121316;
+            --bg-card: #1C1E22;
+            --border-card: rgba(255, 255, 255, 0.08);
+            --lime: #D2FA58;
+            --text-primary: #FFFFFF;
+            --text-secondary: #8C919B;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font-sans);
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            height: 100dvh;
+            background-color: var(--bg-root);
+            color: var(--text-primary);
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            overscroll-behavior: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .mobile-container {
+            width: 100%;
+            max-width: 480px;
+            height: 100%;
+            height: 100dvh;
+            background-color: var(--bg-root);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: max(32px, env(safe-area-inset-top)) 16px max(28px, env(safe-area-inset-bottom));
+            margin: 0 auto;
+            border: none;
+            box-shadow: none;
+        }
+
+        /* Центральный блок с логотипом и названием */
+        .hero-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding-bottom: 24px;
+        }
+
+        .brand-icon {
+            width: 176px;
+            height: 166px;
+            display: block;
+        }
+
+        .brand-title {
+            font-size: 44px;
+            font-weight: 700;
+            color: var(--text-primary);
+            letter-spacing: -0.8px;
+            margin-top: 28px;
+            text-align: center;
+        }
+
+        /* Нижний блок с кнопками */
+        .actions-section {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn-guest {
+            width: 100%;
+            height: 52px;
+            background: var(--lime);
+            color: #121316;
+            border: none;
+            border-radius: 16px;
+            font-size: 15.5px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s ease, filter 0.15s ease;
+        }
+        .btn-guest:active {
+            transform: scale(0.99);
+            filter: brightness(0.95);
+        }
+
+        .btn-yandex {
+            width: 100%;
+            height: 52px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-card);
+            border-radius: 16px;
+            color: var(--text-primary);
+            font-size: 15.5px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: transform 0.1s ease, background-color 0.15s ease;
+        }
+        .btn-yandex:active {
+            transform: scale(0.99);
+            background-color: #25282E;
+        }
+
+        .yandex-badge {
+            width: 22px;
+            height: 22px;
+            background: #FC3F1D;
+            color: #FFFFFF;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 13px;
+            line-height: 1;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body>
+
+<div class="mobile-container">
+
+    <!-- Центральный логотип точь-в-точь по референсу Figma -->
+    <div class="hero-section">
+        <svg class="brand-icon" viewBox="0 0 180 170" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <!-- Полукруглая дуга спидометра (180 градусов, центр 90,86, радиус 56) -->
+            <path d="M 34 86 A 56 56 0 0 1 146 86" stroke="#D2FA58" stroke-width="5.5" stroke-linecap="round"/>
+
+            <!-- 5 внутренних делений шкалы с отступом от дуги -->
+            <!-- 180° (левое горизонтальное) -->
+            <line x1="48" y1="84" x2="57" y2="84" stroke="#D2FA58" stroke-width="5.5" stroke-linecap="round"/>
+            <!-- 135° (левое диагональное) -->
+            <line x1="60.3" y1="54.3" x2="66.7" y2="60.7" stroke="#D2FA58" stroke-width="5.5" stroke-linecap="round"/>
+            <!-- 90° (верхнее вертикальное) -->
+            <line x1="90" y1="42" x2="90" y2="51" stroke="#D2FA58" stroke-width="5.5" stroke-linecap="round"/>
+            <!-- 45° (правое диагональное) -->
+            <line x1="119.7" y1="54.3" x2="113.3" y2="60.7" stroke="#D2FA58" stroke-width="5.5" stroke-linecap="round"/>
+            <!-- 0° (правое горизонтальное) -->
+            <line x1="132" y1="84" x2="123" y2="84" stroke="#D2FA58" stroke-width="5.5" stroke-linecap="round"/>
+
+            <!-- Стрелка спидометра и центральное кольцо -->
+            <circle cx="90" cy="84" r="7.5" stroke="#D2FA58" stroke-width="5.5" fill="#121316"/>
+            <line x1="95.3" y1="78.7" x2="111.5" y2="62.5" stroke="#D2FA58" stroke-width="5.5" stroke-linecap="round"/>
+
+            <!-- Ломаная стрелка снижения затрат -->
+            <path d="M 36 108 L 58 108 L 76 126 L 97 126" stroke="#D2FA58" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 88 117 L 98 126 L 88 135" stroke="#D2FA58" stroke-width="5.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+            <!-- Монета с жирным символом рубля -->
+            <circle cx="129" cy="129" r="21" stroke="#D2FA58" stroke-width="5.5" fill="none"/>
+            <path d="M 124 117 L 124 141" stroke="#D2FA58" stroke-width="5" stroke-linecap="round"/>
+            <path d="M 124 117 L 131.5 117 C 136.5 117 136.5 129 131.5 129 L 120 129" stroke="#D2FA58" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M 120 135.5 L 132 135.5" stroke="#D2FA58" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+
+        <h1 class="brand-title">autoXAK</h1>
+    </div>
+
+    <!-- Кнопки входа без нижней полоски -->
+    <div class="actions-section">
+        <button type="button" class="btn-guest" onclick="handleContinueAsGuest()">
+            Продолжить как гость
+        </button>
+
+        <button type="button" class="btn-yandex" onclick="handleLoginWithYandex()">
+            <span class="yandex-badge">Я</span>
+            <span>Войти с Яндекс ID</span>
+        </button>
+    </div>
+
+</div>
+
+<script>
+    async function handleContinueAsGuest() {
+        let userId = localStorage.getItem('autoXAK_user_id');
+        if (!userId) {
+            try {
+                const devId = (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : 'dev_' + Math.random().toString(36).substring(2, 12));
+                const res = await fetch('/api/v1/auth/handshake', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ device_id: devId })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('autoXAK_jwt_token', data.token);
+                    localStorage.setItem('autoXAK_user_id', data.user_id);
+                    localStorage.setItem('autoXAK_is_guest', 'true');
+                    localStorage.setItem('autoXAK_user_name', 'Гость');
+                }
+            } catch (_) {
+                localStorage.setItem('autoXAK_user_id', 'dev_' + Math.random().toString(36).substring(2, 10));
+                localStorage.setItem('autoXAK_is_guest', 'true');
+            }
+        }
+        window.location.href = '/';
+    }
+
+    function handleLoginWithYandex() {
+        const currentId = localStorage.getItem('autoXAK_user_id') || '';
+        window.location.href = '/api/v1/auth/yandex/login?guest_id=' + encodeURIComponent(currentId);
+    }
+</script>
+</body>
+</html>
