@@ -5810,3 +5810,1488 @@ name
 2026-10-20 20:06:34 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [343]
 2026-10-20 20:06:34 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
 2026-10-20 20:06:34 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-20 20:13:03 | INFO     | [uvicorn.error] server.py:253 (shutdown) -> Shutting down
+2026-10-20 20:13:03 | INFO     | [uvicorn.error] on.py:67 (shutdown) -> Waiting for application shutdown.
+2026-10-20 20:13:03 | INFO     | [uvicorn.error] on.py:76 (shutdown) -> Application shutdown complete.
+2026-10-20 20:13:03 | INFO     | [uvicorn.error] server.py:87 (serve) -> Finished server process [343]
+2026-10-20 20:13:05 | INFO     | [uvicorn.error] server.py:77 (serve) -> Started server process [393]
+2026-10-20 20:13:05 | INFO     | [uvicorn.error] on.py:48 (startup) -> Waiting for application startup.
+2026-10-20 20:13:05 | INFO     | [uvicorn.error] on.py:62 (startup) -> Application startup complete.
+2026-10-20 20:19:50 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [c2353e26] START GET /
+2026-10-20 20:19:50 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [c2353e26] FINISH GET / Status=200 (4.92ms)
+2026-10-20 20:19:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:60806 - "GET / HTTP/1.1" 200
+2026-10-20 20:19:50 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [8b77bb85] START GET /api/v1/users/dev_9f3673d70b6c4e1f/dashboard
+2026-10-20 20:19:50 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [f03af560] START GET /static/manifest.json
+2026-10-20 20:19:50 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [8b77bb85] FINISH GET /api/v1/users/dev_9f3673d70b6c4e1f/dashboard Status=200 (15.72ms)
+2026-10-20 20:19:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:60806 - "GET /api/v1/users/dev_9f3673d70b6c4e1f/dashboard HTTP/1.1" 200
+2026-10-20 20:19:50 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [30a40ade] START GET /static/manifest.json
+2026-10-20 20:19:50 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [f03af560] FINISH GET /static/manifest.json Status=200 (8.15ms)
+2026-10-20 20:19:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:60836 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-20 20:19:50 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [30a40ade] FINISH GET /static/manifest.json Status=200 (5.51ms)
+2026-10-20 20:19:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:60852 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-20 20:19:50 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [2dbe94cf] START GET /api/v1/users/dev_9f3673d70b6c4e1f/analytics/period
+2026-10-20 20:19:50 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [1fbcfd40] START GET /static/icon-192.png
+2026-10-20 20:19:50 | ERROR    | [autoxak] main.py:408 (log_requests_middleware) -> [2dbe94cf] UNHANDLED ERROR in GET /api/v1/users/dev_9f3673d70b6c4e1f/analytics/period (9.21ms): (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id, trips.user_id, trips.car_id, trips.created_at, trips.duration_seconds, trips.distance_km, trips.equivalent_engine_hours, trips.oil_wear_percent, trips.idle_ratio, trips.fuel_saved_rub, trips.oil_saved_rub, trips.total_savings_rub, trips.fuel_saved_liters, trips.range_bonus_km, trips.smooth_score, trips.harsh_accel_count, trips.harsh_brake_count, trips.road_anomalies_count, trips.rush_cost_rub, trips.traffic_jam_seconds, trips.board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.user_id = $1::VARCHAR AND trips.created_at >= $2::TIMESTAMP WITH TIME ZONE AND trips.created_at <= $3::TIMESTAMP WITH TIME ZONE ORDER BY trips.created_at DESC 
+ LIMIT $4::INTEGER]
+[parameters: ('dev_9f3673d70b6c4e1f', datetime.datetime(2026, 9, 20, 20, 24, 50, 657314), datetime.datetime(2026, 10, 20, 20, 24, 50, 657314), 200)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 397, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/main.py", line 1100, in get_period_analytics
+    trips_rows = (await db.execute(trips_stmt)).scalars().all()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 452, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id, trips.user_id, trips.car_id, trips.created_at, trips.duration_seconds, trips.distance_km, trips.equivalent_engine_hours, trips.oil_wear_percent, trips.idle_ratio, trips.fuel_saved_rub, trips.oil_saved_rub, trips.total_savings_rub, trips.fuel_saved_liters, trips.range_bonus_km, trips.smooth_score, trips.harsh_accel_count, trips.harsh_brake_count, trips.road_anomalies_count, trips.rush_cost_rub, trips.traffic_jam_seconds, trips.board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.user_id = $1::VARCHAR AND trips.created_at >= $2::TIMESTAMP WITH TIME ZONE AND trips.created_at <= $3::TIMESTAMP WITH TIME ZONE ORDER BY trips.created_at DESC 
+ LIMIT $4::INTEGER]
+[parameters: ('dev_9f3673d70b6c4e1f', datetime.datetime(2026, 9, 20, 20, 24, 50, 657314), datetime.datetime(2026, 10, 20, 20, 24, 50, 657314), 200)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-20 20:19:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:60806 - "GET /api/v1/users/dev_9f3673d70b6c4e1f/analytics/period HTTP/1.1" 500
+2026-10-20 20:19:50 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [1fbcfd40] FINISH GET /static/icon-192.png Status=200 (14.17ms)
+2026-10-20 20:19:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:60866 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-20 20:19:50 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [de725a89] START GET /api/v1/users/dev_9f3673d70b6c4e1f/profile
+2026-10-20 20:19:50 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [de725a89] FINISH GET /api/v1/users/dev_9f3673d70b6c4e1f/profile Status=200 (3.35ms)
+2026-10-20 20:19:50 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:60866 - "GET /api/v1/users/dev_9f3673d70b6c4e1f/profile HTTP/1.1" 200
+2026-10-20 20:19:55 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [b3fc69cb] START POST /api/v1/telemetry/session
+2026-10-20 20:19:55 | INFO     | [autoxak] main.py:554 (process_telemetry_session) -> Получена сессия 0ff4e503-f499-4366-9943-6b4951f2553f (user=dev_9f3673d70b6c4e1f, точек=55)
+2026-10-20 20:19:55 | ERROR    | [autoxak] main.py:834 (process_telemetry_session) -> Критический сбой сессии dev_9f3673d70b6c4e1f: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id AS trips_id, trips.user_id AS trips_user_id, trips.car_id AS trips_car_id, trips.created_at AS trips_created_at, trips.duration_seconds AS trips_duration_seconds, trips.distance_km AS trips_distance_km, trips.equivalent_engine_hours AS trips_equivalent_engine_hours, trips.oil_wear_percent AS trips_oil_wear_percent, trips.idle_ratio AS trips_idle_ratio, trips.fuel_saved_rub AS trips_fuel_saved_rub, trips.oil_saved_rub AS trips_oil_saved_rub, trips.total_savings_rub AS trips_total_savings_rub, trips.fuel_saved_liters AS trips_fuel_saved_liters, trips.range_bonus_km AS trips_range_bonus_km, trips.smooth_score AS trips_smooth_score, trips.harsh_accel_count AS trips_harsh_accel_count, trips.harsh_brake_count AS trips_harsh_brake_count, trips.road_anomalies_count AS trips_road_anomalies_count, trips.rush_cost_rub AS trips_rush_cost_rub, trips.traffic_jam_seconds AS trips_traffic_jam_seconds, trips.board_computer_consumption_l100km AS trips_board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.id = $1::VARCHAR]
+[parameters: ('0ff4e503-f499-4366-9943-6b4951f2553f',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 756, in process_telemetry_session
+    existing_trip = await db.get(Trip, parsed_uuid)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 595, in get
+    return await greenlet_spawn(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 3637, in get
+    return self._get_impl(
+           ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 3817, in _get_impl
+    return db_load_fn(
+           ^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/loading.py", line 694, in load_on_pk_identity
+    session.execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id AS trips_id, trips.user_id AS trips_user_id, trips.car_id AS trips_car_id, trips.created_at AS trips_created_at, trips.duration_seconds AS trips_duration_seconds, trips.distance_km AS trips_distance_km, trips.equivalent_engine_hours AS trips_equivalent_engine_hours, trips.oil_wear_percent AS trips_oil_wear_percent, trips.idle_ratio AS trips_idle_ratio, trips.fuel_saved_rub AS trips_fuel_saved_rub, trips.oil_saved_rub AS trips_oil_saved_rub, trips.total_savings_rub AS trips_total_savings_rub, trips.fuel_saved_liters AS trips_fuel_saved_liters, trips.range_bonus_km AS trips_range_bonus_km, trips.smooth_score AS trips_smooth_score, trips.harsh_accel_count AS trips_harsh_accel_count, trips.harsh_brake_count AS trips_harsh_brake_count, trips.road_anomalies_count AS trips_road_anomalies_count, trips.rush_cost_rub AS trips_rush_cost_rub, trips.traffic_jam_seconds AS trips_traffic_jam_seconds, trips.board_computer_consumption_l100km AS trips_board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.id = $1::VARCHAR]
+[parameters: ('0ff4e503-f499-4366-9943-6b4951f2553f',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-20 20:19:55 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [b3fc69cb] FINISH POST /api/v1/telemetry/session Status=500 (12.52ms)
+2026-10-20 20:19:55 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:60866 - "POST /api/v1/telemetry/session HTTP/1.1" 500
+2026-10-20 20:20:01 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [527f3b32] START POST /api/v1/trips/0ff4e503-f499-4366-9943-6b4951f2553f/board-computer
+2026-10-20 20:20:01 | ERROR    | [autoxak] main.py:408 (log_requests_middleware) -> [527f3b32] UNHANDLED ERROR in POST /api/v1/trips/0ff4e503-f499-4366-9943-6b4951f2553f/board-computer (2.61ms): (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id, trips.user_id, trips.car_id, trips.created_at, trips.duration_seconds, trips.distance_km, trips.equivalent_engine_hours, trips.oil_wear_percent, trips.idle_ratio, trips.fuel_saved_rub, trips.oil_saved_rub, trips.total_savings_rub, trips.fuel_saved_liters, trips.range_bonus_km, trips.smooth_score, trips.harsh_accel_count, trips.harsh_brake_count, trips.road_anomalies_count, trips.rush_cost_rub, trips.traffic_jam_seconds, trips.board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.id = $1::VARCHAR]
+[parameters: ('0ff4e503-f499-4366-9943-6b4951f2553f',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 397, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 91, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 146, in simple_response
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/main.py", line 1022, in update_trip_board_computer
+    res = await db.execute(stmt)
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 452, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id, trips.user_id, trips.car_id, trips.created_at, trips.duration_seconds, trips.distance_km, trips.equivalent_engine_hours, trips.oil_wear_percent, trips.idle_ratio, trips.fuel_saved_rub, trips.oil_saved_rub, trips.total_savings_rub, trips.fuel_saved_liters, trips.range_bonus_km, trips.smooth_score, trips.harsh_accel_count, trips.harsh_brake_count, trips.road_anomalies_count, trips.rush_cost_rub, trips.traffic_jam_seconds, trips.board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.id = $1::VARCHAR]
+[parameters: ('0ff4e503-f499-4366-9943-6b4951f2553f',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-20 20:20:01 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:60882 - "POST /api/v1/trips/0ff4e503-f499-4366-9943-6b4951f2553f/board-computer HTTP/1.1" 500
+2026-10-20 20:20:01 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [4888e535] START POST /api/v1/telemetry/session
+2026-10-20 20:20:01 | INFO     | [autoxak] main.py:554 (process_telemetry_session) -> Получена сессия 0ff4e503-f499-4366-9943-6b4951f2553f (user=dev_9f3673d70b6c4e1f, точек=55)
+2026-10-20 20:20:01 | ERROR    | [autoxak] main.py:834 (process_telemetry_session) -> Критический сбой сессии dev_9f3673d70b6c4e1f: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id AS trips_id, trips.user_id AS trips_user_id, trips.car_id AS trips_car_id, trips.created_at AS trips_created_at, trips.duration_seconds AS trips_duration_seconds, trips.distance_km AS trips_distance_km, trips.equivalent_engine_hours AS trips_equivalent_engine_hours, trips.oil_wear_percent AS trips_oil_wear_percent, trips.idle_ratio AS trips_idle_ratio, trips.fuel_saved_rub AS trips_fuel_saved_rub, trips.oil_saved_rub AS trips_oil_saved_rub, trips.total_savings_rub AS trips_total_savings_rub, trips.fuel_saved_liters AS trips_fuel_saved_liters, trips.range_bonus_km AS trips_range_bonus_km, trips.smooth_score AS trips_smooth_score, trips.harsh_accel_count AS trips_harsh_accel_count, trips.harsh_brake_count AS trips_harsh_brake_count, trips.road_anomalies_count AS trips_road_anomalies_count, trips.rush_cost_rub AS trips_rush_cost_rub, trips.traffic_jam_seconds AS trips_traffic_jam_seconds, trips.board_computer_consumption_l100km AS trips_board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.id = $1::VARCHAR]
+[parameters: ('0ff4e503-f499-4366-9943-6b4951f2553f',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 756, in process_telemetry_session
+    existing_trip = await db.get(Trip, parsed_uuid)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 595, in get
+    return await greenlet_spawn(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 3637, in get
+    return self._get_impl(
+           ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 3817, in _get_impl
+    return db_load_fn(
+           ^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/loading.py", line 694, in load_on_pk_identity
+    session.execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id AS trips_id, trips.user_id AS trips_user_id, trips.car_id AS trips_car_id, trips.created_at AS trips_created_at, trips.duration_seconds AS trips_duration_seconds, trips.distance_km AS trips_distance_km, trips.equivalent_engine_hours AS trips_equivalent_engine_hours, trips.oil_wear_percent AS trips_oil_wear_percent, trips.idle_ratio AS trips_idle_ratio, trips.fuel_saved_rub AS trips_fuel_saved_rub, trips.oil_saved_rub AS trips_oil_saved_rub, trips.total_savings_rub AS trips_total_savings_rub, trips.fuel_saved_liters AS trips_fuel_saved_liters, trips.range_bonus_km AS trips_range_bonus_km, trips.smooth_score AS trips_smooth_score, trips.harsh_accel_count AS trips_harsh_accel_count, trips.harsh_brake_count AS trips_harsh_brake_count, trips.road_anomalies_count AS trips_road_anomalies_count, trips.rush_cost_rub AS trips_rush_cost_rub, trips.traffic_jam_seconds AS trips_traffic_jam_seconds, trips.board_computer_consumption_l100km AS trips_board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.id = $1::VARCHAR]
+[parameters: ('0ff4e503-f499-4366-9943-6b4951f2553f',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-20 20:20:01 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [4888e535] FINISH POST /api/v1/telemetry/session Status=500 (8.16ms)
+2026-10-20 20:20:01 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:60882 - "POST /api/v1/telemetry/session HTTP/1.1" 500
+2026-10-20 20:20:01 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [ac213044] START GET /api/v1/users/dev_9f3673d70b6c4e1f/dashboard
+2026-10-20 20:20:01 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [ac213044] FINISH GET /api/v1/users/dev_9f3673d70b6c4e1f/dashboard Status=200 (2.12ms)
+2026-10-20 20:20:01 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:55666 - "GET /api/v1/users/dev_9f3673d70b6c4e1f/dashboard HTTP/1.1" 200
+2026-10-20 20:20:01 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [ad206868] START GET /api/v1/users/dev_9f3673d70b6c4e1f/analytics/period
+2026-10-20 20:20:01 | ERROR    | [autoxak] main.py:408 (log_requests_middleware) -> [ad206868] UNHANDLED ERROR in GET /api/v1/users/dev_9f3673d70b6c4e1f/analytics/period (3.38ms): (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id, trips.user_id, trips.car_id, trips.created_at, trips.duration_seconds, trips.distance_km, trips.equivalent_engine_hours, trips.oil_wear_percent, trips.idle_ratio, trips.fuel_saved_rub, trips.oil_saved_rub, trips.total_savings_rub, trips.fuel_saved_liters, trips.range_bonus_km, trips.smooth_score, trips.harsh_accel_count, trips.harsh_brake_count, trips.road_anomalies_count, trips.rush_cost_rub, trips.traffic_jam_seconds, trips.board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.user_id = $1::VARCHAR AND trips.created_at >= $2::TIMESTAMP WITH TIME ZONE AND trips.created_at <= $3::TIMESTAMP WITH TIME ZONE ORDER BY trips.created_at DESC 
+ LIMIT $4::INTEGER]
+[parameters: ('dev_9f3673d70b6c4e1f', datetime.datetime(2026, 9, 20, 20, 25, 1, 471965), datetime.datetime(2026, 10, 20, 20, 25, 1, 471965), 200)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 397, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/main.py", line 1100, in get_period_analytics
+    trips_rows = (await db.execute(trips_stmt)).scalars().all()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 452, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id, trips.user_id, trips.car_id, trips.created_at, trips.duration_seconds, trips.distance_km, trips.equivalent_engine_hours, trips.oil_wear_percent, trips.idle_ratio, trips.fuel_saved_rub, trips.oil_saved_rub, trips.total_savings_rub, trips.fuel_saved_liters, trips.range_bonus_km, trips.smooth_score, trips.harsh_accel_count, trips.harsh_brake_count, trips.road_anomalies_count, trips.rush_cost_rub, trips.traffic_jam_seconds, trips.board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.user_id = $1::VARCHAR AND trips.created_at >= $2::TIMESTAMP WITH TIME ZONE AND trips.created_at <= $3::TIMESTAMP WITH TIME ZONE ORDER BY trips.created_at DESC 
+ LIMIT $4::INTEGER]
+[parameters: ('dev_9f3673d70b6c4e1f', datetime.datetime(2026, 9, 20, 20, 25, 1, 471965), datetime.datetime(2026, 10, 20, 20, 25, 1, 471965), 200)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-20 20:20:01 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:55666 - "GET /api/v1/users/dev_9f3673d70b6c4e1f/analytics/period HTTP/1.1" 500
+2026-10-20 20:20:01 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [496320a6] START GET /api/v1/users/dev_9f3673d70b6c4e1f/profile
+2026-10-20 20:20:01 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [496320a6] FINISH GET /api/v1/users/dev_9f3673d70b6c4e1f/profile Status=200 (1.67ms)
+2026-10-20 20:20:01 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:60882 - "GET /api/v1/users/dev_9f3673d70b6c4e1f/profile HTTP/1.1" 200
+2026-10-20 20:20:06 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [06cf0352] START GET /history
+2026-10-20 20:20:06 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [06cf0352] FINISH GET /history Status=200 (3.29ms)
+2026-10-20 20:20:06 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48476 - "GET /history HTTP/1.1" 200
+2026-10-20 20:20:06 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [e2674063] START GET /api/v1/users/dev_9f3673d70b6c4e1f/analytics/period
+2026-10-20 20:20:06 | ERROR    | [autoxak] main.py:408 (log_requests_middleware) -> [e2674063] UNHANDLED ERROR in GET /api/v1/users/dev_9f3673d70b6c4e1f/analytics/period (4.10ms): (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id, trips.user_id, trips.car_id, trips.created_at, trips.duration_seconds, trips.distance_km, trips.equivalent_engine_hours, trips.oil_wear_percent, trips.idle_ratio, trips.fuel_saved_rub, trips.oil_saved_rub, trips.total_savings_rub, trips.fuel_saved_liters, trips.range_bonus_km, trips.smooth_score, trips.harsh_accel_count, trips.harsh_brake_count, trips.road_anomalies_count, trips.rush_cost_rub, trips.traffic_jam_seconds, trips.board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.user_id = $1::VARCHAR AND trips.created_at >= $2::TIMESTAMP WITH TIME ZONE AND trips.created_at <= $3::TIMESTAMP WITH TIME ZONE ORDER BY trips.created_at DESC 
+ LIMIT $4::INTEGER]
+[parameters: ('dev_9f3673d70b6c4e1f', datetime.datetime(2026, 9, 20, 20, 25, 6, 931747), datetime.datetime(2026, 10, 20, 20, 25, 6, 931747), 200)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 397, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/main.py", line 1100, in get_period_analytics
+    trips_rows = (await db.execute(trips_stmt)).scalars().all()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 452, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id, trips.user_id, trips.car_id, trips.created_at, trips.duration_seconds, trips.distance_km, trips.equivalent_engine_hours, trips.oil_wear_percent, trips.idle_ratio, trips.fuel_saved_rub, trips.oil_saved_rub, trips.total_savings_rub, trips.fuel_saved_liters, trips.range_bonus_km, trips.smooth_score, trips.harsh_accel_count, trips.harsh_brake_count, trips.road_anomalies_count, trips.rush_cost_rub, trips.traffic_jam_seconds, trips.board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.user_id = $1::VARCHAR AND trips.created_at >= $2::TIMESTAMP WITH TIME ZONE AND trips.created_at <= $3::TIMESTAMP WITH TIME ZONE ORDER BY trips.created_at DESC 
+ LIMIT $4::INTEGER]
+[parameters: ('dev_9f3673d70b6c4e1f', datetime.datetime(2026, 9, 20, 20, 25, 6, 931747), datetime.datetime(2026, 10, 20, 20, 25, 6, 931747), 200)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-20 20:20:06 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:48476 - "GET /api/v1/users/dev_9f3673d70b6c4e1f/analytics/period HTTP/1.1" 500
+2026-10-20 20:20:14 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [51a0fda6] START GET /
+2026-10-20 20:20:14 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [51a0fda6] FINISH GET / Status=200 (3.33ms)
+2026-10-20 20:20:14 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45360 - "GET / HTTP/1.1" 200
+2026-10-20 20:20:14 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [884e811f] START GET /static/sw.js
+2026-10-20 20:20:14 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [986c8ed1] START GET /static/manifest.json
+2026-10-20 20:20:14 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [a101c103] START POST /api/v1/telemetry/session
+2026-10-20 20:20:14 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [884e811f] FINISH GET /static/sw.js Status=200 (6.38ms)
+2026-10-20 20:20:14 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45360 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-20 20:20:14 | INFO     | [autoxak] main.py:554 (process_telemetry_session) -> Получена сессия 0ff4e503-f499-4366-9943-6b4951f2553f (user=dev_9f3673d70b6c4e1f, точек=55)
+2026-10-20 20:20:14 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [986c8ed1] FINISH GET /static/manifest.json Status=200 (6.67ms)
+2026-10-20 20:20:14 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45402 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-20 20:20:14 | ERROR    | [autoxak] main.py:834 (process_telemetry_session) -> Критический сбой сессии dev_9f3673d70b6c4e1f: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id AS trips_id, trips.user_id AS trips_user_id, trips.car_id AS trips_car_id, trips.created_at AS trips_created_at, trips.duration_seconds AS trips_duration_seconds, trips.distance_km AS trips_distance_km, trips.equivalent_engine_hours AS trips_equivalent_engine_hours, trips.oil_wear_percent AS trips_oil_wear_percent, trips.idle_ratio AS trips_idle_ratio, trips.fuel_saved_rub AS trips_fuel_saved_rub, trips.oil_saved_rub AS trips_oil_saved_rub, trips.total_savings_rub AS trips_total_savings_rub, trips.fuel_saved_liters AS trips_fuel_saved_liters, trips.range_bonus_km AS trips_range_bonus_km, trips.smooth_score AS trips_smooth_score, trips.harsh_accel_count AS trips_harsh_accel_count, trips.harsh_brake_count AS trips_harsh_brake_count, trips.road_anomalies_count AS trips_road_anomalies_count, trips.rush_cost_rub AS trips_rush_cost_rub, trips.traffic_jam_seconds AS trips_traffic_jam_seconds, trips.board_computer_consumption_l100km AS trips_board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.id = $1::VARCHAR]
+[parameters: ('0ff4e503-f499-4366-9943-6b4951f2553f',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 756, in process_telemetry_session
+    existing_trip = await db.get(Trip, parsed_uuid)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 595, in get
+    return await greenlet_spawn(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 3637, in get
+    return self._get_impl(
+           ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 3817, in _get_impl
+    return db_load_fn(
+           ^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/loading.py", line 694, in load_on_pk_identity
+    session.execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id AS trips_id, trips.user_id AS trips_user_id, trips.car_id AS trips_car_id, trips.created_at AS trips_created_at, trips.duration_seconds AS trips_duration_seconds, trips.distance_km AS trips_distance_km, trips.equivalent_engine_hours AS trips_equivalent_engine_hours, trips.oil_wear_percent AS trips_oil_wear_percent, trips.idle_ratio AS trips_idle_ratio, trips.fuel_saved_rub AS trips_fuel_saved_rub, trips.oil_saved_rub AS trips_oil_saved_rub, trips.total_savings_rub AS trips_total_savings_rub, trips.fuel_saved_liters AS trips_fuel_saved_liters, trips.range_bonus_km AS trips_range_bonus_km, trips.smooth_score AS trips_smooth_score, trips.harsh_accel_count AS trips_harsh_accel_count, trips.harsh_brake_count AS trips_harsh_brake_count, trips.road_anomalies_count AS trips_road_anomalies_count, trips.rush_cost_rub AS trips_rush_cost_rub, trips.traffic_jam_seconds AS trips_traffic_jam_seconds, trips.board_computer_consumption_l100km AS trips_board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.id = $1::VARCHAR]
+[parameters: ('0ff4e503-f499-4366-9943-6b4951f2553f',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-20 20:20:14 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [a101c103] FINISH POST /api/v1/telemetry/session Status=500 (11.65ms)
+2026-10-20 20:20:14 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45412 - "POST /api/v1/telemetry/session HTTP/1.1" 500
+2026-10-20 20:20:14 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [35f32c33] START GET /api/v1/users/dev_9f3673d70b6c4e1f/dashboard
+2026-10-20 20:20:14 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [35f32c33] FINISH GET /api/v1/users/dev_9f3673d70b6c4e1f/dashboard Status=200 (2.56ms)
+2026-10-20 20:20:14 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45412 - "GET /api/v1/users/dev_9f3673d70b6c4e1f/dashboard HTTP/1.1" 200
+2026-10-20 20:20:14 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [2400328a] START GET /static/icon-192.png
+2026-10-20 20:20:14 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [2400328a] FINISH GET /static/icon-192.png Status=200 (4.35ms)
+2026-10-20 20:20:14 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45430 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-20 20:20:14 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [2c4a4b6b] START GET /api/v1/users/dev_9f3673d70b6c4e1f/analytics/period
+2026-10-20 20:20:14 | ERROR    | [autoxak] main.py:408 (log_requests_middleware) -> [2c4a4b6b] UNHANDLED ERROR in GET /api/v1/users/dev_9f3673d70b6c4e1f/analytics/period (3.37ms): (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id, trips.user_id, trips.car_id, trips.created_at, trips.duration_seconds, trips.distance_km, trips.equivalent_engine_hours, trips.oil_wear_percent, trips.idle_ratio, trips.fuel_saved_rub, trips.oil_saved_rub, trips.total_savings_rub, trips.fuel_saved_liters, trips.range_bonus_km, trips.smooth_score, trips.harsh_accel_count, trips.harsh_brake_count, trips.road_anomalies_count, trips.rush_cost_rub, trips.traffic_jam_seconds, trips.board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.user_id = $1::VARCHAR AND trips.created_at >= $2::TIMESTAMP WITH TIME ZONE AND trips.created_at <= $3::TIMESTAMP WITH TIME ZONE ORDER BY trips.created_at DESC 
+ LIMIT $4::INTEGER]
+[parameters: ('dev_9f3673d70b6c4e1f', datetime.datetime(2026, 9, 20, 20, 25, 14, 515822), datetime.datetime(2026, 10, 20, 20, 25, 14, 515822), 200)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 397, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/main.py", line 1100, in get_period_analytics
+    trips_rows = (await db.execute(trips_stmt)).scalars().all()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 452, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id, trips.user_id, trips.car_id, trips.created_at, trips.duration_seconds, trips.distance_km, trips.equivalent_engine_hours, trips.oil_wear_percent, trips.idle_ratio, trips.fuel_saved_rub, trips.oil_saved_rub, trips.total_savings_rub, trips.fuel_saved_liters, trips.range_bonus_km, trips.smooth_score, trips.harsh_accel_count, trips.harsh_brake_count, trips.road_anomalies_count, trips.rush_cost_rub, trips.traffic_jam_seconds, trips.board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.user_id = $1::VARCHAR AND trips.created_at >= $2::TIMESTAMP WITH TIME ZONE AND trips.created_at <= $3::TIMESTAMP WITH TIME ZONE ORDER BY trips.created_at DESC 
+ LIMIT $4::INTEGER]
+[parameters: ('dev_9f3673d70b6c4e1f', datetime.datetime(2026, 9, 20, 20, 25, 14, 515822), datetime.datetime(2026, 10, 20, 20, 25, 14, 515822), 200)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-20 20:20:14 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45412 - "GET /api/v1/users/dev_9f3673d70b6c4e1f/analytics/period HTTP/1.1" 500
+2026-10-20 20:20:14 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [0e09b1c2] START GET /api/v1/users/dev_9f3673d70b6c4e1f/profile
+2026-10-20 20:20:14 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [0e09b1c2] FINISH GET /api/v1/users/dev_9f3673d70b6c4e1f/profile Status=200 (2.07ms)
+2026-10-20 20:20:14 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45430 - "GET /api/v1/users/dev_9f3673d70b6c4e1f/profile HTTP/1.1" 200
+2026-10-20 20:20:15 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [33e86db4] START GET /setup
+2026-10-20 20:20:15 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [33e86db4] FINISH GET /setup Status=200 (3.74ms)
+2026-10-20 20:20:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45412 - "GET /setup HTTP/1.1" 200
+2026-10-20 20:20:15 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [e668c17b] START GET /api/v1/vehicles/catalog
+2026-10-20 20:20:15 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [a22dfc00] START GET /static/sw.js
+2026-10-20 20:20:15 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [e668c17b] FINISH GET /api/v1/vehicles/catalog Status=200 (6.38ms)
+2026-10-20 20:20:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45412 - "GET /api/v1/vehicles/catalog HTTP/1.1" 200
+2026-10-20 20:20:15 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [a22dfc00] FINISH GET /static/sw.js Status=200 (6.35ms)
+2026-10-20 20:20:15 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [e987e456] START GET /api/v1/users/dev_9f3673d70b6c4e1f/profile
+2026-10-20 20:20:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45430 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-20 20:20:15 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [e987e456] FINISH GET /api/v1/users/dev_9f3673d70b6c4e1f/profile Status=200 (2.65ms)
+2026-10-20 20:20:15 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45412 - "GET /api/v1/users/dev_9f3673d70b6c4e1f/profile HTTP/1.1" 200
+2026-10-20 20:20:16 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [07b4b887] START GET /
+2026-10-20 20:20:16 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [07b4b887] FINISH GET / Status=200 (3.95ms)
+2026-10-20 20:20:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45412 - "GET / HTTP/1.1" 200
+2026-10-20 20:20:16 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [828bae97] START GET /static/manifest.json
+2026-10-20 20:20:16 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [dff163c2] START POST /api/v1/telemetry/session
+2026-10-20 20:20:16 | INFO     | [autoxak] main.py:554 (process_telemetry_session) -> Получена сессия 0ff4e503-f499-4366-9943-6b4951f2553f (user=dev_9f3673d70b6c4e1f, точек=55)
+2026-10-20 20:20:16 | ERROR    | [autoxak] main.py:834 (process_telemetry_session) -> Критический сбой сессии dev_9f3673d70b6c4e1f: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id AS trips_id, trips.user_id AS trips_user_id, trips.car_id AS trips_car_id, trips.created_at AS trips_created_at, trips.duration_seconds AS trips_duration_seconds, trips.distance_km AS trips_distance_km, trips.equivalent_engine_hours AS trips_equivalent_engine_hours, trips.oil_wear_percent AS trips_oil_wear_percent, trips.idle_ratio AS trips_idle_ratio, trips.fuel_saved_rub AS trips_fuel_saved_rub, trips.oil_saved_rub AS trips_oil_saved_rub, trips.total_savings_rub AS trips_total_savings_rub, trips.fuel_saved_liters AS trips_fuel_saved_liters, trips.range_bonus_km AS trips_range_bonus_km, trips.smooth_score AS trips_smooth_score, trips.harsh_accel_count AS trips_harsh_accel_count, trips.harsh_brake_count AS trips_harsh_brake_count, trips.road_anomalies_count AS trips_road_anomalies_count, trips.rush_cost_rub AS trips_rush_cost_rub, trips.traffic_jam_seconds AS trips_traffic_jam_seconds, trips.board_computer_consumption_l100km AS trips_board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.id = $1::VARCHAR]
+[parameters: ('0ff4e503-f499-4366-9943-6b4951f2553f',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 756, in process_telemetry_session
+    existing_trip = await db.get(Trip, parsed_uuid)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 595, in get
+    return await greenlet_spawn(
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 3637, in get
+    return self._get_impl(
+           ^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 3817, in _get_impl
+    return db_load_fn(
+           ^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/loading.py", line 694, in load_on_pk_identity
+    session.execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id AS trips_id, trips.user_id AS trips_user_id, trips.car_id AS trips_car_id, trips.created_at AS trips_created_at, trips.duration_seconds AS trips_duration_seconds, trips.distance_km AS trips_distance_km, trips.equivalent_engine_hours AS trips_equivalent_engine_hours, trips.oil_wear_percent AS trips_oil_wear_percent, trips.idle_ratio AS trips_idle_ratio, trips.fuel_saved_rub AS trips_fuel_saved_rub, trips.oil_saved_rub AS trips_oil_saved_rub, trips.total_savings_rub AS trips_total_savings_rub, trips.fuel_saved_liters AS trips_fuel_saved_liters, trips.range_bonus_km AS trips_range_bonus_km, trips.smooth_score AS trips_smooth_score, trips.harsh_accel_count AS trips_harsh_accel_count, trips.harsh_brake_count AS trips_harsh_brake_count, trips.road_anomalies_count AS trips_road_anomalies_count, trips.rush_cost_rub AS trips_rush_cost_rub, trips.traffic_jam_seconds AS trips_traffic_jam_seconds, trips.board_computer_consumption_l100km AS trips_board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.id = $1::VARCHAR]
+[parameters: ('0ff4e503-f499-4366-9943-6b4951f2553f',)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-20 20:20:16 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [828bae97] FINISH GET /static/manifest.json Status=200 (9.55ms)
+2026-10-20 20:20:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45402 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-20 20:20:16 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [dff163c2] FINISH POST /api/v1/telemetry/session Status=500 (10.23ms)
+2026-10-20 20:20:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45412 - "POST /api/v1/telemetry/session HTTP/1.1" 500
+2026-10-20 20:20:16 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [5e7c59bb] START GET /api/v1/users/dev_9f3673d70b6c4e1f/dashboard
+2026-10-20 20:20:16 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [f891be86] START GET /static/icon-192.png
+2026-10-20 20:20:16 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [5e7c59bb] FINISH GET /api/v1/users/dev_9f3673d70b6c4e1f/dashboard Status=200 (2.77ms)
+2026-10-20 20:20:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45468 - "GET /api/v1/users/dev_9f3673d70b6c4e1f/dashboard HTTP/1.1" 200
+2026-10-20 20:20:16 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [f891be86] FINISH GET /static/icon-192.png Status=200 (4.49ms)
+2026-10-20 20:20:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45478 - "GET /static/icon-192.png HTTP/1.1" 200
+2026-10-20 20:20:16 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [35575027] START GET /api/v1/users/dev_9f3673d70b6c4e1f/analytics/period
+2026-10-20 20:20:16 | ERROR    | [autoxak] main.py:408 (log_requests_middleware) -> [35575027] UNHANDLED ERROR in GET /api/v1/users/dev_9f3673d70b6c4e1f/analytics/period (3.04ms): (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id, trips.user_id, trips.car_id, trips.created_at, trips.duration_seconds, trips.distance_km, trips.equivalent_engine_hours, trips.oil_wear_percent, trips.idle_ratio, trips.fuel_saved_rub, trips.oil_saved_rub, trips.total_savings_rub, trips.fuel_saved_liters, trips.range_bonus_km, trips.smooth_score, trips.harsh_accel_count, trips.harsh_brake_count, trips.road_anomalies_count, trips.rush_cost_rub, trips.traffic_jam_seconds, trips.board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.user_id = $1::VARCHAR AND trips.created_at >= $2::TIMESTAMP WITH TIME ZONE AND trips.created_at <= $3::TIMESTAMP WITH TIME ZONE ORDER BY trips.created_at DESC 
+ LIMIT $4::INTEGER]
+[parameters: ('dev_9f3673d70b6c4e1f', datetime.datetime(2026, 9, 20, 20, 25, 16, 351991), datetime.datetime(2026, 10, 20, 20, 25, 16, 351991), 200)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 514, in _prepare_and_execute
+    prepared_stmt, attributes = await adapt_connection._prepare(
+                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 765, in _prepare
+    prepared_stmt = await self._connection.prepare(
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 636, in prepare
+    return await self._prepare(
+           ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 654, in _prepare
+    stmt = await self._get_statement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/connection.py", line 433, in _get_statement
+    statement = await self._protocol.prepare(
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 166, in prepare
+asyncpg.exceptions.UndefinedColumnError: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.ProgrammingError: <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/app/app/main.py", line 397, in log_requests_middleware
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 165, in call_next
+    raise app_exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 151, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 83, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 62, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 758, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 778, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 299, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 79, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 64, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 74, in app
+    response = await func(request)
+               ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 278, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 191, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/main.py", line 1100, in get_period_analytics
+    trips_rows = (await db.execute(trips_stmt)).scalars().all()
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 452, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 197, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2306, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2191, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1421, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 514, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1643, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1849, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1989, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2356, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1970, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 924, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 572, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 127, in await_only
+    return current.driver.switch(awaitable)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 192, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 501, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 789, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.ProgrammingError: (sqlalchemy.dialects.postgresql.asyncpg.ProgrammingError) <class 'asyncpg.exceptions.UndefinedColumnError'>: column trips.board_computer_consumption_l100km does not exist
+[SQL: SELECT trips.id, trips.user_id, trips.car_id, trips.created_at, trips.duration_seconds, trips.distance_km, trips.equivalent_engine_hours, trips.oil_wear_percent, trips.idle_ratio, trips.fuel_saved_rub, trips.oil_saved_rub, trips.total_savings_rub, trips.fuel_saved_liters, trips.range_bonus_km, trips.smooth_score, trips.harsh_accel_count, trips.harsh_brake_count, trips.road_anomalies_count, trips.rush_cost_rub, trips.traffic_jam_seconds, trips.board_computer_consumption_l100km 
+FROM trips 
+WHERE trips.user_id = $1::VARCHAR AND trips.created_at >= $2::TIMESTAMP WITH TIME ZONE AND trips.created_at <= $3::TIMESTAMP WITH TIME ZONE ORDER BY trips.created_at DESC 
+ LIMIT $4::INTEGER]
+[parameters: ('dev_9f3673d70b6c4e1f', datetime.datetime(2026, 9, 20, 20, 25, 16, 351991), datetime.datetime(2026, 10, 20, 20, 25, 16, 351991), 200)]
+(Background on this error at: https://sqlalche.me/e/20/f405)
+
+2026-10-20 20:20:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45468 - "GET /api/v1/users/dev_9f3673d70b6c4e1f/analytics/period HTTP/1.1" 500
+2026-10-20 20:20:16 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [40c2b592] START GET /api/v1/users/dev_9f3673d70b6c4e1f/profile
+2026-10-20 20:20:16 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [40c2b592] FINISH GET /api/v1/users/dev_9f3673d70b6c4e1f/profile Status=200 (2.02ms)
+2026-10-20 20:20:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45412 - "GET /api/v1/users/dev_9f3673d70b6c4e1f/profile HTTP/1.1" 200
+2026-10-20 20:20:16 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [5d0358ce] START GET /static/manifest.json
+2026-10-20 20:20:16 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [5d0358ce] FINISH GET /static/manifest.json Status=200 (3.69ms)
+2026-10-20 20:20:16 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45402 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-20 20:20:17 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [db2569fc] START GET /login
+2026-10-20 20:20:17 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [db2569fc] FINISH GET /login Status=200 (4.02ms)
+2026-10-20 20:20:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45412 - "GET /login HTTP/1.1" 200
+2026-10-20 20:20:17 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [3fee52f0] START GET /static/manifest.json
+2026-10-20 20:20:17 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [2a3da31b] START GET /static/sw.js
+2026-10-20 20:20:17 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [b0f7bbfe] START GET /static/manifest.json
+2026-10-20 20:20:17 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [3fee52f0] FINISH GET /static/manifest.json Status=200 (9.17ms)
+2026-10-20 20:20:17 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [2a3da31b] FINISH GET /static/sw.js Status=200 (8.34ms)
+2026-10-20 20:20:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45402 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-20 20:20:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45412 - "GET /static/sw.js HTTP/1.1" 200
+2026-10-20 20:20:17 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [b0f7bbfe] FINISH GET /static/manifest.json Status=200 (4.83ms)
+2026-10-20 20:20:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45496 - "GET /static/manifest.json HTTP/1.1" 200
+2026-10-20 20:20:17 | INFO     | [autoxak] main.py:394 (log_requests_middleware) -> [dd2fb707] START GET /static/icon-192.png
+2026-10-20 20:20:17 | INFO     | [autoxak] main.py:399 (log_requests_middleware) -> [dd2fb707] FINISH GET /static/icon-192.png Status=200 (4.36ms)
+2026-10-20 20:20:17 | INFO     | [uvicorn.access] h11_impl.py:480 (send) -> 172.22.0.1:45468 - "GET /static/icon-192.png HTTP/1.1" 200

@@ -157,6 +157,8 @@ class Trip(Base):
     road_anomalies_count = Column(Integer, default=0)
     rush_cost_rub = Column(Float, default=0.0)
     traffic_jam_seconds = Column(Float, default=0.0)
+    # Расход по бортовому компьютеру ТС (Ground Truth для ML)
+    board_computer_consumption_l100km = Column(Float, nullable=True)
 
     user = relationship("User", back_populates="trips")
 

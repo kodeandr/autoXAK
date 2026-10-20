@@ -721,6 +721,74 @@
             font-size: 11.5px;
             color: var(--text-secondary);
         }
+        /* Стили ячейки ввода расхода по БК */
+        .bk-input-card {
+            width: 100%;
+            background: var(--bg-cell, #2A2D34);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+            padding: 12px 14px;
+            margin-bottom: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: left;
+        }
+
+        .bk-input-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-secondary, #8C919B);
+            font-weight: 500;
+        }
+
+        .bk-input-header svg {
+            width: 16px;
+            height: 16px;
+            color: var(--lime, #D2FA58);
+            flex-shrink: 0;
+        }
+
+        .bk-input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bk-input-field {
+            flex: 1;
+            height: 44px;
+            background: #1C1E22;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 10px;
+            color: #FFFFFF;
+            font-size: 18px;
+            font-weight: 700;
+            padding: 0 12px;
+            font-variant-numeric: tabular-nums;
+            outline: none;
+            transition: border-color 0.15s ease;
+        }
+        .bk-input-field:focus {
+            border-color: var(--lime, #D2FA58);
+        }
+        .bk-input-field::placeholder {
+            color: rgba(255, 255, 255, 0.25);
+            font-weight: 500;
+        }
+
+        .bk-unit-badge {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--lime, #D2FA58);
+            background: rgba(210, 250, 88, 0.1);
+            border: 1px solid rgba(210, 250, 88, 0.25);
+            padding: 10px 12px;
+            border-radius: 10px;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -980,6 +1048,21 @@
                 <div class="stat-cell">
                     <span class="stat-cell-val" id="sum-duration">0 ч 00 мин</span>
                     <span class="stat-cell-label">Время поездки</span>
+                </div>
+            </div>
+
+                        <!-- Ячейка ввода расхода по бортовому компьютеру (по запросу ML) -->
+            <div class="bk-input-card">
+                <div class="bk-input-header">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="9"/>
+                        <path d="M12 7v5l3 3"/>
+                    </svg>
+                    <span>Расход по бортовому компьютеру машины:</span>
+                </div>
+                <div class="bk-input-row">
+                    <input type="number" id="input-bk-consumption" class="bk-input-field" step="0.1" min="1.0" max="99.0" placeholder="0.0" inputmode="decimal">
+                    <div class="bk-unit-badge">л / 100 км</div>
                 </div>
             </div>
 
@@ -1468,6 +1551,7 @@
         }
 
         const sessionId = (crypto.randomUUID ? crypto.randomUUID() : 'session_' + Date.now());
+        lastFinishedSessionId = sessionId;
         const payload = {
             session_id: sessionId,
             user_id: currentUserId,
@@ -1571,7 +1655,36 @@
         } catch (_) {}
     }
 
-    function claimToPiggyBank() {
+    let lastFinishedSessionId = null;
+
+    async function claimToPiggyBank() {
+        const bkInput = document.getElementById('input-bk-consumption');
+        const bkVal = bkInput ? parseFloat(bkInput.value.replace(',', '.')) : NaN;
+
+        // Если водитель ввел значение БК — отправляем на бэкенд для ML
+        if (!isNaN(bkVal) && bkVal > 0 && lastFinishedSessionId) {
+            try {
+                await fetch(`/api/v1/trips/${encodeURIComponent(lastFinishedSessionId)}/board-computer`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...(typeof AutoXAKSession !== 'undefined' ? AutoXAKSession.getAuthHeaders() : {})
+                    },
+                    body: JSON.stringify({ board_computer_consumption_l100km: bkVal })
+                });
+
+                // Обновляем локальную запись
+                const map = JSON.parse(localStorage.getItem('autoXAK_trip_details_map') || '{}');
+                if (map[lastFinishedSessionId]) {
+                    map[lastFinishedSessionId].board_computer_consumption_l100km = bkVal;
+                    localStorage.setItem('autoXAK_trip_details_map', JSON.stringify(map));
+                }
+            } catch (err) {
+                console.warn('[ML-Audit] Не удалось отправить значение БК на сервер (оффлайн):', err);
+            }
+        }
+
+        if (bkInput) bkInput.value = '';
         document.getElementById('summary-modal').classList.remove('active');
         syncCockpitWithBackend();
     }

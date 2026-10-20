@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+﻿from pydantic import BaseModel, Field
 from typing import List, Optional
 import uuid
 
@@ -19,3 +19,4 @@ class TripSessionPayload(BaseModel):
     user_id: str
     car_id: str
     telemetry_stream: List[TelemetryPoint]
+    board_computer_consumption_l100km: Optional[float] = Field(default=None, description="Расход по БК, л/100 км")

@@ -341,6 +341,10 @@ def calculate_haversine_distance_km(coords: List[Dict[str, float]]) -> float:
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        try:
+            await conn.execute(text("ALTER TABLE trips ADD COLUMN IF NOT EXISTS board_computer_consumption_l100km FLOAT;"))
+        except Exception:
+            pass
     yield
 
 
@@ -777,6 +781,7 @@ async def process_telemetry_session(
                 harsh_brake_count=harsh_brake_count,
                 road_anomalies_count=road_anomalies,
                 rush_cost_rub=rush_cost_rub,
+                board_computer_consumption_l100km=getattr(payload, 'board_computer_consumption_l100km', None),
                 traffic_jam_seconds=round(traffic_jam_seconds, 2)
             )
             db.add(new_trip)
@@ -818,6 +823,7 @@ async def process_telemetry_session(
             harsh_brake_count=harsh_brake_count,
             traffic_jam_seconds=round(traffic_jam_seconds, 2),
             rush_cost_rub=rush_cost_rub,
+                board_computer_consumption_l100km=getattr(payload, 'board_computer_consumption_l100km', None),
             base_potential_rub=base_potential_rub,
             metrics=metrics_payload
         )
@@ -1001,6 +1007,30 @@ async def get_user_trips(user_id: str, limit: int = 100, db: AsyncSession = Depe
         trips=trip_items
     )
 
+
+
+class BoardComputerFuelUpdate(BaseModel):
+    board_computer_consumption_l100km: float = Field(..., gt=0.0, le=100.0, description="Фактический расход бензина по БК, л/100 км")
+
+@app.post("/api/v1/trips/{session_id}/board-computer")
+async def update_trip_board_computer(
+    session_id: str,
+    payload: BoardComputerFuelUpdate,
+    db: AsyncSession = Depends(get_db)
+):
+    stmt = select(Trip).where(Trip.id == session_id)
+    res = await db.execute(stmt)
+    trip = res.scalar_one_or_none()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Поездка не найдена")
+    trip.board_computer_consumption_l100km = round(float(payload.board_computer_consumption_l100km), 2)
+    await db.commit()
+    logger.info(f"[ML-Validation] Для поездки {session_id} зафиксирован расход БК: {trip.board_computer_consumption_l100km} л/100 км")
+    return {
+        "status": "SAVED",
+        "session_id": session_id,
+        "board_computer_consumption_l100km": trip.board_computer_consumption_l100km
+    }
 
 @app.get("/api/v1/users/{user_id}/analytics/period", response_model=PeriodAnalyticsResponse)
 async def get_period_analytics(
