@@ -1,5 +1,6 @@
 ﻿import os
 import math
+import asyncio
 import uuid
 import time
 import traceback
@@ -17,7 +18,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.security import HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_, or_
+from sqlalchemy import select, func, and_, or_, text
 from sqlalchemy.exc import IntegrityError
 
 from app.core.logger import logger
@@ -460,6 +461,18 @@ async def setup_page():
 @app.get("/sw.js", include_in_schema=False)
 def service_worker():
     return FileResponse(_resolve_static_file("sw.js"), media_type="application/javascript", headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"})
+
+
+@app.get("/ready", include_in_schema=False)
+async def readiness_check(db: AsyncSession = Depends(get_db)):
+    """Separate process liveness from readiness for database-backed requests."""
+    try:
+        async with asyncio.timeout(3):
+            await db.execute(text("SELECT 1"))
+    except Exception:
+        logger.warning("Readiness check: database unavailable")
+        return JSONResponse(status_code=503, content={"status": "unavailable"})
+    return {"status": "ready"}
 
 
 @app.get("/health")
