@@ -771,7 +771,7 @@
 <script>
     'use strict';
 
-    let currentUserId = localStorage.getItem('autoXAK_user_id') || 'test_user_01';
+    let currentUserId = localStorage.getItem('autoXAK_user_id') || '';
 
     const FALLBACK_CATALOG = [
         {
@@ -1200,7 +1200,7 @@
         try {
             const synRes = await fetch('/api/v1/vehicles/synthesize', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...AutoXAKSession.getAuthHeaders() },
                 body: JSON.stringify({
                     custom_name: customCarName,
                     body_type: bodyType,
@@ -1210,13 +1210,14 @@
                     transmission_type: transType
                 })
             });
+            if (!synRes.ok) throw new Error(`HTTP ${synRes.status}`);
             if (synRes.ok) {
                 const synData = await synRes.json();
                 if (synData.car_id || synData.id) {
                     synthesizedCarId = synData.car_id || synData.id;
                 }
             }
-        } catch (_) {}
+        } catch (_) { window.alert('Не удалось сохранить характеристики автомобиля. Проверьте соединение и повторите.'); return; }
 
         await persistVehicleSelection({
             car_id: synthesizedCarId,
@@ -1235,6 +1236,8 @@
 
         localStorage.setItem('autoXAK_car_id', vehicleData.car_id);
         localStorage.setItem('autoXAK_car_name', vehicleData.car_name);
+        localStorage.setItem('autoXAK_selected_car_id', vehicleData.car_id);
+        localStorage.setItem('autoXAK_selected_car_name', vehicleData.car_name);
         localStorage.setItem('autoXAK_fuel_pass', String(vehicleData.fuel_consumption || 8.2));
 
         const profilePayload = {
@@ -1242,34 +1245,20 @@
             car_id: vehicleData.car_id,
             car_name: vehicleData.car_name,
             fuel_consumption: vehicleData.fuel_consumption || 8.2,
-            fuel_price_rub: fuelPrice,
-            service_cost_rub: 9500.0,
-            current_oil_wear_percent: 0.0
+            fuel_price_rub: fuelPrice
         };
         localStorage.setItem('autoXAK_profile', JSON.stringify(profilePayload));
 
         document.getElementById('garage-current-car-name').innerText = vehicleData.car_name;
 
-        try {
-            const headers = (window.AutoXAKSession && typeof window.AutoXAKSession.getAuthHeaders === 'function')
-                ? window.AutoXAKSession.getAuthHeaders()
-                : {};
-            await fetch(`/api/v1/users/${encodeURIComponent(currentUserId)}/profile`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...headers
-                },
-                body: JSON.stringify(profilePayload)
-            });
-        } catch (e) {
-            console.warn('Профиль сохранен локально (оффлайн-режим):', e);
-        }
+        await AutoXAKSession.saveProfile(profilePayload);
 
         closeEditScreen();
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
+        const session = await AutoXAKSession.ensureAuthenticated();
+        currentUserId = session.userId;
         initCustomDropdowns();
         await initCatalog();
         await loadUserGarageState();

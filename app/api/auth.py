@@ -2,29 +2,36 @@
 import json
 import uuid
 import hashlib
+import secrets
+import hmac
+from datetime import timedelta
 import asyncio
 import urllib.request
 import urllib.parse
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Header, Request, status
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update
 
 from app.core.database import get_db
 from app.models.db_models import User, Trip
-from app.core.security import create_access_token, decode_access_token
+from app.core.security import create_access_token, decode_access_token, SECRET_KEY
+from app.api.dependencies import require_user, bearer
+from fastapi.security import HTTPAuthorizationCredentials
+from app.models.recordings import TripRecording, RecordingVehicle
+from app.models.db_models import CPALead
 
 router = APIRouter(prefix="/api/v1/auth", tags=["Аутентификация (Яндекс ID + Гость)"])
 
-SECRET_SALT = os.getenv("SECRET_KEY", "autoxak_super_secret_jwt_key_mipt_2026")
+SECRET_SALT = os.getenv("YANDEX_ID_SALT", "").strip() or SECRET_KEY
 
 
 class GuestPayload(BaseModel):
-    guest_id: Optional[str] = None
-    car_id: Optional[str] = "haval_jolion_15t_4wd"
+    guest_id: Optional[str] = Field(default=None, max_length=64)
+    car_id: Optional[str] = Field(default="haval_jolion_15t_4wd", max_length=100)
 
 
 class HandshakePayload(BaseModel):
@@ -51,9 +58,7 @@ def _resolve_redirect_uri(request: Request) -> str:
     custom_uri = os.getenv("YANDEX_REDIRECT_URI", "").strip()
     if custom_uri:
         return custom_uri
-    proto = request.headers.get("x-forwarded-proto", request.url.scheme)
-    host = request.headers.get("x-forwarded-host", request.headers.get("host", "localhost:8000"))
-    return f"{proto}://{host}/api/v1/auth/yandex/callback"
+    return str(request.url_for("yandex_oauth_callback"))
 
 
 def _exchange_code_for_yandex_id(code: str, redirect_uri: str) -> str:
@@ -102,70 +107,73 @@ async def _get_or_merge_yandex_user(
     guest_id: Optional[str] = None,
 ) -> User:
     ya_user_id = _build_anonymized_yandex_id(raw_yandex_id)
+    if db.bind.dialect.name == "postgresql":
+        from sqlalchemy import text
+        lock_id = int.from_bytes(hashlib.sha256(ya_user_id.encode()).digest()[:8], "big", signed=True)
+        await db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": lock_id})
 
-    stmt = select(User).where(User.id == ya_user_id)
-    ya_user = (await db.execute(stmt)).scalar_one_or_none()
-
-    guest_user = None
-    if guest_id and guest_id != ya_user_id and guest_id.startswith(("guest_", "dev_")):
-        g_stmt = select(User).where(User.id == guest_id)
-        guest_user = (await db.execute(g_stmt)).scalar_one_or_none()
-
-    if not ya_user:
-        ya_user = User(
-            id=ya_user_id,
-            email=None,
-            name="Яндекс ID",
-            hashed_password=None,
-            is_guest=False,
-            car_id=getattr(guest_user, "car_id", None) or "haval_jolion_15t_4wd",
-            fuel_price_rub=getattr(guest_user, "fuel_price_rub", None) or 72.40,
-            service_cost_rub=getattr(guest_user, "service_cost_rub", None) or 9500.0,
-            total_savings_rub=getattr(guest_user, "total_savings_rub", 0.0) or 0.0,
-            current_oil_wear_percent=getattr(guest_user, "current_oil_wear_percent", 0.0) or 0.0,
-        )
-        for field in ("total_fuel_saved_liters", "range_bank_km", "total_distance_km", "total_trips"):
-            if hasattr(ya_user, field) and guest_user is not None:
-                setattr(ya_user, field, getattr(guest_user, field, 0.0) or 0)
+    # Serialize merges with trip writes; the same guest can only be transferred once.
+    ids = sorted({ya_user_id, guest_id} - {None})
+    users = (await db.execute(select(User).where(User.id.in_(ids)).order_by(User.id).with_for_update())).scalars().all()
+    by_id = {user.id: user for user in users}
+    ya_user = by_id.get(ya_user_id)
+    guest_user = by_id.get(guest_id)
+    if guest_user is not None and not guest_user.is_guest:
+        raise HTTPException(403, "Only an authenticated guest can be merged")
+    if ya_user is None:
+        ya_user = User(id=ya_user_id, name="Яндекс ID", is_guest=False,
+                       car_id=getattr(guest_user, "car_id", None) or "haval_jolion_15t_4wd",
+                       car_name=getattr(guest_user, "car_name", None),
+                       custom_profile=getattr(guest_user, "custom_profile", None),
+                       fuel_price_rub=getattr(guest_user, "fuel_price_rub", None) or 72.40,
+                       service_cost_rub=getattr(guest_user, "service_cost_rub", None) or 9500.0)
         db.add(ya_user)
-    else:
-        if guest_user and (getattr(guest_user, "total_savings_rub", 0.0) or 0.0) > 0:
-            ya_user.total_savings_rub = (ya_user.total_savings_rub or 0.0) + (guest_user.total_savings_rub or 0.0)
-            guest_user.total_savings_rub = 0.0
-
-    if guest_user:
-        await db.execute(
-            update(Trip).where(Trip.user_id == guest_user.id).values(user_id=ya_user_id)
-        )
-
+        await db.flush()  # Parent must exist before moving foreign keys.
+    if guest_user is not None:
+        for field in ("total_savings_rub", "total_fuel_saved_liters", "range_bank_km", "total_distance_km", "total_trips", "current_oil_wear_percent"):
+            value = (getattr(ya_user, field) or 0) + (getattr(guest_user, field) or 0)
+            setattr(ya_user, field, min(100.0, value) if field == "current_oil_wear_percent" else value)
+            setattr(guest_user, field, 0)
+        for table in (Trip, TripRecording, CPALead):
+            await db.execute(update(table).where(table.user_id == guest_user.id).values(user_id=ya_user_id))
+        profile = await db.get(RecordingVehicle, guest_user.id)
+        if profile is not None:
+            if await db.get(RecordingVehicle, ya_user_id) is None:
+                db.add(RecordingVehicle(user_id=ya_user_id, profile=profile.profile))
+            await db.delete(profile)
     await db.commit()
     await db.refresh(ya_user)
     return ya_user
 
 
-def _build_session_bridge_html(user: User, token: str) -> str:
+def _build_session_bridge_html(user: User, token: str, previous_user_id: Optional[str] = None) -> str:
     payload_js = json.dumps({
         "user_id": user.id,
         "token": token,
         "name": "Яндекс ID",
         "car_id": user.car_id or "haval_jolion_15t_4wd",
         "is_guest": False,
-    })
+        "previous_user_id": previous_user_id,
+    }).replace("<", "\\u003c").replace(">", "\\u003e").replace("&", "\\u0026")
     return f"""<!DOCTYPE html>
 <html lang="ru">
-<head><meta charset="utf-8"><title>autoXAK — Яндекс ID</title></head>
+<head><meta charset="utf-8"><title>autoXAK — Яндекс ID</title><script src="/static/session.js"></script><script src="/static/offline_store.js"></script></head>
 <body style="background:#05070C;color:#FFF;font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;">
     <div style="color:#D2FA58;font-weight:700;">Вход выполнен, загружаем кокпит...</div>
     <script>
-    (function() {{
+    (async function() {{
         const data = {payload_js};
+        if (data.previous_user_id && AutoXAKSession.getUserId() === data.previous_user_id) {{
+            await AutoXAKOfflineStore.reassignOwner(data.previous_user_id, data.user_id);
+        }}
+        AutoXAKSession.adoptSession(data);
         localStorage.setItem('autoXAK_user_id', data.user_id);
         localStorage.setItem('autoXAK_jwt_token', data.token);
         localStorage.setItem('autoXAK_is_guest', 'false');
         localStorage.setItem('autoXAK_user_name', data.name);
         localStorage.setItem('autoXAK_welcome_seen', 'true');
         window.location.replace('/');
-    }})();
+    }})().catch(error => {{ console.error(error); window.alert('Не удалось перенести офлайн-поездки. Повторите вход.'); window.location.replace('/login'); }});
     </script>
 </body>
 </html>"""
@@ -175,6 +183,7 @@ def _build_session_bridge_html(user: User, token: str) -> str:
 async def continue_as_guest(
     payload: Optional[GuestPayload] = None,
     db: AsyncSession = Depends(get_db),
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer),
 ):
     requested_id = payload.guest_id if payload and payload.guest_id else None
     car_id = (payload.car_id if payload and payload.car_id else None) or "haval_jolion_15t_4wd"
@@ -183,6 +192,9 @@ async def continue_as_guest(
         stmt = select(User).where(User.id == requested_id)
         existing = (await db.execute(stmt)).scalar_one_or_none()
         if existing:
+            owner = await require_user(credentials, db)
+            if owner.id != requested_id or not owner.is_guest:
+                raise HTTPException(403, "Guest session proof is required")
             token = create_access_token(user_id=existing.id)
             return AuthTokenResponse(
                 token=token,
@@ -193,7 +205,7 @@ async def continue_as_guest(
                 is_new_user=False,
             )
 
-    guest_id = f"guest_{uuid.uuid4().hex[:10]}"
+    guest_id = f"guest_{uuid.uuid4().hex}"
     guest_user = User(
         id=guest_id,
         email=None,
@@ -221,13 +233,31 @@ async def continue_as_guest(
     )
 
 
-@router.get("/yandex/login")
-async def yandex_oauth_login(request: Request, guest_id: Optional[str] = None):
-    state_val = (guest_id or "").strip()
-    client_id = os.getenv("YANDEX_CLIENT_ID", "").strip()
+OAUTH_COOKIE = "autoxak_oauth_state"
 
+
+def _oauth_claims(request: Request, state: Optional[str]):
+    claims = decode_access_token(request.cookies.get(OAUTH_COOKIE, ""))
+    if not claims or claims.get("purpose") != "oauth_state" or not state or not hmac.compare_digest(state, claims["sub"]):
+        raise HTTPException(400, "Invalid or expired OAuth state")
+    return claims
+
+
+@router.get("/yandex/login")
+@router.post("/yandex/login")
+async def yandex_oauth_login(request: Request, db: AsyncSession = Depends(get_db),
+                             credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer)):
+    guest_id = None
+    if credentials is not None:
+        user = await require_user(credentials, db)
+        guest_id = user.id if user.is_guest else None
+    state_val = secrets.token_urlsafe(32)
+    signed_state = create_access_token(state_val, {"purpose": "oauth_state", "guest_id": guest_id}, expires_delta=timedelta(minutes=10))
+    client_id = os.getenv("YANDEX_CLIENT_ID", "").strip()
+    if not client_id and os.getenv("ENABLE_YANDEX_DEMO", "false").lower() != "true":
+        raise HTTPException(503, "Yandex OAuth is not configured")
     if not client_id:
-        demo_url = f"/api/v1/auth/yandex/demo?guest_id={urllib.parse.quote(state_val)}"
+        demo_url = f"/api/v1/auth/yandex/demo?state={urllib.parse.quote(state_val)}"
         html = f"""<!DOCTYPE html>
 <html lang="ru">
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Яндекс ID</title></head>
@@ -245,7 +275,9 @@ async def yandex_oauth_login(request: Request, guest_id: Optional[str] = None):
     </div>
 </body>
 </html>"""
-        return HTMLResponse(content=html)
+        response = JSONResponse({"url": demo_url}) if request.method == "POST" else HTMLResponse(content=html)
+        response.set_cookie(OAUTH_COOKIE, signed_state, max_age=600, httponly=True, secure=request.url.scheme == "https", samesite="lax")
+        return response
 
     redirect_uri = _resolve_redirect_uri(request)
     params = {
@@ -255,18 +287,21 @@ async def yandex_oauth_login(request: Request, guest_id: Optional[str] = None):
         "state": state_val,
     }
     url = f"https://oauth.yandex.ru/authorize?{urllib.parse.urlencode(params)}"
-    return RedirectResponse(url=url)
+    response = JSONResponse({"url": url}) if request.method == "POST" else RedirectResponse(url=url)
+    response.set_cookie(OAUTH_COOKIE, signed_state, max_age=600, httponly=True,
+                        secure=request.url.scheme == "https", samesite="lax")
+    return response
 
 
 @router.get("/yandex/demo", response_class=HTMLResponse)
-async def yandex_oauth_demo(
-    guest_id: Optional[str] = None,
-    db: AsyncSession = Depends(get_db),
-):
-    seed_source = guest_id if guest_id else "demo_driver_mipt"
-    user = await _get_or_merge_yandex_user(db, raw_yandex_id=seed_source, guest_id=guest_id)
-    token = create_access_token(user_id=user.id)
-    return HTMLResponse(content=_build_session_bridge_html(user, token))
+async def yandex_oauth_demo(request: Request, state: Optional[str] = None, db: AsyncSession = Depends(get_db)):
+    if os.getenv("ENABLE_YANDEX_DEMO", "false").lower() != "true":
+        raise HTTPException(404, "Demo login is disabled")
+    claims = _oauth_claims(request, state)
+    user = await _get_or_merge_yandex_user(db, raw_yandex_id="demo_" + claims["sub"], guest_id=claims.get("guest_id"))
+    response = HTMLResponse(content=_build_session_bridge_html(user, create_access_token(user.id), claims.get("guest_id")))
+    response.delete_cookie(OAUTH_COOKIE)
+    return response
 
 
 @router.get("/yandex/callback", response_class=HTMLResponse)
@@ -276,51 +311,28 @@ async def yandex_oauth_callback(
     state: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
 ):
+    claims = _oauth_claims(request, state)
     if not code:
         return RedirectResponse(url="/?auth_error=yandex_cancelled")
 
     try:
         redirect_uri = _resolve_redirect_uri(request)
         raw_yandex_id = await asyncio.to_thread(_exchange_code_for_yandex_id, code, redirect_uri)
-        user = await _get_or_merge_yandex_user(db, raw_yandex_id=raw_yandex_id, guest_id=state)
+        user = await _get_or_merge_yandex_user(db, raw_yandex_id=raw_yandex_id, guest_id=claims.get("guest_id"))
         token = create_access_token(user_id=user.id)
-    except Exception as exc:
-        err_msg = urllib.parse.quote(str(exc))
-        return RedirectResponse(url=f"/?auth_error={err_msg}")
+    except Exception:
+        await db.rollback()
+        response = RedirectResponse(url="/?auth_error=yandex_failed")
+        response.delete_cookie(OAUTH_COOKIE)
+        return response
 
-    return HTMLResponse(content=_build_session_bridge_html(user, token))
+    response = HTMLResponse(content=_build_session_bridge_html(user, token, claims.get("guest_id")))
+    response.delete_cookie(OAUTH_COOKIE)
+    return response
 
 
 @router.get("/me", response_model=AuthTokenResponse)
-async def get_current_user_profile(
-    user_id: Optional[str] = None,
-    authorization: Optional[str] = Header(default=None),
-    db: AsyncSession = Depends(get_db),
-):
-    resolved_id = None
-    if authorization and authorization.lower().startswith("bearer "):
-        raw_token = authorization.split(" ", 1)[1].strip()
-        decoded = decode_access_token(raw_token)
-        if decoded:
-            resolved_id = decoded if isinstance(decoded, str) else decoded.get("sub")
-
-    if not resolved_id:
-        resolved_id = user_id
-
-    if not resolved_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Сессия не найдена")
-
-    stmt = select(User).where(User.id == resolved_id)
-    user = (await db.execute(stmt)).scalar_one_or_none()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Профиль не найден")
-
-    token = create_access_token(user_id=user.id)
-    return AuthTokenResponse(
-        token=token,
-        user_id=user.id,
-        name=user.name or ("Яндекс ID" if not user.is_guest else "Гость"),
-        car_id=user.car_id or "haval_jolion_15t_4wd",
-        is_guest=bool(user.is_guest),
-        is_new_user=False,
-    )
+async def get_current_user_profile(user: User = Depends(require_user)):
+    return AuthTokenResponse(token=create_access_token(user.id), user_id=user.id,
+                             name=user.name or ("Гость" if user.is_guest else "Яндекс ID"),
+                             car_id=user.car_id or "haval_jolion_15t_4wd", is_guest=bool(user.is_guest))

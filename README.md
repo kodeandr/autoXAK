@@ -1,12 +1,12 @@
 # autoXAK (АвтоХАК) — Zero-Hardware Telematics & Wear Engine
 
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.110.0-009688.svg?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.158.1-009688.svg?style=flat&logo=fastapi)](https://fastapi.tiangolo.com)
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB.svg?style=flat&logo=python)](https://www.python.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg?style=flat&logo=postgresql)](https://www.postgresql.org/)
 [![Redis](https://img.shields.io/badge/Redis-7.2-DC382D.svg?style=flat&logo=redis)](https://redis.io/)
 [![Docker Compose](https://img.shields.io/badge/Docker_Compose-Supported-2496ED.svg?style=flat&logo=docker)](https://www.docker.com/)
 [![PWA](https://img.shields.io/badge/PWA-Offline--First-5A0FC8.svg?style=flat&logo=pwa)](https://developer.mozilla.org/docs/Web/Progressive_web_apps)
-[![Academic Verification](https://img.shields.io/badge/MIPT_R%26D-H1_Confirmed_(MAPE_3.36%25)-success.svg)](#-метрологическая-верификация-и-доказательство-гипотезы-h1)
+[![Academic Verification](https://img.shields.io/badge/MIPT_R%26D-Needs_real_data_validation-orange.svg)](#-метрологическая-верификация-и-доказательство-гипотезы-h1)
 [![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 > **Платформа безаппаратного предиктивного мониторинга эксплуатационных издержек легкового автотранспорта и трибологической деградации моторного масла на основе потоковой мобильной телеметрии и геоконтекста.**
@@ -62,6 +62,12 @@
 * 🛒 **CPA-монетизация предиктивного ТО:** Интеллектуальный триггер контекстного оффера на замену масла и фильтров при исчерпании остаточного ресурса смазки $\le 20\%$ с подбором точных OEM-допусков.
 
 ---
+
+> **Результат аудита:** заявленная точность WearEngine сейчас не подтверждена.
+> Штатные синтетические проверки расходятся с OBD-формулой на 50–59%.
+> Таблицы и физические формулы ниже отражают исходную документацию, а не
+> воспроизведённую в текущем коде гарантию точности. Реальных парных логов
+> для независимой проверки и калибровки сейчас нет.
 
 ## 🔬 Физико-математическое ядро (Wear & Cost Engine)
 
@@ -250,19 +256,14 @@ cd autoXAK
 ### 3. Конфигурация окружения (.env)
 Создайте файл `.env` в корневой директории:
 ```env
-# Database
-DATABASE_URL=postgresql+asyncpg://autoXAK_user:autoXAK_pass@postgres:5432/autoXAK_db
-
-# Cache
-REDIS_HOST=redis
-REDIS_PORT=6379
-
-# 2GIS API Integration (при отсутствии ключа работает Graceful Mock)
-DGIS_API_KEY=your_2gis_api_key_here
+# Generate each value locally, e.g. python -c "import secrets; print(secrets.token_hex(32))"
+SECRET_KEY=<private persistent random value, at least 32 characters>
+POSTGRES_PASSWORD=<separate private random value>
 DGIS_USE_MOCK=true
-
-# Security
-SECRET_KEY=autoxak_secret_jwt_key_mipt_2026
+DGIS_API_KEY=
+YANDEX_CLIENT_ID=
+YANDEX_CLIENT_SECRET=
+YANDEX_REDIRECT_URI=https://autoxak.ru/api/v1/auth/yandex/callback
 ```
 
 ### 4. Генерация локальных SSL-сертификатов
@@ -270,7 +271,7 @@ SECRET_KEY=autoxak_secret_jwt_key_mipt_2026
 ```bash
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
   -keyout key.pem -out cert.pem \
-  -subj "/CN=localhost"
+  -subj "/CN=localhost" -addext "subjectAltName=DNS:localhost,IP:127.0.0.1"
 ```
 
 ### 5. Запуск комплекса в Docker Compose
@@ -295,7 +296,7 @@ docker compose exec api python seed_fuel_prices.py
 
 ### 7. Проверка работоспособности
 ```bash
-curl -k "https://localhost:8000/health"
+curl --cacert cert.pem "https://localhost:8000/health"
 ```
 Ожидаемый ответ сервера:
 ```json
@@ -377,3 +378,40 @@ docker compose exec api python run_multicar_verification.py
 ## 📄 Лицензия
 
 Проект распространяется под лицензией [MIT](LICENSE).
+
+
+## Проверки после аудита
+
+Проверки API с пользовательскими данными требуют Bearer-токен. `user_id`, отпечаток
+устройства и идентификатор гостя не подтверждают право доступа. Яндекс OAuth требует
+настроенных переменных; демо отключено по умолчанию. `ENABLE_YANDEX_DEMO=true`
+предназначен только для изолированной разработки.
+
+После обновления замените ранее опубликованные ключи 2ГИС/Яндекса, пароли БД и TLS
+ключ: удаление значений из файлов не отзывает их. Сгенерируйте собственную пару
+`key.pem`/`cert.pem` по инструкции выше. Они исключены из Git. `SECRET_KEY` должен
+сохраняться между перезапусками. Перед ротацией подписи учтите, что старые токены
+перестанут действовать; для стабильных Яндекс ID сохраните отдельный `YANDEX_ID_SALT`.
+
+Установите зависимости из `requirements.txt`. Запускайте `python -m pytest` из корня
+с `DATABASE_URL`, направленным на отдельную тестовую PostgreSQL БД, и заданным
+`SECRET_KEY`. Тесты запросов откатывают свои транзакции; проверки конкуренции
+создают и удаляют собственных пользователей. Доступность PostgreSQL обязательна.
+
+Браузерные регрессии: `cd tests/browser && npm ci && npm test`. Нужны запущенный API
+и Chromium (`CHROMIUM_PATH=/path/to/chromium`), адрес задаётся `AUTOXAK_BASE_URL`
+(по умолчанию внутренний HTTP loopback, порт 8000). Эти тесты создают собственных
+гостей и поездки; запускайте их в БД разработки. При отсутствии системного Chromium
+можно установить браузер средствами Playwright из официального источника.
+
+Скрипты `run_verification.py`, `run_multicar_verification.py` и
+`calibrate_verification.py` проверяют API на синтетических сигналах. Они не доказывают
+точность модели на дорожных данных. По умолчанию они используют локальный HTTPS и
+доверяют локальному `cert.pem`; `AUTOXAK_CA_FILE` задаёт собственный CA,
+`AUTOXAK_TOKEN` — существующую сессию. Для внутренней проверки без TLS явно задайте
+`AUTOXAK_BASE_URL=http://127.0.0.1:8000`. Отключение проверки сертификатов не требуется.
+
+Статистический отчёт возвращает `null` вместо вымышленных p-value/t-статистики при
+недостаточных данных. Нулевая эталонная наработка не подтверждает гипотезу точности.
+Оценки топлива/износа остаются исследовательскими; аппаратные датчики смартфонов,
+живые интеграции и реальная точность требуют отдельных испытаний.

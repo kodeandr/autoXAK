@@ -10,12 +10,18 @@ class SignalFilter:
         return np.hypot(ax, ay)
 
     def __init__(self, sample_rate_hz: float = 50.0, cutoff_hz: float = 2.5):
+        if not np.isfinite(sample_rate_hz) or sample_rate_hz <= 0 or not np.isfinite(cutoff_hz) or cutoff_hz <= 0:
+            raise ValueError("Filter frequencies must be positive and finite")
         self.fs = sample_rate_hz
         self.cutoff = cutoff_hz
 
     def apply_butterworth_lpf(self, data: Union[np.ndarray, list], order: int = 4) -> np.ndarray:
         arr = np.asarray(data, dtype=float)
-        if len(arr) <= 15:
+        if arr.ndim != 1 or not np.isfinite(arr).all():
+            raise ValueError("Expected a finite one-dimensional signal")
+        if not isinstance(order, int) or order < 1:
+            raise ValueError("Filter order must be a positive integer")
+        if len(arr) <= 3 * (order + 1):
             return arr
         nyq = 0.5 * self.fs
         normal_cutoff = min(self.cutoff / nyq, 0.99)
@@ -33,14 +39,13 @@ class SignalFilter:
         y = np.asarray(ay, dtype=float)
         z = np.asarray(az, dtype=float)
 
-        # Низкочастотная оценка гравитационного вектора
-        grav_x = self.apply_butterworth_lpf(x) if len(x) > 15 else np.full_like(x, np.mean(x))
-        grav_y = self.apply_butterworth_lpf(y) if len(y) > 15 else np.full_like(y, np.mean(y))
-        grav_z = self.apply_butterworth_lpf(z) if len(z) > 15 else np.full_like(z, np.mean(z))
-
-        # Линейное динамическое ускорение ТС
-        lin_x = x - grav_x
-        lin_y = y - grav_y
-        lin_z = z - grav_z
-
-        return lin_x, lin_y, lin_z
+        if not (len(x) == len(y) == len(z)):
+            raise ValueError("Acceleration axes must have equal lengths")
+        if len(x) == 0:
+            return x, y, z
+        # A fixed gravity estimate preserves driving frequencies. The caller with
+        # speed/orientation data should use IMUAlignmentService before low-pass filtering.
+        gravity = np.median(np.column_stack((x, y, z)), axis=0)
+        norm = np.linalg.norm(gravity)
+        gravity = gravity * (9.81 / norm) if norm > 1e-9 else np.zeros(3)
+        return tuple(self.apply_butterworth_lpf(axis - bias) for axis, bias in zip((x, y, z), gravity))

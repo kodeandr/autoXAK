@@ -25,6 +25,8 @@ async def require_user(
     claims = decode_access_token(credentials.credentials)
     if not isinstance(claims, dict):
         raise denied
+    if claims.get("purpose", "access") != "access":
+        raise denied
     subject, expires = claims.get("sub"), claims.get("exp")
     if not isinstance(subject, str) or not subject or len(subject) > 64:
         raise denied
@@ -35,4 +37,10 @@ async def require_user(
     user = await db.get(User, subject)
     if user is None:
         raise denied
+    return user
+
+
+async def require_owner(user_id: str, user: User = Depends(require_user)) -> User:
+    if user.id != user_id:
+        raise HTTPException(403, "Access to another user is forbidden")
     return user

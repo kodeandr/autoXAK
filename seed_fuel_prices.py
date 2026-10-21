@@ -1,6 +1,6 @@
 ﻿import asyncio
 from datetime import datetime, timezone
-from sqlalchemy import text
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.core.database import engine, Base
 from app.models.db_models import FuelRegionalPrice
@@ -97,13 +97,16 @@ FUEL_DATA = [
 
 async def seed():
     async with engine.begin() as conn:
-        await conn.execute(text("DROP TABLE IF EXISTS fuel_regional_prices CASCADE"))
         await conn.run_sync(Base.metadata.create_all)
 
     async with SessionLocal() as session:
         for f in FUEL_DATA:
-            entry = FuelRegionalPrice(**f)
-            session.add(entry)
+            entry = await session.scalar(select(FuelRegionalPrice).where(FuelRegionalPrice.region_code == f["region_code"], FuelRegionalPrice.brand == f["brand"]))
+            if entry is None:
+                session.add(FuelRegionalPrice(**f))
+            else:
+                for name, value in f.items():
+                    setattr(entry, name, value)
 
         await session.commit()
         print("Таблица региональных цен на топливо успешно создана и наполнена!")

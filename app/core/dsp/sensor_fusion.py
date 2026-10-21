@@ -4,6 +4,8 @@ import numpy as np
 
 class SensorFusionEngine:
     def __init__(self, sampling_rate_hz: float = 50.0):
+        if not np.isfinite(sampling_rate_hz) or sampling_rate_hz <= 0:
+            raise ValueError("sampling_rate_hz must be positive and finite")
         self.fs = sampling_rate_hz
         self.dt = 1.0 / sampling_rate_hz
 
@@ -30,9 +32,8 @@ class SensorFusionEngine:
 
         # Извлечение массивов
         ax = np.array([s.get("ax", 0.0) for s in samples], dtype=float)
-        ay = np.array([s.get("ay", 0.0) for s in samples], dtype=float)
         az = np.array([s.get("az", 0.0) for s in samples], dtype=float)
-        gy = np.array([s.get("gy", 0.0) for s in samples], dtype=float) # тангаж кузова (pitch)
+        az = az - np.median(az)
 
         # ---------------------------------------------------------------------
         # 1. Z-SHOCK VETO (Фильтр дорожных неровностей: лежачие полицейские, ямы)
@@ -45,13 +46,12 @@ class SensorFusionEngine:
         
         clean_ax = ax.copy()
         road_anomalies_count = 0
-        suppression_window = int(0.35 * self.fs) # 350 мс заморозки продольного отклика
+        suppression_window = max(1, int(0.35 * self.fs)) # 350 мс заморозки продольного отклика
         
         i = 0
         while i < n:
             if impact_mask[i]:
                 # Проверяем кросс-валидацию по гироскопу тангажа (клевки кузова)
-                pitch_activity = np.max(np.abs(gy[max(0, i - 10):min(n, i + 10)])) if n > 0 else 0.0
                 
                 # Если зафиксирован характерный всплеск удара подвески
                 road_anomalies_count += 1

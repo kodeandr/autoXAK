@@ -1,93 +1,110 @@
-﻿/**
- * autoXAK Session & Multi-Tenancy Manager (Yandex ID + Guest Mode)
- */
-const AutoXAKSession = (() => {
-    const STORAGE_KEY_TOKEN = "autoXAK_jwt_token";
-    const STORAGE_KEY_USER_ID = "autoXAK_user_id";
-    const STORAGE_KEY_DEVICE = "autoXAK_device_id";
-    const STORAGE_KEY_IS_GUEST = "autoXAK_is_guest";
-    const STORAGE_KEY_USER_NAME = "autoXAK_user_name";
+﻿/** Authentication and service-worker lifecycle shared by all pages. */
+const AutoXAKSession = window.AutoXAKSession = (() => {
+    let authentication = null;
+    const key = (name) => `autoXAK_${name}`;
+    const getToken = () => localStorage.getItem(key('jwt_token')) || '';
+    const getUserId = () => localStorage.getItem(key('user_id')) || '';
 
-    function getOrCreateDeviceId() {
-        let devId = localStorage.getItem(STORAGE_KEY_DEVICE);
-        if (!devId) {
-            devId = (crypto.randomUUID && typeof crypto.randomUUID === "function")
-                ? crypto.randomUUID().replace(/-/g, "")
-                : "dev" + Math.random().toString(36).substring(2, 14) + Date.now().toString(36);
-            localStorage.setItem(STORAGE_KEY_DEVICE, devId);
-        }
-        return devId;
-    }
-
-    async function ensureAuthenticated() {
-        let token = localStorage.getItem(STORAGE_KEY_TOKEN);
-        let userId = localStorage.getItem(STORAGE_KEY_USER_ID);
-
-        if (token && userId) {
-            return {
-                token,
-                userId,
-                isGuest: localStorage.getItem(STORAGE_KEY_IS_GUEST) !== "false",
-                name: localStorage.getItem(STORAGE_KEY_USER_NAME) || (userId.startsWith("ya_") ? "Яндекс ID" : "Гость")
-            };
-        }
-
-        const deviceId = getOrCreateDeviceId();
+    function usableToken(token, userId) {
         try {
-            const res = await fetch("/api/v1/auth/handshake", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ device_id: deviceId })
-            });
-
-            if (res.ok) {
-                const data = await res.json();
-                localStorage.setItem(STORAGE_KEY_TOKEN, data.token);
-                localStorage.setItem(STORAGE_KEY_USER_ID, data.user_id);
-                localStorage.setItem(STORAGE_KEY_IS_GUEST, data.is_guest ? "true" : "false");
-                localStorage.setItem(STORAGE_KEY_USER_NAME, data.name || (data.is_guest ? "Гость" : "Яндекс ID"));
-                return {
-                    token: data.token,
-                    userId: data.user_id,
-                    isGuest: data.is_guest,
-                    name: data.name
-                };
-            }
-        } catch (e) {
-            console.error("[Session] Ошибка синхронизации сессии:", e);
-        }
-
-        return { token: token || "", userId: userId || "guest_offline", isGuest: true, name: "Гость" };
+            const part = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+            const claims = JSON.parse(atob(part.padEnd(Math.ceil(part.length / 4) * 4, '=')));
+            return claims.sub === userId && Number.isFinite(claims.exp) && claims.exp * 1000 > Date.now();
+        } catch (_) { return false; }
     }
 
-    function loginWithYandex() {
-        const currentId = localStorage.getItem(STORAGE_KEY_USER_ID) || "";
-        window.location.href = `/api/v1/auth/yandex/login?guest_id=${encodeURIComponent(currentId)}`;
+    function storeSession(data) {
+        const previous = getUserId();
+        if (previous && previous !== data.user_id) {
+            for (const name of ['trip_details_map', 'offline_trips', 'local_history', 'profile', 'car_id', 'car_name', 'selected_car_id', 'selected_car_name', 'pending_profile']) {
+                localStorage.removeItem(key(name));
+            }
+        }
+        localStorage.setItem(key('jwt_token'), data.token);
+        localStorage.setItem(key('user_id'), data.user_id);
+        localStorage.setItem(key('is_guest'), String(data.is_guest !== false));
+        localStorage.setItem(key('user_name'), data.name || 'Гость');
+        return {token: data.token, userId: data.user_id, isGuest: data.is_guest !== false, name: data.name || 'Гость'};
+    }
+
+    async function authenticate(options) {
+        const token = getToken(), userId = getUserId();
+        if (usableToken(token, userId)) {
+            return {token, userId, isGuest: localStorage.getItem(key('is_guest')) !== 'false', name: localStorage.getItem(key('user_name')) || 'Гость'};
+        }
+        if (userId && !options.newGuest) {
+            if (navigator.onLine) window.location.replace('/login');
+            throw new Error('Для восстановления сессии необходимо войти заново');
+        }
+        const response = await fetch('/api/v1/auth/guest', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
+        if (!response.ok) throw new Error(`Не удалось создать сессию: HTTP ${response.status}`);
+        return storeSession(await response.json());
+    }
+
+    function ensureAuthenticated(options = {}) {
+        if (!authentication) {
+            authentication = authenticate(options).finally(() => { authentication = null; });
+        }
+        return authentication;
     }
 
     function getAuthHeaders() {
-        const token = localStorage.getItem(STORAGE_KEY_TOKEN);
-        return token ? { "Authorization": `Bearer ${token}` } : {};
+        const token = getToken();
+        return token ? {'Authorization': `Bearer ${token}`} : {};
     }
 
-    function registerServiceWorker() {
-        if ("serviceWorker" in navigator) {
-            window.addEventListener("load", () => {
-                navigator.serviceWorker.register("/static/sw.js")
-                    .then((reg) => console.log("[PWA] ServiceWorker активен:", reg.scope))
-                    .catch((err) => console.warn("[PWA] Ошибка ServiceWorker:", err));
-            });
-        }
+    async function syncPendingProfile() {
+        const saved = localStorage.getItem(key('pending_profile'));
+        if (!saved) return true;
+        try {
+            const pending = JSON.parse(saved);
+            if (pending.user_id !== getUserId() || !navigator.onLine) return false;
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 8000);
+            try {
+                const response = await fetch(`/api/v1/users/${encodeURIComponent(pending.user_id)}/profile`, {
+                    method:'POST', headers:{'Content-Type':'application/json', ...getAuthHeaders()},
+                    body:JSON.stringify(pending), signal:controller.signal});
+                if (!response.ok) return false;
+                if (localStorage.getItem(key('pending_profile')) === saved) localStorage.removeItem(key('pending_profile'));
+                return true;
+            } finally {clearTimeout(timeout);}
+        } catch (_) {return false;}
+    }
+    async function saveProfile(payload) {
+        if (payload.user_id !== getUserId()) throw new Error('Session changed during profile save');
+        localStorage.setItem(key('pending_profile'), JSON.stringify(payload));
+        return syncPendingProfile();
     }
 
-    registerServiceWorker();
+    function clearSession() {
+        for (const name of ['jwt_token', 'user_id', 'is_guest', 'user_name', 'trip_details_map', 'offline_trips', 'local_history', 'profile', 'car_id', 'car_name', 'selected_car_id', 'selected_car_name', 'pending_profile']) localStorage.removeItem(key(name));
+    }
 
-    return {
-        ensureAuthenticated,
-        loginWithYandex,
-        getAuthHeaders,
-        getUserId: () => localStorage.getItem(STORAGE_KEY_USER_ID) || "guest_offline",
-        getToken: () => localStorage.getItem(STORAGE_KEY_TOKEN) || "",
-        isGuest: () => localStorage.getItem(STORAGE_KEY_IS_GUEST) !== "false"
-    };
+    async function loginWithYandex() {
+        if (!(await syncPendingProfile())) throw new Error("Сначала синхронизируйте изменения автомобиля");
+        const response = await fetch('/api/v1/auth/yandex/login', {
+            method: 'POST', headers: usableToken(getToken(), getUserId()) ? getAuthHeaders() : {}
+        });
+        if (!response.ok) throw new Error('Вход через Яндекс сейчас недоступен');
+        const data = await response.json();
+        window.location.assign(data.url);
+    }
+
+    async function registerServiceWorker() {
+        if (!('serviceWorker' in navigator)) return;
+        try {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            for (const registration of registrations) {
+                const worker = registration.active || registration.waiting || registration.installing;
+                if (worker && new URL(worker.scriptURL).pathname === '/static/sw.js') await registration.unregister();
+            }
+            await navigator.serviceWorker.register('/sw.js', {scope: '/'});
+        } catch (error) { console.warn('[PWA]', error); }
+    }
+    if (document.readyState === 'complete') registerServiceWorker();
+    else window.addEventListener('load', registerServiceWorker, {once: true});
+
+    return {saveProfile, syncPendingProfile, adoptSession: storeSession, ensureAuthenticated, clearSession, loginWithYandex, getAuthHeaders, getUserId, getToken,
+            isGuest: () => localStorage.getItem(key('is_guest')) !== 'false'};
 })();

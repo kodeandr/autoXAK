@@ -1,0 +1,57 @@
+name: Regression checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql+asyncpg://autoxak:ci_only@127.0.0.1:5432/autoxak_test
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: '6379'
+      DGIS_USE_MOCK: 'true'
+      SECRET_KEY: ci-test-only-key-never-use-in-deployment
+      LOG_DIR: /tmp/autoxak-ci-logs
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: autoxak
+          POSTGRES_PASSWORD: ci_only
+          POSTGRES_DB: autoxak_test
+        ports: ['5432:5432']
+        options: --health-cmd "pg_isready -U autoxak -d autoxak_test" --health-interval 3s --health-timeout 3s --health-retries 20
+      redis:
+        image: redis:7.2-alpine
+        ports: ['6379:6379']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tests/browser/package-lock.json
+      - run: python -m pip install -r requirements.txt
+      - run: python -m pytest
+      - run: npm ci --prefix tests/browser
+      - name: Browser regression checks
+        run: |
+          python seed_fleet.py
+          python seed_fuel_prices.py
+          python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/autoxak-api.log 2>&1 &
+          python - <<'PY'
+          import time, urllib.request
+          for attempt in range(60):
+              try:
+                  with urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=1) as response:
+                      assert response.status == 200
+                  break
+              except Exception:
+                  if attempt == 59: raise
+                  time.sleep(0.5)
+          PY
+          CHROMIUM_PATH="$(command -v google-chrome)" npm test --prefix tests/browser

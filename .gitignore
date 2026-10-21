@@ -18,3 +18,5 @@ key.pem
 cert.pem
 .pytest-tmp*/
 
+
+node_modules/

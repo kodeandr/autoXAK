@@ -14,7 +14,7 @@ def init_redis() -> aioredis.Redis:
             host=REDIS_HOST,
             port=REDIS_PORT,
             db=0,
-            decode_responses=True
+            decode_responses=True, socket_connect_timeout=0.5, socket_timeout=0.5
         )
     return redis_client
 

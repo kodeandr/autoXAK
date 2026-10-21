@@ -205,33 +205,15 @@
 
 <script>
     async function handleContinueAsGuest() {
-        let userId = localStorage.getItem('autoXAK_user_id');
-        if (!userId) {
-            try {
-                const devId = (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, '') : 'dev_' + Math.random().toString(36).substring(2, 12));
-                const res = await fetch('/api/v1/auth/handshake', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ device_id: devId })
-                });
-                if (res.ok) {
-                    const data = await res.json();
-                    localStorage.setItem('autoXAK_jwt_token', data.token);
-                    localStorage.setItem('autoXAK_user_id', data.user_id);
-                    localStorage.setItem('autoXAK_is_guest', 'true');
-                    localStorage.setItem('autoXAK_user_name', 'Гость');
-                }
-            } catch (_) {
-                localStorage.setItem('autoXAK_user_id', 'dev_' + Math.random().toString(36).substring(2, 10));
-                localStorage.setItem('autoXAK_is_guest', 'true');
-            }
-        }
-        window.location.href = '/';
+        try {
+            await AutoXAKSession.ensureAuthenticated({newGuest: true});
+            window.location.href = '/';
+        } catch (error) { window.alert(error.message); }
     }
 
-    function handleLoginWithYandex() {
-        const currentId = localStorage.getItem('autoXAK_user_id') || '';
-        window.location.href = '/api/v1/auth/yandex/login?guest_id=' + encodeURIComponent(currentId);
+    async function handleLoginWithYandex() {
+        try { await AutoXAKSession.loginWithYandex(); }
+        catch (error) { window.alert(error.message); }
     }
 </script>
 </body>

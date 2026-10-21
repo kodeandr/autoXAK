@@ -3,27 +3,33 @@ import math
 import uuid
 import time
 import traceback
+import hashlib
+import json
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional, Any
 from contextlib import asynccontextmanager
 
 import numpy as np
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from fastapi import FastAPI, HTTPException, Depends, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, or_
+from sqlalchemy.exc import IntegrityError
 
 from app.core.logger import logger
 from app.api.auth import router as auth_router
 from app.api.recordings import router as recordings_router
-from app.models import recordings as recording_tables
 
-from app.core.database import engine, Base, get_db
-from app.models.telemetry import TripSessionPayload
+from app.core.database import engine, get_db, initialize_schema
+from app.api.dependencies import require_user, require_owner
+from app.services.profile_synthesizer import ProfileSynthesizer
+from app.schemas.vehicle import CustomVehicleInput
+from fastapi.encoders import jsonable_encoder
+from app.models.telemetry import TripSessionPayload, TelemetryPoint
 from app.models.results import (
     TripCalculationResult, 
     TripHistoryResponse, 
@@ -33,7 +39,6 @@ from app.models.db_models import User, Trip, VehicleMake, VehicleModel, VehicleT
 from app.core.dsp.filters import SignalFilter
 from app.core.dsp.alignment import IMUAlignmentService
 from app.services.wear_engine import WearEngine
-from app.core.security import create_access_token, decode_access_token
 
 try:
     from app.services.twin_engine import TwinEngine, AggressiveTwinEngine
@@ -58,7 +63,7 @@ security_scheme = HTTPBearer(auto_error=False)
 # =====================================================================
 
 class AuthHandshakePayload(BaseModel):
-    device_id: str = Field(..., description="Уникальный отпечаток устройства / браузера")
+    device_id: str = Field(..., min_length=1, max_length=200, description="Уникальный отпечаток устройства / браузера")
     preferred_car_id: Optional[str] = Field(default="haval_jolion_15t_4wd")
 
 
@@ -67,6 +72,8 @@ class AuthResponse(BaseModel):
     user_id: str
     car_id: str
     is_new_user: bool
+    is_guest: bool = True
+    name: str = "Гость"
 
 
 class ExtendedTripCalculationResult(TripCalculationResult):
@@ -149,11 +156,13 @@ class DashboardResponse(BaseModel):
 
 
 class ProfileUpdateRequest(BaseModel):
-    car_id: Optional[str] = Field(default="haval_jolion_15t_4wd", description="Идентификатор ТС в реестре")
-    fuel_price_rub: Optional[float] = Field(default=72.40, gt=0.0)
-    service_cost_rub: Optional[float] = Field(default=9500.0, gt=0.0)
-    current_oil_wear_percent: Optional[float] = Field(default=0.0, ge=0.0, le=100.0)
-    name: Optional[str] = None
+    model_config = {"allow_inf_nan": False}
+    car_name: Optional[str] = Field(default=None, max_length=200)
+    car_id: Optional[str] = Field(default=None, min_length=1, max_length=100, description="Идентификатор ТС в реестре")
+    fuel_price_rub: Optional[float] = Field(default=None, gt=0.0, le=10000)
+    service_cost_rub: Optional[float] = Field(default=None, gt=0.0, le=10000000)
+    current_oil_wear_percent: Optional[float] = Field(default=None, ge=0.0, le=100.0)
+    name: Optional[str] = Field(default=None, max_length=100)
     user_id: Optional[str] = None
 
 UserProfileUpdatePayload = ProfileUpdateRequest
@@ -163,46 +172,37 @@ class VerificationPayload(BaseModel):
     session_id: str
     user_id: str
     car_id: str
-    telemetry_stream: List[dict]
+    telemetry_stream: List[TelemetryPoint] = Field(min_length=50, max_length=500000)
+    user_savings: List[float] = Field(default_factory=list, max_length=100000)
+    model_config = {"allow_inf_nan": False}
     obd_ground_truth: Dict[str, List[float]]
+
+    @model_validator(mode="after")
+    def aligned_obd_signals(self):
+        times = [point.t for point in self.telemetry_stream]
+        if any(b <= a for a, b in zip(times, times[1:])):
+            raise ValueError("Telemetry timestamps must increase")
+        expected = len(times)
+        for key in ("engine_rpm", "engine_load", "oil_temperature"):
+            if len(self.obd_ground_truth.get(key, [])) != expected:
+                raise ValueError("Every OBD signal must match telemetry length")
+        BenchmarkEngine.calculate_obd_ground_truth_hours(
+            self.obd_ground_truth["engine_rpm"], self.obd_ground_truth["engine_load"], self.obd_ground_truth["oil_temperature"])
+        return self
+
 
 
 class CPAClaimPayload(BaseModel):
-    user_id: str
-    promo_code: str
-    partner_id: str = "autodoc_lead_engine"
+    user_id: str = Field(min_length=1, max_length=64)
+    promo_code: str = Field(min_length=1, max_length=64)
+    partner_id: str = Field(default="autodoc_lead_engine", min_length=1, max_length=64)
 
 
 # =====================================================================
 # Авторизация и контекст пользователя
 # =====================================================================
 
-async def get_current_user(
-    auth: Optional[HTTPAuthorizationCredentials] = Depends(security_scheme),
-    db: AsyncSession = Depends(get_db)
-) -> User:
-    if not auth or not auth.credentials:
-        stmt = select(User).order_by(User.created_at.asc()).limit(1)
-        res = await db.execute(stmt)
-        user = res.scalar_one_or_none()
-        if user:
-            return user
-        raise HTTPException(status_code=401, detail="Требуется авторизация (Bearer token)")
-
-    payload = decode_access_token(auth.credentials)
-    if not payload or "sub" not in payload:
-        raise HTTPException(status_code=401, detail="Недействительный или просроченный токен")
-
-    user_id = payload["sub"]
-    stmt = select(User).where(User.id == user_id)
-    res = await db.execute(stmt)
-    user = res.scalar_one_or_none()
-
-    if not user:
-        raise HTTPException(status_code=401, detail="Пользователь не найден")
-
-    return user
-
+get_current_user = require_user
 
 # =====================================================================
 # Резолвер характеристик автомобилей
@@ -241,8 +241,10 @@ def get_default_profile() -> Any:
     return _FallbackProfile()
 
 
-async def resolve_car_profile_async(car_id: Optional[str], db: AsyncSession) -> Any:
+async def resolve_car_profile_async(car_id: Optional[str], db: AsyncSession, user: Optional[User] = None) -> Any:
     """Извлекает физический профиль ТС из PostgreSQL или статического реестра."""
+    if user is not None and user.custom_profile and user.custom_profile.get("car_id") == car_id:
+        return VehiclePhysicalProfile.model_validate(user.custom_profile)
     if not car_id:
         return get_default_profile()
 
@@ -339,13 +341,12 @@ def calculate_haversine_distance_km(coords: List[Dict[str, float]]) -> float:
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-        try:
-            await conn.execute(text("ALTER TABLE trips ADD COLUMN IF NOT EXISTS board_computer_consumption_l100km FLOAT;"))
-        except Exception:
-            pass
-    yield
+    await initialize_schema()
+    try:
+        yield
+    finally:
+        await engine.dispose()
+        await gis_service.aclose()
 
 
 app = FastAPI(
@@ -360,7 +361,7 @@ app.include_router(recordings_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[origin.strip() for origin in os.getenv("CORS_ORIGINS", "").split(",") if origin.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -456,6 +457,11 @@ async def setup_page():
     return FileResponse(_resolve_static_file("setup.html"))
 
 
+@app.get("/sw.js", include_in_schema=False)
+def service_worker():
+    return FileResponse(_resolve_static_file("sw.js"), media_type="application/javascript", headers={"Service-Worker-Allowed": "/", "Cache-Control": "no-cache"})
+
+
 @app.get("/health")
 def health_check():
     return {
@@ -517,9 +523,15 @@ async def get_current_fuel_price(
     db: AsyncSession = Depends(get_db)
 ):
     target_grade = (fuel_grade or fuel_type or "ai95").lower()
+    if target_grade not in {"ai92", "ai95", "ai100", "dt"}:
+        raise HTTPException(422, "Unknown fuel grade")
     stmt = select(FuelRegionalPrice).where(FuelRegionalPrice.region_code == region_code)
-    res = await db.execute(stmt)
+    if brand:
+        stmt = stmt.where(FuelRegionalPrice.brand == brand)
+    res = await db.execute(stmt.order_by(FuelRegionalPrice.brand))
     item = res.scalars().first()
+    if brand and item is None:
+        raise HTTPException(404, "Fuel brand is unavailable in this region")
 
     if item:
         price_map = {
@@ -542,11 +554,42 @@ async def get_current_fuel_price(
 # Расчетный эндпоинт сессии телеметрии (исправленная физика и DSP)
 # =====================================================================
 
+def _is_uuid(value: str) -> bool:
+    try:
+        uuid.UUID(value)
+        return True
+    except ValueError:
+        return False
+
+
+def _stored_trip_result(trip: Trip) -> ExtendedTripCalculationResult:
+    return ExtendedTripCalculationResult(
+        session_id=trip.id, duration_seconds=trip.duration_seconds, distance_km=trip.distance_km,
+        oil_wear_percent=trip.oil_wear_percent, cost_savings_rub=trip.total_savings_rub,
+        fuel_saved_liters=trip.fuel_saved_liters, fuel_saved_rub=trip.fuel_saved_rub,
+        oil_saved_rub=trip.oil_saved_rub, range_bonus_km=trip.range_bonus_km,
+        smooth_score=trip.smooth_score, road_anomalies_count=trip.road_anomalies_count,
+        harsh_accel_count=trip.harsh_accel_count, harsh_brake_count=trip.harsh_brake_count,
+        traffic_jam_seconds=trip.traffic_jam_seconds, rush_cost_rub=trip.rush_cost_rub)
+
+
+@app.post("/api/v1/vehicles/synthesize")
+async def synthesize_vehicle(payload: CustomVehicleInput, db: AsyncSession = Depends(get_db), user: User = Depends(require_user)):
+    profile = ProfileSynthesizer.synthesize_profile(payload)
+    user.custom_profile = jsonable_encoder(profile)
+    await db.commit()
+    return user.custom_profile
+
+
 @app.post("/api/v1/telemetry/session", response_model=ExtendedTripCalculationResult)
 async def process_telemetry_session(
     payload: TripSessionPayload, 
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    owner: User = Depends(require_user)
 ):
+    if payload.user_id != owner.id:
+        raise HTTPException(403, "Access to another user is forbidden")
+
     stream = payload.telemetry_stream or []
     points_count = len(stream)
     session_ref = getattr(payload, "session_id", "new_session")
@@ -560,6 +603,16 @@ async def process_telemetry_session(
         )
 
     try:
+        parsed_uuid = str(uuid.UUID(session_ref)) if _is_uuid(session_ref) else str(uuid.uuid5(uuid.NAMESPACE_URL, f"autoxak:{owner.id}:{session_ref}"))
+        digest = hashlib.sha256(json.dumps(payload.model_dump(mode="json", exclude={"user_id"}), sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+        user = (await db.execute(select(User).where(User.id == owner.id).with_for_update().execution_options(populate_existing=True))).scalar_one()
+        existing_trip = (await db.execute(select(Trip).where(or_(Trip.id == parsed_uuid, and_(Trip.user_id == owner.id, Trip.client_session_id == session_ref))))).scalar_one_or_none()
+        if existing_trip is not None:
+            if existing_trip.user_id != owner.id or (existing_trip.request_hash and existing_trip.request_hash != digest):
+                raise HTTPException(409, "Session identifier already contains different data")
+            if existing_trip.calculation_result:
+                return ExtendedTripCalculationResult.model_validate(existing_trip.calculation_result)
+            return _stored_trip_result(existing_trip)
         times = np.array([p.t for p in stream], dtype=np.float64)
         raw_ax = np.array([p.ax for p in stream], dtype=np.float64)
         raw_ay = np.array([p.ay for p in stream], dtype=np.float64)
@@ -568,23 +621,26 @@ async def process_telemetry_session(
 
         # 1. Вычисление реального шага времени dt по меткам времени (защита от плавающей частоты браузера)
         raw_diffs = np.diff(times)
-        valid_diffs = raw_diffs[(raw_diffs > 0.002) & (raw_diffs < 0.5)]
-        dt = float(np.median(valid_diffs)) if len(valid_diffs) > 10 else 0.02
+        dt = float(np.mean(raw_diffs))
+        if np.max(raw_diffs) > 2.0:
+            raise HTTPException(422, "Telemetry contains gaps longer than two seconds")
 
         span_sec = float(times[-1] - times[0]) if times[-1] > times[0] else 0.0
-        duration_sec = span_sec if (0.5 <= span_sec <= 86400.0) else float(points_count * dt)
+        duration_sec = span_sec
+        integration_dt = duration_sec / points_count
 
         # 2. Выделение чистого линейного ускорения без гравитации (filt_z в покое = 0.0, а не 9.81)
-        filt_x, filt_y, filt_z = signal_filter.isolate_linear_acceleration(raw_ax, raw_ay, raw_az)
+        local_filter = SignalFilter(sample_rate_hz=1.0 / dt, cutoff_hz=min(2.5, 0.45 / dt))
+        aligned = IMUAlignmentService(sample_rate_hz=1.0 / dt).calibrate_and_transform(raw_ax, raw_ay, raw_az, speeds)
+        filt_x, filt_y, filt_z = (local_filter.apply_butterworth_lpf(axis) for axis in aligned[:3])
 
         # Определяем, было ли реальное движение (скорость > 0.5 м/с или динамическое ускорение > 0.35 м/с²)
         is_moving_session = bool(np.max(speeds) > 0.5 or np.std(filt_x) > 0.25)
 
         # 3. Расчет дистанции: отсекаем Wi-Fi/IP дрейф координат на стоящем ПК
         coords = [{"lat": p.lat, "lon": p.lon} for p in stream if p.lat is not None and p.lon is not None]
-        speed_distance_km = float(np.sum(speeds) * dt / 1000.0)
-        gps_distance_km = calculate_haversine_distance_km(coords) if np.max(speeds) > 0.5 else 0.0
-        distance_km = max(speed_distance_km, gps_distance_km) if is_moving_session else 0.0
+        speed_distance_km = float(np.trapz(speeds, times) / 1000.0)
+        distance_km = speed_distance_km if is_moving_session else 0.0
         if distance_km < 0.03:
             distance_km = 0.0
 
@@ -600,29 +656,8 @@ async def process_telemetry_session(
         harsh_accel_count = count_maneuver_events(clean_signed_ax, threshold=2.0, is_greater=True, min_points=5)
         harsh_brake_count = count_maneuver_events(clean_signed_ax, threshold=-2.3, is_greater=False, min_points=5)
 
-        traffic_jam_seconds = float(np.sum(speeds < 1.0) * dt)
+        traffic_jam_seconds = float(np.sum(speeds < 1.0) * integration_dt)
         idle_ratio = min(1.0, (traffic_jam_seconds / duration_sec)) if duration_sec > 0 else 0.0
-
-        # 6. Загрузка или создание пользователя
-        user_stmt = select(User).where(User.id == payload.user_id)
-        result = await db.execute(user_stmt)
-        user = result.scalar_one_or_none()
-
-        if not user:
-            user = User(
-                id=payload.user_id,
-                car_id=payload.car_id or "haval_jolion_15t_4wd",
-                fuel_price_rub=72.40,
-                service_cost_rub=9500.0,
-                total_savings_rub=0.0,
-                total_fuel_saved_liters=0.0,
-                range_bank_km=0.0,
-                total_distance_km=0.0,
-                total_trips=0,
-                current_oil_wear_percent=0.0
-            )
-            db.add(user)
-            await db.flush()
 
         user.total_savings_rub = float(getattr(user, "total_savings_rub", 0.0) or 0.0)
         user.total_fuel_saved_liters = float(getattr(user, "total_fuel_saved_liters", 0.0) or 0.0)
@@ -635,7 +670,7 @@ async def process_telemetry_session(
         user_fuel_price = float(getattr(user, "fuel_price_rub", 72.40) or 72.40)
         user_service_cost = float(getattr(user, "service_cost_rub", 9500.0) or 9500.0)
 
-        profile = await resolve_car_profile_async(resolved_car_id, db)
+        profile = await resolve_car_profile_async(resolved_car_id, db, user)
         try:
             trip_wear_engine = WearEngine(profile=profile)
         except TypeError:
@@ -651,7 +686,7 @@ async def process_telemetry_session(
         # 7. Расчет износа моторного масла (передаем знаковое продольное ускорение clean_signed_ax)
         if hasattr(trip_wear_engine, "evaluate_trip_wear"):
             wear_stats = trip_wear_engine.evaluate_trip_wear(
-                dt=dt, 
+                dt=integration_dt,
                 speed_mps=speeds, 
                 ax_mps2=clean_signed_ax, 
                 traffic_score=getattr(road_context, 'traffic_score', 1.0) if road_context else 1.0,
@@ -673,7 +708,7 @@ async def process_telemetry_session(
         if hasattr(trip_twin_engine, "evaluate_financial_delta") and hasattr(trip_twin_engine, "simulate_aggressive_twin_kinematics"):
             twin_speed, twin_ax = trip_twin_engine.simulate_aggressive_twin_kinematics(speeds, dt=dt)
             twin_wear_stats = trip_wear_engine.evaluate_trip_wear(
-                dt=dt, 
+                dt=integration_dt,
                 speed_mps=twin_speed, 
                 ax_mps2=twin_ax, 
                 current_life_pct=current_life_pct
@@ -685,7 +720,7 @@ async def process_telemetry_session(
                 distance_km=distance_km,
                 user_equiv_hours=equiv_hours,
                 user_ax=clean_signed_ax,
-                raw_az=raw_az,
+                raw_az=filt_z,
                 speeds_mps=speeds,
                 twin_equiv_hours=twin_equiv_hours,
                 fuel_price_rub=user_fuel_price,
@@ -705,11 +740,6 @@ async def process_telemetry_session(
         fuel_saved_rub = float(savings.get("fuel_savings_rub", savings.get("fuel_saved_rub", 0.0)))
         oil_saved_rub = float(savings.get("oil_savings_rub", savings.get("oil_saved_rub", 0.0)))
         total_savings_rub = float(savings.get("total_savings_rub", fuel_saved_rub + oil_saved_rub))
-
-        if total_savings_rub == 0.0 and distance_km > 0.02:
-            fuel_saved_rub = round((distance_km * 0.022) * user_fuel_price, 2)
-            oil_saved_rub = round(distance_km * 0.45, 2)
-            total_savings_rub = round(fuel_saved_rub + oil_saved_rub, 2)
 
         # 9. Финансовая декомпозиция маневров
         harsh_events_total = harsh_accel_count + harsh_brake_count
@@ -748,44 +778,38 @@ async def process_telemetry_session(
             smooth_score = 100
 
         # 10. Идемпотентная запись поездки и обновление баланса пользователя
-        try:
-            parsed_uuid = str(uuid.UUID(str(session_ref)))
-        except ValueError:
-            parsed_uuid = str(uuid.uuid4())
+        user.total_savings_rub = round(user.total_savings_rub + total_savings_rub, 2)
+        user.total_fuel_saved_liters = round(user.total_fuel_saved_liters + fuel_saved_liters, 3)
+        user.range_bank_km = round(user.range_bank_km + range_bonus_km, 2)
+        user.total_distance_km = round(user.total_distance_km + distance_km, 2)
+        user.total_trips += 1
+        user.current_oil_wear_percent = min(100.0, round(user.current_oil_wear_percent + oil_wear_pct, 5))
 
-        existing_trip = await db.get(Trip, parsed_uuid)
-        if not existing_trip:
-            user.total_savings_rub = round(user.total_savings_rub + total_savings_rub, 2)
-            user.total_fuel_saved_liters = round(user.total_fuel_saved_liters + fuel_saved_liters, 3)
-            user.range_bank_km = round(user.range_bank_km + range_bonus_km, 2)
-            user.total_distance_km = round(user.total_distance_km + distance_km, 2)
-            user.total_trips += 1
-            user.current_oil_wear_percent = min(100.0, round(user.current_oil_wear_percent + oil_wear_pct, 5))
-
-            new_trip = Trip(
-                id=parsed_uuid,
-                user_id=payload.user_id,
-                car_id=resolved_car_id,
-                duration_seconds=round(duration_sec, 2),
-                distance_km=round(distance_km, 2),
-                equivalent_engine_hours=round(equiv_hours, 5),
-                oil_wear_percent=round(oil_wear_pct, 5),
-                idle_ratio=round(idle_ratio, 3),
-                fuel_saved_rub=round(fuel_saved_rub, 2),
-                oil_saved_rub=round(oil_saved_rub, 2),
-                total_savings_rub=round(total_savings_rub, 2),
-                fuel_saved_liters=round(fuel_saved_liters, 3),
-                range_bonus_km=round(range_bonus_km, 2),
-                smooth_score=smooth_score,
-                harsh_accel_count=harsh_accel_count,
-                harsh_brake_count=harsh_brake_count,
-                road_anomalies_count=road_anomalies,
-                rush_cost_rub=rush_cost_rub,
-                board_computer_consumption_l100km=getattr(payload, 'board_computer_consumption_l100km', None),
-                traffic_jam_seconds=round(traffic_jam_seconds, 2)
-            )
-            db.add(new_trip)
-            await db.commit()
+        new_trip = Trip(
+            id=parsed_uuid,
+            client_session_id=session_ref,
+            user_id=payload.user_id,
+            car_id=resolved_car_id,
+            duration_seconds=round(duration_sec, 2),
+            distance_km=round(distance_km, 2),
+            equivalent_engine_hours=round(equiv_hours, 5),
+            oil_wear_percent=round(oil_wear_pct, 5),
+            idle_ratio=round(idle_ratio, 3),
+            fuel_saved_rub=round(fuel_saved_rub, 2),
+            oil_saved_rub=round(oil_saved_rub, 2),
+            total_savings_rub=round(total_savings_rub, 2),
+            fuel_saved_liters=round(fuel_saved_liters, 3),
+            range_bonus_km=round(range_bonus_km, 2),
+            smooth_score=smooth_score,
+            harsh_accel_count=harsh_accel_count,
+            harsh_brake_count=harsh_brake_count,
+            road_anomalies_count=road_anomalies,
+            rush_cost_rub=rush_cost_rub,
+            board_computer_consumption_l100km=getattr(payload, 'board_computer_consumption_l100km', None),
+            traffic_jam_seconds=round(traffic_jam_seconds, 2),
+            request_hash=digest
+        )
+        db.add(new_trip)
 
         metrics_payload = {
             "fuel_saved_liters": fuel_saved_liters,
@@ -804,7 +828,7 @@ async def process_telemetry_session(
             "cost_savings_rub": round(total_savings_rub, 2)
         }
 
-        return ExtendedTripCalculationResult(
+        calculation = ExtendedTripCalculationResult(
             session_id=parsed_uuid,
             duration_seconds=round(duration_sec, 2),
             distance_km=round(distance_km, 2),
@@ -828,6 +852,13 @@ async def process_telemetry_session(
             metrics=metrics_payload
         )
 
+        new_trip.calculation_result = calculation.model_dump(mode="json")
+        await db.commit()
+        return calculation
+
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(409, "Session identifier conflicts with an existing trip")
     except HTTPException:
         raise
     except Exception as exc:
@@ -843,7 +874,8 @@ async def process_telemetry_session(
 @app.get("/api/v1/users/{user_id}/profile")
 async def get_user_vehicle_profile(
     user_id: str,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    owner: User = Depends(require_owner)
 ):
     user_stmt = select(User).where(User.id == user_id)
     res = await db.execute(user_stmt)
@@ -863,8 +895,8 @@ async def get_user_vehicle_profile(
     return {
         "user_id": user.id,
         "car_id": user.car_id or "haval_jolion_15t_4wd",
-        "car_name": getattr(user, "name", None),
-        "fuel_consumption": 8.5,
+        "car_name": user.car_name,
+        "fuel_consumption": float((user.custom_profile or {}).get("base_city_fuel_rate_l100km", 8.5)),
         "fuel_price_rub": user.fuel_price_rub if user.fuel_price_rub is not None else 72.40,
         "service_cost_rub": user.service_cost_rub if user.service_cost_rub is not None else 9500.0,
         "current_oil_wear_percent": user.current_oil_wear_percent if user.current_oil_wear_percent is not None else 0.0,
@@ -872,28 +904,11 @@ async def get_user_vehicle_profile(
 
 
 @app.get("/api/v1/users/{user_id}/dashboard", response_model=DashboardResponse)
-async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db)):
+async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db),
+    owner: User = Depends(require_owner)):
     stmt = select(User).where(User.id == user_id)
     res = await db.execute(stmt)
     user = res.scalar_one_or_none()
-
-    # Если пользователь еще не создан, создаем дефолтную запись, чтобы фронтенд никогда не получал 404
-    if not user:
-        user = User(
-            id=user_id,
-            car_id="haval_jolion_15t_4wd",
-            fuel_price_rub=72.40,
-            service_cost_rub=9500.0,
-            total_savings_rub=0.0,
-            total_fuel_saved_liters=0.0,
-            range_bank_km=0.0,
-            total_distance_km=0.0,
-            total_trips=0,
-            current_oil_wear_percent=0.0
-        )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
 
     oil_wear = float(getattr(user, "current_oil_wear_percent", 0.0) or 0.0)
     remaining_oil = max(0.0, round(100.0 - oil_wear, 1))
@@ -910,19 +925,17 @@ async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db)):
     saved_liters = float(getattr(user, "total_fuel_saved_liters", 0.0) or 0.0)
     saved_range_km = float(getattr(user, "range_bank_km", 0.0) or 0.0)
 
-    if saved_liters == 0.0 and total_savings > 0 and fuel_price > 0:
-        saved_liters = round(total_savings / fuel_price, 2)
-        saved_range_km = round((saved_liters * 100.0) / 8.5, 1)
-
     est_autonomy_days = round(saved_liters / 4.2, 1) if saved_liters > 0 else 0.0
 
+    month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    month_savings = await db.scalar(select(func.coalesce(func.sum(Trip.total_savings_rub), 0.0)).where(Trip.user_id == user_id, Trip.created_at >= month_start))
     return DashboardResponse(
         user_id=user.id,
         car_id=getattr(user, "car_id", "haval_jolion_15t_4wd") or "haval_jolion_15t_4wd",
         fuel_price_rub=fuel_price,
         service_cost_rub=service_cost,
         total_savings_rub=round(total_savings, 2),
-        month_savings_rub=round(total_savings, 2),
+        month_savings_rub=round(float(month_savings), 2),
         total_trips=total_trips,
         total_distance_km=round(total_dist, 2),
         oil_remaining_percent=remaining_oil,
@@ -936,10 +949,11 @@ async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db)):
 
 
 @app.get("/api/v1/cpa/offer/{user_id}")
-async def get_cpa_personalized_offer(user_id: str, db: AsyncSession = Depends(get_db)):
+async def get_cpa_personalized_offer(user_id: str, db: AsyncSession = Depends(get_db),
+    owner: User = Depends(require_owner)):
     user = await db.get(User, user_id)
     car_id = user.car_id if user else "haval_jolion_15t_4wd"
-    profile = await resolve_car_profile_async(car_id, db)
+    profile = await resolve_car_profile_async(car_id, db, user)
 
     oil_vol = float(getattr(profile, "oil_capacity_l", 3.8) or 3.8)
     oil_grade = getattr(getattr(profile, "oil_profile", None), "oil_grade", "0W-20")
@@ -960,7 +974,11 @@ async def get_cpa_personalized_offer(user_id: str, db: AsyncSession = Depends(ge
 
 
 @app.post("/api/v1/cpa/claim")
-async def claim_cpa_offer(payload: CPAClaimPayload, db: AsyncSession = Depends(get_db)):
+async def claim_cpa_offer(payload: CPAClaimPayload, db: AsyncSession = Depends(get_db),
+    owner: User = Depends(require_user)):
+    if payload.user_id != owner.id:
+        raise HTTPException(403, "Access to another user is forbidden")
+
     user = await db.get(User, payload.user_id)
     car_id = user.car_id if user else "haval_jolion_15t_4wd"
     lead = CPALead(
@@ -976,7 +994,8 @@ async def claim_cpa_offer(payload: CPAClaimPayload, db: AsyncSession = Depends(g
 
 
 @app.get("/api/v1/users/{user_id}/trips", response_model=TripHistoryResponse)
-async def get_user_trips(user_id: str, limit: int = 100, db: AsyncSession = Depends(get_db)):
+async def get_user_trips(user_id: str, limit: int = Query(100, ge=1, le=200), db: AsyncSession = Depends(get_db),
+    owner: User = Depends(require_owner)):
     count_stmt = select(func.count(Trip.id)).where(Trip.user_id == user_id)
     total_count = (await db.execute(count_stmt)).scalar() or 0
 
@@ -1016,9 +1035,11 @@ class BoardComputerFuelUpdate(BaseModel):
 async def update_trip_board_computer(
     session_id: str,
     payload: BoardComputerFuelUpdate,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    owner: User = Depends(require_user)
 ):
-    stmt = select(Trip).where(Trip.id == session_id)
+    canonical_id = session_id if _is_uuid(session_id) else str(uuid.uuid5(uuid.NAMESPACE_URL, f"autoxak:{owner.id}:{session_id}"))
+    stmt = select(Trip).where(Trip.id == canonical_id, Trip.user_id == owner.id)
     res = await db.execute(stmt)
     trip = res.scalar_one_or_none()
     if not trip:
@@ -1037,7 +1058,8 @@ async def get_period_analytics(
     user_id: str,
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    owner: User = Depends(require_owner)
 ):
     now = datetime.now(timezone.utc)
     if end_date is None:
@@ -1045,11 +1067,13 @@ async def get_period_analytics(
     if start_date is None:
         start_date = end_date - timedelta(days=30)
 
+    start_date = start_date.replace(tzinfo=timezone.utc) if start_date.tzinfo is None else start_date.astimezone(timezone.utc)
+    end_date = end_date.replace(tzinfo=timezone.utc) if end_date.tzinfo is None else end_date.astimezone(timezone.utc)
     if start_date > end_date:
         raise HTTPException(status_code=400, detail="start_date не может быть позже end_date")
 
-    start_naive = start_date.astimezone(timezone.utc).replace(tzinfo=None) if start_date.tzinfo else start_date
-    end_naive = end_date.astimezone(timezone.utc).replace(tzinfo=None) if end_date.tzinfo else end_date
+    start_naive = start_date
+    end_naive = end_date
 
     agg_stmt = select(
         func.count(Trip.id).label("total_trips"),
@@ -1146,32 +1170,10 @@ async def get_period_analytics(
 
 @app.post("/api/v1/auth/handshake", response_model=AuthResponse)
 async def auth_handshake(payload: AuthHandshakePayload, db: AsyncSession = Depends(get_db)):
-    user_id = f"dev_{payload.device_id[:16]}"
-    stmt = select(User).where(User.id == user_id)
-    res = await db.execute(stmt)
-    user = res.scalar_one_or_none()
-    is_new = False
-
-    if not user:
-        is_new = True
-        user = User(
-            id=user_id,
-            car_id=payload.preferred_car_id or "haval_jolion_15t_4wd",
-            fuel_price_rub=72.40,
-            service_cost_rub=9500.0,
-            total_savings_rub=0.0,
-            total_fuel_saved_liters=0.0,
-            range_bank_km=0.0,
-            total_distance_km=0.0,
-            total_trips=0,
-            current_oil_wear_percent=0.0
-        )
-        db.add(user)
-        await db.commit()
-        await db.refresh(user)
-
-    token = create_access_token(user_id=user.id)
-    return AuthResponse(token=token, user_id=user.id, car_id=user.car_id, is_new_user=is_new)
+    from app.api.auth import continue_as_guest
+    guest = await continue_as_guest(None, db, None)
+    return AuthResponse(token=guest.token, user_id=guest.user_id, car_id=guest.car_id,
+                        is_new_user=True, is_guest=True, name="Гость")
 
 
 @app.get("/api/v1/users/me")
@@ -1192,7 +1194,8 @@ async def get_me(current_user: User = Depends(get_current_user)):
 async def update_user_vehicle_profile(
     user_id: str,
     payload: ProfileUpdateRequest,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    owner: User = Depends(require_owner)
 ):
     user_stmt = select(User).where(User.id == user_id)
     res = await db.execute(user_stmt)
@@ -1214,6 +1217,8 @@ async def update_user_vehicle_profile(
         )
         db.add(user)
     else:
+        if payload.car_name is not None:
+            user.car_name = payload.car_name
         if payload.car_id is not None:
             user.car_id = payload.car_id
         if payload.name is not None:
@@ -1238,30 +1243,34 @@ async def update_user_vehicle_profile(
 
 
 @app.post("/api/v1/analytics/verify-run", response_model=VerificationReport)
-async def verify_experiment_run(payload: VerificationPayload, db: AsyncSession = Depends(get_db)):
+async def verify_experiment_run(payload: VerificationPayload, db: AsyncSession = Depends(get_db),
+    owner: User = Depends(require_user)):
+    if payload.user_id != owner.id:
+        raise HTTPException(403, "Access to another user is forbidden")
+
     stream = payload.telemetry_stream
     if not stream or len(stream) < 50:
         raise HTTPException(status_code=422, detail="Недостаточный объем телеметрии.")
 
-    raw_ax = np.array([p["ax"] for p in stream], dtype=np.float64)
-    raw_ay = np.array([p["ay"] for p in stream], dtype=np.float64)
-    raw_az = np.array([p["az"] for p in stream], dtype=np.float64)
-    speeds = np.array([p["speed"] for p in stream], dtype=np.float64)
+    raw_ax = np.array([p.ax for p in stream], dtype=np.float64)
+    raw_ay = np.array([p.ay for p in stream], dtype=np.float64)
+    raw_az = np.array([p.az for p in stream], dtype=np.float64)
+    speeds = np.array([p.speed for p in stream], dtype=np.float64)
 
-    filt_x, filt_y, filt_z = signal_filter.isolate_linear_acceleration(raw_ax, raw_ay, raw_az)
+    dt = float(np.mean(np.diff([point.t for point in stream])))
+    local_filter = SignalFilter(sample_rate_hz=1 / dt, cutoff_hz=min(2.5, 0.45 / dt))
+    aligned = IMUAlignmentService(sample_rate_hz=1 / dt).calibrate_and_transform(raw_ax, raw_ay, raw_az, speeds)
+    filt_x, filt_y, filt_z = (local_filter.apply_butterworth_lpf(axis) for axis in aligned[:3])
+    clean_signed_ax, _ = TwinEngine.filter_road_anomalies(filt_x, raw_az=filt_z, dt=dt)
 
-    clean_signed_ax = filt_x
-    if hasattr(TwinEngine, "filter_road_anomalies"):
-        clean_signed_ax, _ = TwinEngine.filter_road_anomalies(filt_x, raw_az=filt_z, dt=0.02)
-
-    profile = await resolve_car_profile_async(payload.car_id, db)
+    profile = await resolve_car_profile_async(payload.car_id, db, owner)
     engine_inst = WearEngine(profile=profile)
     
     if hasattr(engine_inst, "evaluate_trip_wear"):
-        wear_stats = engine_inst.evaluate_trip_wear(dt=0.02, speed_mps=speeds, ax_mps2=clean_signed_ax)
+        wear_stats = engine_inst.evaluate_trip_wear(dt=dt, speed_mps=speeds, ax_mps2=clean_signed_ax)
         autoxak_hours = float(wear_stats["equivalent_hours"])
     else:
-        wear_stats = engine_inst.compute_oil_wear(speeds_mps=speeds, horizontal_acc=clean_signed_ax, dt=0.02)
+        wear_stats = engine_inst.compute_oil_wear(speeds_mps=speeds, horizontal_acc=clean_signed_ax, dt=dt)
         autoxak_hours = float(wear_stats.get("equivalent_engine_hours", wear_stats.get("equivalent_hours", 0.0)))
 
     obd = payload.obd_ground_truth
@@ -1270,7 +1279,7 @@ async def verify_experiment_run(payload: VerificationPayload, db: AsyncSession =
         obd_rpm=obd.get("engine_rpm", []),
         obd_load=obd.get("engine_load", []),
         obd_temp=obd.get("oil_temperature", []),
-        user_savings=[6.67, 8.20, 5.40, 7.80, 9.10],
-        dt=0.02
+        user_savings=payload.user_savings,
+        dt=dt
     )
     return report

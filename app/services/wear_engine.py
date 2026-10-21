@@ -1,5 +1,5 @@
 import numpy as np
-from typing import Dict, Any, Union
+from typing import Dict, Any
 from app.models.vehicle_profiles import get_default_profile, VehiclePhysicalProfile
 
 
@@ -23,11 +23,19 @@ class WearEngine:
     ) -> Dict[str, float]:
         """Физико-химический расчет эквивалентных моточасов и времени простоя в пробках."""
         raw_speeds = args[0] if len(args) > 0 else (speeds_mps if speeds_mps is not None else (speed_mps if speed_mps is not None else speeds))
-        raw_accel = args[1] if len(args) > 1 else (accel_mps2 if accel_mps2 is not None else (ax_mps2 if ax_mps2 is not None else accel))
+        raw_accel = args[1] if len(args) > 1 else (accel_mps2 if accel_mps2 is not None else (ax_mps2 if ax_mps2 is not None else (accel if accel is not None else kwargs.get("horizontal_acc"))))
 
         sp = np.asarray(raw_speeds if raw_speeds is not None else [], dtype=float)
         ac = np.asarray(raw_accel if raw_accel is not None else [], dtype=float)
 
+        if not np.isfinite(dt) or dt <= 0:
+            raise ValueError("dt must be positive and finite")
+        if sp.ndim != 1 or ac.ndim != 1 or not np.isfinite(sp).all() or not np.isfinite(ac).all() or (sp < 0).any():
+            raise ValueError("Speeds and acceleration must be finite one-dimensional signals")
+        if len(ac) == 0:
+            ac = np.zeros_like(sp)
+        if len(ac) != len(sp) or not np.isfinite(traffic_score):
+            raise ValueError("Signals must be aligned and traffic score finite")
         n = len(sp)
         if n == 0:
             return {
