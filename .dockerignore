@@ -8,6 +8,7 @@ pgdata/
 .env
 .env.*
 backups/
+backups-migration-*/
 *.db
 .pytest-tmp*/
 logs/

@@ -29,13 +29,13 @@ def dotenv_quote(value):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("domain")
-    parser.add_argument("email")
+    parser.add_argument("email", nargs="?", default="")
     parser.add_argument("--api-container", default="autoXAK_backend_api")
     parser.add_argument("--postgres-container", default="autoXAK_postgres")
     args = parser.parse_args()
     if not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?", args.domain) or "." not in args.domain:
         parser.error("Specify a domain without a scheme or path")
-    if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", args.email):
+    if args.email and not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", args.email):
         parser.error("Specify an email address")
 
     root = Path(__file__).resolve().parent.parent
