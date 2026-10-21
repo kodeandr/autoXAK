@@ -3,6 +3,7 @@
 This only creates a private env file. It does not stop or modify containers/data.
 """
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -48,8 +49,12 @@ def main():
         raise SystemExit("Nonstandard database/user; adapt the production config before migrating")
     if len(api_env.get("SECRET_KEY", "").strip()) < 32:
         raise SystemExit("Existing SECRET_KEY is absent or too short; resolve key migration before proceeding")
+    if hashlib.sha256(api_env["SECRET_KEY"].strip().encode()).hexdigest() == "ebf4229c4ed7aeed131e39d0862a28baa330d56d474fc64e3803da2fec1ea0f9":
+        raise SystemExit("The old publicly committed signing key is still in use. Plan key rotation and preserve YANDEX_ID_SALT before migrating; existing guest tokens will need special handling")
     if not pg_env.get("POSTGRES_PASSWORD"):
         raise SystemExit("POSTGRES_PASSWORD is unavailable; preserve the existing password manually")
+    if hashlib.sha256(pg_env["POSTGRES_PASSWORD"].encode()).hexdigest() == "258c6d0df36d592b044e3e6ca19e855352a13bf6107097ccf881cb2e2e06f0ff":
+        raise SystemExit("The old publicly committed PostgreSQL password is still in use. Rotate the database password and update its private deployment settings before migrating")
     # Unlike pg_isready, this verifies the password against the existing cluster.
     subprocess.run([
         "docker", "exec", args.postgres_container, "sh", "-c",
