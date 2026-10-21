@@ -6,6 +6,8 @@ __pycache__/
 .pytest_cache/
 pgdata/
 .env
+.env.*
+backups/
 *.db
 .pytest-tmp*/
 logs/

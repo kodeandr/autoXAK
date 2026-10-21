@@ -12,6 +12,30 @@ async def test_health_check_endpoint(async_client: AsyncClient):
     assert data["status"] in ["ok", "healthy"]
 
 
+async def test_readiness_requires_database(async_client: AsyncClient):
+    from unittest.mock import AsyncMock
+    from sqlalchemy.exc import OperationalError
+    from app.core.database import get_db
+    from app.main import app
+
+    assert (await async_client.get("/ready")).json() == {"status": "ready"}
+    previous_override = app.dependency_overrides[get_db]
+
+    async def unavailable_database():
+        db = AsyncMock()
+        db.execute.side_effect = OperationalError("SELECT 1", {}, RuntimeError("private database detail"))
+        yield db
+
+    app.dependency_overrides[get_db] = unavailable_database
+    try:
+        response = await async_client.get("/ready")
+        assert response.status_code == 503
+        assert response.json() == {"status": "unavailable"}
+        assert (await async_client.get("/health")).status_code == 200
+    finally:
+        app.dependency_overrides[get_db] = previous_override
+
+
 async def test_process_telemetry_session(async_client: AsyncClient, synthetic_telemetry_batch: dict):
     """POST /api/v1/telemetry/session: сквозной прием, расчет и сохранение сессии."""
     response = await async_client.post(
