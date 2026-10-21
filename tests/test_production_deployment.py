@@ -6,6 +6,7 @@ from pathlib import Path
 import shutil
 import subprocess
 import sys
+import hashlib
 
 from deploy.prepare_nginx import prepare
 
@@ -59,13 +60,15 @@ def test_nginx_switch_rejects_an_unexpected_site(source):
 
 
 @pytest.mark.skipif(os.name != "posix" or not shutil.which("bash"), reason="Requires Bash")
-@pytest.mark.parametrize("failure", ["", "build", "dump", "startup", "stop-new", "nginx", "https"])
-def test_migration_failure_preserves_old_stack_and_site(tmp_path, failure):
+@pytest.mark.parametrize("failure,rotate", [
+    (failure, rotate) for failure in ("", "build", "dump", "startup", "stop-new", "nginx", "https") for rotate in (False, True)
+] + [("password", True)])
+def test_migration_failure_preserves_old_stack_and_site(tmp_path, failure, rotate):
     """Exercise shell error handling with injected Docker/Nginx failures, without a real server."""
     root = Path(__file__).resolve().parents[1]
     scripts = tmp_path / "deploy"
     scripts.mkdir()
-    for name in ("prepare_nginx.py", "production.sh", "migrate_autoxak.sh"):
+    for name in ("prepare_nginx.py", "production.sh", "migrate_autoxak.sh", "rotate_database_password.py"):
         shutil.copyfile(root / "deploy" / name, scripts / name)
     site = tmp_path / "nginx.site"
     site.write_text(SITE)
@@ -76,6 +79,12 @@ def test_migration_failure_preserves_old_stack_and_site(tmp_path, failure):
     source = source.replace("/etc/nginx/sites-enabled/autoxak", str(site))
     migration.write_text(source)
     (tmp_path / ".env.production").write_text("# Private fixture already prepared\n")
+    if rotate:
+        (tmp_path / ".migration-secrets.json").write_text(json.dumps({
+            "old_password": "old-test-password", "new_password": "test-password",
+            "signing_key_sha256": hashlib.sha256(b"test-private-key-for-deployment-checks").hexdigest(),
+            "postgres_container": "autoXAK_postgres",
+        }))
     commands = tmp_path / "commands"
     commands.mkdir()
     log = tmp_path / "commands.jsonl"
@@ -107,6 +116,15 @@ elif name == 'docker':
         sys.stdout.write('fixture-custom-dump')
     elif args[0] == 'exec' and 'pg_restore' in args:
         assert sys.stdin.read() == 'fixture-custom-dump'
+    elif args[0] == 'exec' and 'psql' in args and args[-1].startswith('\\password'):
+        values = sys.stdin.read().splitlines()
+        assert len(values) == 2 and values[0] == values[1]
+        with open(os.environ['COMMAND_LOG'], 'a') as log:
+            log.write(json.dumps(['password-change', 'old' if values[0]=='old-test-password' else 'new'])+'\n')
+    elif args[0] == 'exec' and 'IFS= read -r PGPASSWORD' in args[-1]:
+        password = sys.stdin.read().strip()
+        if failure == 'password' and password == 'test-password': sys.exit(1)
+        print('1')
 elif name == 'nginx' and failure == 'nginx' and '-c' not in args:
     if 'proxy_pass http://' in pathlib.Path(os.environ['NGINX_SITE']).read_text():
         sys.exit(1)
@@ -140,3 +158,8 @@ elif name == 'curl':
             else:
                 old_start = next(i for i, action in enumerate(actions) if action[:2] == ["docker", "start"])
                 assert new_stop < old_start
+    changes = [action[1] for action in actions if action[0] == "password-change"]
+    if rotate and failure in ("", "startup", "stop-new", "nginx", "https", "password"):
+        assert changes == (["new"] if failure in ("", "stop-new") else ["new", "old"])
+    else:
+        assert not changes

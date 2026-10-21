@@ -27,11 +27,28 @@ const AutoXAKSession = window.AutoXAKSession = (() => {
         return {token: data.token, userId: data.user_id, isGuest: data.is_guest !== false, name: data.name || 'Гость'};
     }
 
+    async function serverAcceptsToken(token) {
+        if (!navigator.onLine) return true;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        try {
+            const response = await fetch('/api/v1/auth/me', {
+                headers: {'Authorization': `Bearer ${token}`}, signal: controller.signal,
+                cache: 'no-store'
+            });
+            // Only an explicit rejection invalidates the local session. Network
+            // outages and server failures must preserve offline recording access.
+            return response.status !== 401;
+        } catch (_) { return true; }
+        finally { clearTimeout(timeout); }
+    }
+
     async function authenticate(options) {
         const token = getToken(), userId = getUserId();
-        if (usableToken(token, userId)) {
+        if (usableToken(token, userId) && await serverAcceptsToken(token)) {
             return {token, userId, isGuest: localStorage.getItem(key('is_guest')) !== 'false', name: localStorage.getItem(key('user_name')) || 'Гость'};
         }
+        localStorage.removeItem(key('jwt_token'));
         if (userId && !options.newGuest) {
             if (navigator.onLine) window.location.replace('/login');
             throw new Error('Для восстановления сессии необходимо войти заново');
@@ -82,7 +99,10 @@ const AutoXAKSession = window.AutoXAKSession = (() => {
     }
 
     async function loginWithYandex() {
-        if (!(await syncPendingProfile())) throw new Error("Сначала синхронизируйте изменения автомобиля");
+        const token = getToken();
+        const accepted = usableToken(token, getUserId()) && await serverAcceptsToken(token);
+        if (!accepted) localStorage.removeItem(key('jwt_token'));
+        if (accepted && !(await syncPendingProfile())) throw new Error("Сначала синхронизируйте изменения автомобиля");
         const response = await fetch('/api/v1/auth/yandex/login', {
             method: 'POST', headers: usableToken(getToken(), getUserId()) ? getAuthHeaders() : {}
         });

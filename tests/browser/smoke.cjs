@@ -125,6 +125,38 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
         assert.equal(sensors.cleared,0);
         assert.equal(sensors.hasAlert,true);
         console.log('Browser: profile recovery after 503, single GPS distance integration, no fabricated IMU samples, geolocation watcher 0 cleanup passed');
+        // A signing-key rotation invalidates the signature while local JWT
+        // expiry still looks valid. Reauthentication must not require clearing storage.
+        await page.goto(base + '/login');
+        const stale = await page.evaluate(() => {
+            const user = AutoXAKSession.getUserId();
+            const parts = AutoXAKSession.getToken().split('.');
+            parts[2] = (parts[2][0] === 'A' ? 'B' : 'A') + parts[2].slice(1);
+            const token = parts.join('.');
+            const pending = JSON.stringify({user_id:user, car_name:'Keep until reauthentication'});
+            localStorage.setItem('autoXAK_jwt_token', token);
+            localStorage.setItem('autoXAK_pending_profile', pending);
+            return {user,token,pending};
+        });
+        let oauthAuthorization;
+        await page.route('**/api/v1/auth/yandex/login', async route => {
+            oauthAuthorization = (await route.request().allHeaders()).authorization || '';
+            await route.fulfill({status:503, contentType:'application/json', body:'{"detail":"test unavailable"}'});
+        });
+        await page.evaluate(async () => {try {await AutoXAKSession.loginWithYandex();} catch (_) {}});
+        assert.equal(oauthAuthorization,'');
+        assert.equal(await page.evaluate(()=>localStorage.getItem('autoXAK_pending_profile')),stale.pending);
+        await page.unroute('**/api/v1/auth/yandex/login');
+        await page.evaluate(token=>localStorage.setItem('autoXAK_jwt_token',token),stale.token);
+        await page.click('.btn-guest');
+        await page.waitForURL(base + '/');
+        const renewed = await page.evaluate(()=>({user:AutoXAKSession.getUserId(),headers:AutoXAKSession.getAuthHeaders()}));
+        assert.notEqual(renewed.user, stale.user);
+        assert.equal((await page.request.get(base+'/api/v1/auth/me',{headers:renewed.headers})).status(),200);
+        await page.route('**/api/v1/auth/me',route=>route.fulfill({status:503,contentType:'application/json',body:'{}'}));
+        assert.equal((await page.evaluate(()=>AutoXAKSession.ensureAuthenticated())).userId,renewed.user);
+        await page.unroute('**/api/v1/auth/me');
+        console.log('Browser: stale signature reauthentication, OAuth without rejected bearer, pending profile preserved, 503 keeps offline identity passed');
         assert.deepEqual(errors, []);
         console.log('Browser: guest login, authenticated garage/manual profile, preserved wear/settings, history, root service worker passed');
         await context.close();

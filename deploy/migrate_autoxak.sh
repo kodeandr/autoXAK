@@ -4,6 +4,10 @@ set -Eeuo pipefail
 umask 077
 project_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$project_dir"
+if [[ "${1:-}" != "" && "${1:-}" != "--rotate-legacy-secrets" || "$#" -gt 1 ]]; then
+    printf 'Usage: bash deploy/migrate_autoxak.sh [--rotate-legacy-secrets]\n' >&2
+    exit 1
+fi
 if [[ "$EUID" != 0 ]]; then
     printf 'Run this migration as root on the existing server.\n' >&2
     exit 1
@@ -28,7 +32,7 @@ compose() {
     docker compose --env-file "$project_dir/.env.production" -f "$project_dir/compose.production.yml" "$@"
 }
 if [[ ! -e .env.production ]]; then
-    python3 deploy/prepare_existing.py autoxak.ru
+    python3 deploy/prepare_existing.py autoxak.ru "$@"
 else
     printf 'Using existing private .env.production; checking the target volume and domain.\n'
 fi
@@ -50,6 +54,9 @@ for condition, message in checks:
         raise SystemExit(message)
 '
 docker volume inspect autoxak_pgdata > /dev/null
+if [[ -f .migration-secrets.json ]]; then
+    python3 deploy/rotate_database_password.py check
+fi
 compose pull postgres redis
 compose build api
 
@@ -57,12 +64,16 @@ backup_dir="$(mktemp -d "$project_dir/backups-migration-XXXXXXXX")"
 chmod 700 "$backup_dir"
 cp -p -- "$nginx_site" "$backup_dir/nginx.original"
 cp -p .env.production "$backup_dir/env.production"
+if [[ -f .migration-secrets.json ]]; then
+    cp -p .migration-secrets.json "$backup_dir/migration-secrets.json"
+fi
 python3 deploy/prepare_nginx.py "$nginx_site" "$backup_dir/nginx.staged"
 printf 'events {}\nhttp { include "%s/nginx.staged"; }\n' "$backup_dir" > "$backup_dir/nginx.validation.conf"
 nginx -t -c "$backup_dir/nginx.validation.conf"
 
 switched=false
 nginx_changed=false
+password_changed=false
 rollback() {
     local status="$?"
     trap - ERR INT TERM
@@ -73,8 +84,14 @@ rollback() {
             if [[ "$nginx_changed" == true ]]; then
                 cp -p -- "$backup_dir/nginx.original" "$nginx_site"
             fi
-            docker start autoXAK_postgres autoXAK_redis autoXAK_backend_api
-            nginx -t && systemctl reload nginx
+            if docker start autoXAK_postgres; then
+                if [[ "$password_changed" == false ]] || python3 deploy/rotate_database_password.py restore; then
+                    docker start autoXAK_redis autoXAK_backend_api
+                    nginx -t && systemctl reload nginx
+                else
+                    printf 'Database password could not be restored; old API was not started. Private recovery state: %s\n' "$backup_dir" >&2
+                fi
+            fi
         else
             printf 'Could not stop the new stack. Old PostgreSQL was NOT started, to protect its volume.\n' >&2
         fi
@@ -91,6 +108,10 @@ docker exec autoXAK_postgres pg_dump -U autoXAK_user -d autoXAK_db -Fc > "$backu
 test -s "$backup_dir/database.incomplete"
 docker exec -i autoXAK_postgres pg_restore --list < "$backup_dir/database.incomplete" > /dev/null
 mv "$backup_dir/database.incomplete" "$backup_dir/database.dump"
+if [[ -f .migration-secrets.json ]]; then
+    password_changed=true
+    python3 deploy/rotate_database_password.py apply
+fi
 docker stop -t 60 autoXAK_redis autoXAK_postgres
 compose up -d --no-build --wait --wait-timeout 180 postgres redis api
 bash deploy/production.sh check

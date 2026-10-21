@@ -9,6 +9,12 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import secrets
+
+if __package__:
+    from .legacy_settings import read_string_setting
+else:
+    from legacy_settings import read_string_setting
 
 
 def inspect_container(name):
@@ -32,6 +38,8 @@ def main():
     parser.add_argument("email", nargs="?", default="")
     parser.add_argument("--api-container", default="autoXAK_backend_api")
     parser.add_argument("--postgres-container", default="autoXAK_postgres")
+    parser.add_argument("--rotate-legacy-secrets", action="store_true",
+                        help="Replace signing and database secrets; old guest tokens stop working")
     args = parser.parse_args()
     if not re.fullmatch(r"[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?", args.domain) or "." not in args.domain:
         parser.error("Specify a domain without a scheme or path")
@@ -42,18 +50,38 @@ def main():
     target = root / ".env.production"
     if target.exists():
         raise SystemExit(".env.production already exists; no settings were changed")
+    rotation_file = root / ".migration-secrets.json"
+    if rotation_file.exists():
+        raise SystemExit("Private migration state already exists; inspect it locally before preparing again")
     api = inspect_container(args.api_container)
     postgres = inspect_container(args.postgres_container)
     api_env, pg_env = environment(api), environment(postgres)
     if pg_env.get("POSTGRES_USER") != "autoXAK_user" or pg_env.get("POSTGRES_DB") != "autoXAK_db":
         raise SystemExit("Nonstandard database/user; adapt the production config before migrating")
-    if len(api_env.get("SECRET_KEY", "").strip()) < 32:
+    old_key = api_env.get("SECRET_KEY", "").strip()
+    old_salt = api_env.get("YANDEX_ID_SALT", "").strip()
+    if args.rotate_legacy_secrets:
+        # Read the real old source without importing modules or exposing secrets.
+        security_source = subprocess.check_output([
+            "docker", "exec", args.api_container, "cat", "/app/app/core/security.py",
+        ], text=True)
+        auth_source = subprocess.check_output([
+            "docker", "exec", args.api_container, "cat", "/app/app/api/auth.py",
+        ], text=True)
+        try:
+            old_key = read_string_setting(security_source, "SECRET_KEY", api_env)
+            old_salt = read_string_setting(auth_source, "SECRET_SALT", api_env, {"SECRET_KEY": old_key})
+        except ValueError as error:
+            raise SystemExit(str(error)) from None
+        if not old_salt:
+            raise SystemExit("Cannot determine the existing Yandex identity salt; no settings changed")
+    if not args.rotate_legacy_secrets and len(old_key) < 32:
         raise SystemExit("Existing SECRET_KEY is absent or too short; resolve key migration before proceeding")
-    if hashlib.sha256(api_env["SECRET_KEY"].strip().encode()).hexdigest() == "ebf4229c4ed7aeed131e39d0862a28baa330d56d474fc64e3803da2fec1ea0f9":
+    if not args.rotate_legacy_secrets and hashlib.sha256(old_key.encode()).hexdigest() == "ebf4229c4ed7aeed131e39d0862a28baa330d56d474fc64e3803da2fec1ea0f9":
         raise SystemExit("The old publicly committed signing key is still in use. Plan key rotation and preserve YANDEX_ID_SALT before migrating; existing guest tokens will need special handling")
     if not pg_env.get("POSTGRES_PASSWORD"):
         raise SystemExit("POSTGRES_PASSWORD is unavailable; preserve the existing password manually")
-    if hashlib.sha256(pg_env["POSTGRES_PASSWORD"].encode()).hexdigest() == "258c6d0df36d592b044e3e6ca19e855352a13bf6107097ccf881cb2e2e06f0ff":
+    if not args.rotate_legacy_secrets and hashlib.sha256(pg_env["POSTGRES_PASSWORD"].encode()).hexdigest() == "258c6d0df36d592b044e3e6ca19e855352a13bf6107097ccf881cb2e2e06f0ff":
         raise SystemExit("The old publicly committed PostgreSQL password is still in use. Rotate the database password and update its private deployment settings before migrating")
     # Unlike pg_isready, this verifies the password against the existing cluster.
     subprocess.run([
@@ -69,8 +97,8 @@ def main():
     values = {
         "APP_DOMAIN": args.domain,
         "ACME_EMAIL": args.email,
-        "SECRET_KEY": api_env["SECRET_KEY"],
-        "POSTGRES_PASSWORD": pg_env["POSTGRES_PASSWORD"],
+        "SECRET_KEY": secrets.token_hex(32) if args.rotate_legacy_secrets else old_key,
+        "POSTGRES_PASSWORD": secrets.token_hex(32) if args.rotate_legacy_secrets else pg_env["POSTGRES_PASSWORD"],
         "POSTGRES_VOLUME": volume_name,
         "POSTGRES_VOLUME_EXTERNAL": "true",
         "PROXY_SUBNET": "172.29.250.0/24",
@@ -82,12 +110,21 @@ def main():
     }
     for name in ("DGIS_API_KEY", "YANDEX_CLIENT_ID", "YANDEX_CLIENT_SECRET", "YANDEX_ID_SALT"):
         values[name] = api_env.get(name, "")
+    if args.rotate_legacy_secrets:
+        values["YANDEX_ID_SALT"] = old_salt
     content = "# Preserved from existing containers. Keep this file private.\n" + "".join(
         f"{name}={dotenv_quote(value)}\n" for name, value in values.items()
     )
     os.umask(0o077)
     with target.open("x", encoding="utf-8") as output:
         output.write(content)
+    if args.rotate_legacy_secrets:
+        state = {"old_password": pg_env["POSTGRES_PASSWORD"], "new_password": values["POSTGRES_PASSWORD"],
+                 "signing_key_sha256": hashlib.sha256(values["SECRET_KEY"].encode()).hexdigest(),
+                 "postgres_container": args.postgres_container}
+        with rotation_file.open("x", encoding="utf-8") as output:
+            json.dump(state, output)
+        print("Private rotation state prepared. Password changes only during cutover; old guest tokens will be invalidated.")
     print(f"Created private {target.name}; existing containers and volume are unchanged.")
 
 

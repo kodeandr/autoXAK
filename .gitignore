@@ -22,3 +22,4 @@ cert.pem
 node_modules/
 backups/
 backups-migration-*/
+.migration-secrets.json
