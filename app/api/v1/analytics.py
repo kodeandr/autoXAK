@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_
 
 from app.core.database import get_db
+from app.api.dependencies import require_owner
 from app.models.db_models import Trip, User
 from app.schemas.analytics import PeriodAnalyticsResponse, TripsPeriodSummaryMetrics, TripSummaryItem
 
@@ -20,7 +21,8 @@ async def get_period_analytics(
     end_date: Optional[datetime] = Query(
         None, description="Конец периода (ISO 8601). По умолчанию: текущий момент"
     ),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    owner: User = Depends(require_owner)
 ):
     """
     Возвращает сводные агрегированные данные о поездках пользователя за заданный интервал
@@ -32,6 +34,8 @@ async def get_period_analytics(
     if start_date is None:
         start_date = end_date - timedelta(days=30)
 
+    start_date = start_date.replace(tzinfo=timezone.utc) if start_date.tzinfo is None else start_date.astimezone(timezone.utc)
+    end_date = end_date.replace(tzinfo=timezone.utc) if end_date.tzinfo is None else end_date.astimezone(timezone.utc)
     if start_date > end_date:
         raise HTTPException(
             status_code=400, 
@@ -39,8 +43,8 @@ async def get_period_analytics(
         )
 
     # Приведение временных зон к naive UTC для корректной фильтрации в БД
-    start_naive = start_date.astimezone(timezone.utc).replace(tzinfo=None) if start_date.tzinfo else start_date
-    end_naive = end_date.astimezone(timezone.utc).replace(tzinfo=None) if end_date.tzinfo else end_date
+    start_naive = start_date
+    end_naive = end_date
 
     # 1. Агрегация ключевых показателей на уровне СУБД (1 SQL-запрос)
     agg_stmt = select(

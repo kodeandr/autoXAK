@@ -443,7 +443,7 @@
 </div>
 
 <script>
-    const userId = localStorage.getItem('autoXAK_user_id') || 'test_user_01';
+    let userId = '';
     let loadedTrips = [];
 
     function pluralizeTrips(count) {
@@ -479,13 +479,15 @@
 
     function getLocalOfflineTrips() {
         try {
-            return JSON.parse(localStorage.getItem('autoXAK_offline_trips') || '[]');
+            return JSON.parse(localStorage.getItem('autoXAK_offline_trips') || '[]').filter(trip => trip.user_id === userId);
         } catch (e) {
             return [];
         }
     }
 
     async function fetchHistory() {
+        const session = await AutoXAKSession.ensureAuthenticated();
+        userId = session.userId;
         const localDetails = getLocalDetailsMap();
         const offlineList = getLocalOfflineTrips();
 
@@ -493,7 +495,7 @@
         let serverTotalRub = 0;
 
         try {
-            const res = await fetch(`/api/v1/users/${encodeURIComponent(userId)}/analytics/period`);
+            const res = await fetch(`/api/v1/users/${encodeURIComponent(userId)}/analytics/period`, {headers: AutoXAKSession.getAuthHeaders()});
             if (res.ok) {
                 const data = await res.json();
                 serverTrips = Array.isArray(data.trips) ? data.trips : [];
@@ -507,26 +509,21 @@
         const seenIds = new Set();
         const merged = [];
 
-        for (const offTrip of offlineList) {
-            if (offTrip.session_id) seenIds.add(offTrip.session_id);
-            merged.push(offTrip);
+        for (const trip of serverTrips) {
+            const sid = trip.session_id || trip.id;
+            if (sid) seenIds.add(sid);
+            merged.push({...localDetails[sid], ...trip});
         }
-
-        for (const srvTrip of serverTrips) {
-            const sid = srvTrip.session_id || srvTrip.id;
-            if (sid && seenIds.has(sid)) continue;
-            const extra = (sid && localDetails[sid]) ? localDetails[sid] : {};
-            merged.push({
-                ...extra,
-                ...srvTrip
-            });
+        for (const trip of offlineList) {
+            if (!seenIds.has(trip.session_id)) { merged.push(trip); seenIds.add(trip.session_id); }
         }
+        merged.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
 
         // Если сервер пуст и оффлайн-очередь пуста, проверяем локальный архив
         if (merged.length === 0) {
             try {
                 const localArchive = JSON.parse(localStorage.getItem('autoXAK_local_history') || '[]');
-                for (const item of localArchive) merged.push(item);
+                for (const item of localArchive) if (item.user_id === userId) merged.push(item);
             } catch (e) {}
         }
 

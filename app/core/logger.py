@@ -3,7 +3,7 @@ import sys
 from logging.handlers import RotatingFileHandler
 import os
 
-LOG_DIR = "/app/logs"
+LOG_DIR = os.getenv("LOG_DIR", os.path.join(os.path.dirname(__file__), "..", "..", "logs"))
 os.makedirs(LOG_DIR, exist_ok=True)
 LOG_FILE = os.path.join(LOG_DIR, "autoxak.log")
 

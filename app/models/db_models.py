@@ -8,7 +8,7 @@ from sqlalchemy import (
     Boolean,
     DateTime, 
     ForeignKey, 
-    Index
+    Index, JSON
 )
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -98,6 +98,8 @@ class User(Base):
     hashed_password = Column(String(256), nullable=True)
 
     car_id = Column(String(100), default="haval_jolion_15t_4wd")
+    car_name = Column(String(200), nullable=True)
+    custom_profile = Column(JSON, nullable=True)
     fuel_price_rub = Column(Float, default=72.40)
     service_cost_rub = Column(Float, default=9500.0)
 
@@ -136,6 +138,10 @@ class Trip(Base):
     car_id = Column(String(100), nullable=False)
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
+    client_session_id = Column(String(128), nullable=True)
+    request_hash = Column(String(64), nullable=True)
+    calculation_result = Column(JSON, nullable=True)
+
     # Базовые параметры движения
     duration_seconds = Column(Float, nullable=False)
     distance_km = Column(Float, nullable=False)
@@ -164,6 +170,7 @@ class Trip(Base):
 
     __table_args__ = (
         Index("ix_trips_user_created", "user_id", "created_at"),
+        Index("ix_trips_user_client_session", "user_id", "client_session_id", unique=True),
     )
 
     @property

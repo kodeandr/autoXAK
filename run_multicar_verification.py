@@ -1,8 +1,10 @@
-﻿import json
+﻿"""Synthetic multi-profile API check, not a measured OBD validation study."""
+import json
 import ssl
 import time
 import uuid
 import urllib.request
+from scripts.api_client import LocalAPIClient
 import numpy as np
 
 TOTAL_POINTS = 3000
@@ -69,9 +71,7 @@ TEST_TRIMS = [
     }
 ]
 
-ctx = ssl.create_default_context()
-ctx.check_hostname = False
-ctx.verify_mode = ssl.CERT_NONE
+api = LocalAPIClient()
 
 results = []
 
@@ -109,7 +109,7 @@ for cfg in TEST_TRIMS:
 
     payload = {
         "session_id": f"verify-{cfg['car_id']}-{uuid.uuid4().hex[:6]}",
-        "user_id": "dev_dc231419f3be416d",
+        "user_id": api.user_id,
         "car_id": cfg["car_id"],
         "telemetry_stream": stream,
         "obd_ground_truth": {
@@ -119,15 +119,8 @@ for cfg in TEST_TRIMS:
         }
     }
 
-    req = urllib.request.Request(
-        "https://127.0.0.1:8000/api/v1/analytics/verify-run",
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"}
-    )
-
-    with urllib.request.urlopen(req, context=ctx) as response:
-        report = json.loads(response.read().decode("utf-8"))
-        results.append({
+    report = api.call("/api/v1/analytics/verify-run", "POST", payload)
+    results.append({
             "title": cfg["title"],
             "car_id": cfg["car_id"],
             "autoxak_h": report.get("autoxak_predicted_hours"),
@@ -137,7 +130,7 @@ for cfg in TEST_TRIMS:
         })
 
 print("\n" + "=" * 90)
-print("       КРОСС-ВАЛИДАЦИЯ МОДИФИКАЦИЙ ИЗ РЕЛЯЦИОННОЙ БД POSTGRESQL (TOP-FLEET)")
+print("       СИНТЕТИЧЕСКАЯ ПРОВЕРКА ПРОФИЛЕЙ (НЕ ЭМПИРИЧЕСКАЯ ВАЛИДАЦИЯ)")
 print("=" * 90)
 print(f"{'Модификация автомобиля':<42} | {'autoXAK (ч)':<11} | {'OBD-II (ч)':<10} | {'MAPE (%)':<8} | {'H1'} ")
 print("-" * 90)

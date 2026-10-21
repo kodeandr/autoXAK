@@ -1,4 +1,6 @@
-from typing import Any, Dict
+import hashlib
+import json
+from typing import Any
 from app.schemas.vehicle import CustomVehicleInput
 from app.models.vehicle_profiles import OilProfile
 
@@ -64,10 +66,12 @@ class ProfileSynthesizer:
 
         brand = str(input_data.brand)
         model = str(input_data.model)
-        car_id = f"{brand.lower()}_{model.lower()}_custom"
+        digest = hashlib.sha256(json.dumps(input_data.model_dump(), sort_keys=True).encode()).hexdigest()[:24]
+        car_id = f"custom_{digest}"
 
         return SynthesizedProfile(
             car_id=car_id,
+            car_name=input_data.custom_name or f"{brand} {model}",
             brand=brand,
             model=model,
             curb_weight_kg=weight,

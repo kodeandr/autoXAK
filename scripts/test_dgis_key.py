@@ -2,10 +2,12 @@ import asyncio
 import os
 import httpx
 
-API_KEY = os.getenv("DGIS_API_KEY", "1069d305-b706-4819-840a-b8a191fda6c8")
+API_KEY = os.getenv("DGIS_API_KEY", "")
 
 async def test_key():
-    print(f"[*] Тестирование ключа 2GIS: {API_KEY[:8]}...{API_KEY[-4:]}")
+    if not API_KEY:
+        raise SystemExit("Set DGIS_API_KEY before running the optional live integration check")
+    print("[*] Проверка доступа к API 2ГИС")
     
     # Тест 1: Геокодер / Поиск объектов (базовый Catalog API v3)
     url_catalog = "https://catalog.api.2gis.com/3.0/items/geocode"
@@ -22,7 +24,7 @@ async def test_key():
         if res.status_code == 200:
             print("    -> Catalog API успешно авторизован.")
         else:
-            print(f"    -> Ошибка: {res.text}")
+            print(f"    -> Ошибка HTTP {res.status_code}")
 
         # Тест 2: Навигационный/маршрутный сервис (уровень заторов и граф дорог)
         url_navi = f"https://routing.api.2gis.com/carrouting/6.0.0/global?key={API_KEY}"

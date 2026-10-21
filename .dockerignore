@@ -12,3 +12,5 @@ logs/
 key.pem
 cert.pem
 research/data/
+
+node_modules/

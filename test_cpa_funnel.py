@@ -2,19 +2,11 @@
 import ssl
 import urllib.request
 
-ctx = ssl.create_default_context()
-ctx.check_hostname = False
-ctx.verify_mode = ssl.CERT_NONE
+from scripts.api_client import LocalAPIClient
 
-BASE_URL = "https://127.0.0.1:8000/api/v1"
 
 def api_call(endpoint, method="GET", data=None):
-    url = f"{BASE_URL}{endpoint}"
-    body = json.dumps(data).encode("utf-8") if data else None
-    headers = {"Content-Type": "application/json"}
-    req = urllib.request.Request(url, data=body, headers=headers, method=method)
-    with urllib.request.urlopen(req, context=ctx) as resp:
-        return json.loads(resp.read().decode("utf-8"))
+    return api.call('/api/v1' + endpoint, method, data)
 
 print("\n" + "=" * 80)
 print("             ТЕСТИРОВАНИЕ СКВОЗНОЙ CPA-ВОРОНКИ (autoXAK)")
@@ -38,7 +30,8 @@ test_cases = [
 ]
 
 for tc in test_cases:
-    uid = tc["user_id"]
+    api = LocalAPIClient()
+    uid = api.user_id
     cid = tc["car_id"]
     print(f"\n[ТЕСТ] Пользователь: {uid} | Авто: {cid}")
 

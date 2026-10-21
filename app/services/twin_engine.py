@@ -31,16 +31,19 @@ class TwinEngine:
         dt: float = 0.02
     ) -> Tuple[np.ndarray, int]:
         """Z-Shock Veto: подавление ложных перегрузок при наезде на лежачие полицейские и ямы."""
+        if not np.isfinite(dt) or dt <= 0:
+            raise ValueError("dt must be positive and finite")
         clean_ax = np.array(user_ax, copy=True, dtype=float)
         n = len(clean_ax)
         if n == 0:
             return clean_ax, 0
 
         anomalies_count = 0
-        suppression_window = int(0.35 / max(dt, 0.001))
+        suppression_window = max(1, int(0.35 / dt))
 
         if raw_az is not None and len(raw_az) == n:
             az = np.asarray(raw_az, dtype=float)
+            az = az - np.median(az)  # Accept gravity-inclusive and linear vertical inputs.
             jerk_z = np.gradient(az, dt) if n > 1 else np.zeros(n)
             impact_mask = (np.abs(az) > 3.5) | (np.abs(jerk_z) > 15.0)
 
@@ -60,7 +63,7 @@ class TwinEngine:
             while i < n:
                 if spike_mask[i]:
                     anomalies_count += 1
-                    end_idx = min(n, i + int(0.25 / max(dt, 0.001)))
+                    end_idx = min(n, i + max(1, int(0.25 / dt)))
                     clean_ax[i:end_idx] = 0.0
                     i = end_idx
                 else:
@@ -261,7 +264,7 @@ class TwinEngine:
 
         base_city_rate = float(getattr(self.profile, "base_city_fuel_rate_l100km", 8.5) or 8.5)
         raw_saved_liters = (in_dist_km * (1.8 / 100.0)) - hunting_penalty_liters
-        saved_liters = max(0.005, round(float(raw_saved_liters), 3))
+        saved_liters = max(0.0, round(float(raw_saved_liters), 3))
         fuel_saved_rub = round(float(saved_liters * fp), 2)
 
         range_bonus_km = round((100.0 * saved_liters) / max(base_city_rate, 4.0), 1)
@@ -282,7 +285,7 @@ class TwinEngine:
         total_savings_rub = round(fuel_saved_rub + oil_saved_rub, 2)
 
         if clean_ax is not None and len(clean_ax) > 0:
-            harsh_events = int(np.sum(clean_ax > 2.0) + np.sum(clean_ax < -2.5))
+            harsh_events = sum(int(np.sum(np.diff(np.r_[0, mask.astype(np.int8)]) == 1)) for mask in (clean_ax > 2.0, clean_ax < -2.5))
             penalty = (harsh_events * 5) + (15 if hunting_detected else 0)
             smooth_score = max(40, min(100, int(100 - penalty)))
         else:

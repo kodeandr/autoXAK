@@ -1,140 +1,117 @@
-﻿/**
- * autoXAK Offline-First Storage Engine (IndexedDB)
- * Транзакционная очередь для гарантированной доставки телеметрии.
- */
-const AutoXAKOfflineStore = (() => {
-    const DB_NAME = "autoXAK_storage";
-    const DB_VERSION = 1;
-    const STORE_TRIPS = "pending_trips";
-
-    let dbInstance = null;
+﻿/** Pending trips are acknowledged only after the IndexedDB transaction commits. */
+const AutoXAKOfflineStore = window.AutoXAKOfflineStore = (() => {
+    const DB_NAME = 'autoXAK_storage', STORE = 'pending_trips', CONTROLS = 'pending_controls';
+    let opening = null, syncing = null;
 
     function openDB() {
-        return new Promise((resolve, reject) => {
-            if (dbInstance) return resolve(dbInstance);
-
-            const req = indexedDB.open(DB_NAME, DB_VERSION);
-
-            req.onupgradeneeded = (e) => {
-                const db = e.target.result;
-                if (!db.objectStoreNames.contains(STORE_TRIPS)) {
-                    const store = db.createObjectStore(STORE_TRIPS, { keyPath: "session_id" });
-                    store.createIndex("status", "status", { unique: false });
-                    store.createIndex("created_at", "created_at", { unique: false });
+        if (opening) return opening;
+        opening = new Promise((resolve, reject) => {
+            const request = indexedDB.open(DB_NAME, 2);
+            request.onupgradeneeded = () => {
+                const db = request.result;
+                if (!db.objectStoreNames.contains(CONTROLS)) db.createObjectStore(CONTROLS, {keyPath: "session_id"});
+                if (!db.objectStoreNames.contains(STORE)) {
+                    const store = db.createObjectStore(STORE, {keyPath: 'session_id'});
+                    store.createIndex('status', 'status');
+                    store.createIndex('created_at', 'created_at');
                 }
             };
-
-            req.onsuccess = (e) => {
-                dbInstance = e.target.result;
-                resolve(dbInstance);
+            request.onsuccess = () => {
+                const db = request.result;
+                db.onversionchange = () => { db.close(); opening = null; };
+                resolve(db);
             };
-
-            req.onerror = (e) => reject(e.target.error);
+            request.onerror = () => { opening = null; reject(request.error); };
+            request.onblocked = () => { opening = null; reject(new Error('IndexedDB is blocked by another tab')); };
         });
+        return opening;
     }
 
-    async function savePendingTrip(payload) {
+    async function transaction(mode, operation, name = STORE) {
         const db = await openDB();
         return new Promise((resolve, reject) => {
-            const tx = db.transaction(STORE_TRIPS, "readwrite");
-            const store = tx.objectStore(STORE_TRIPS);
-            const record = {
-                session_id: payload.session_id,
-                user_id: payload.user_id,
-                car_id: payload.car_id,
-                telemetry_stream: payload.telemetry_stream,
-                created_at: Date.now(),
-                status: "PENDING",
-                attempts: 0
-            };
-            const req = store.put(record);
-            req.onsuccess = () => resolve(record);
-            req.onerror = () => reject(req.error);
+            const tx = db.transaction(name, mode);
+            let result;
+            const request = operation(tx.objectStore(name));
+            request.onsuccess = () => { result = request.result; };
+            tx.oncomplete = () => resolve(result);
+            tx.onerror = () => reject(tx.error || request.error);
+            tx.onabort = () => reject(tx.error || new Error('IndexedDB transaction aborted'));
         });
     }
 
-    async function removePendingTrip(sessionId) {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(STORE_TRIPS, "readwrite");
-            const store = tx.objectStore(STORE_TRIPS);
-            const req = store.delete(sessionId);
-            req.onsuccess = () => resolve(true);
-            req.onerror = () => reject(req.error);
-        });
+    function savePendingTrip(payload) {
+        return transaction('readwrite', store => store.put({...payload, created_at: Date.now(), status: 'PENDING'}));
     }
-
+    function saveDraftTrip(payload) {
+        return transaction('readwrite', store => store.put({...payload, created_at: Date.now(), status: 'RECORDING'}));
+    }
+    async function recoverInterruptedTrips() {
+        const drafts = await transaction('readonly', store => store.index('status').getAll('RECORDING'));
+        for (const draft of drafts || []) {
+            if (draft.user_id === AutoXAKSession.getUserId() && draft.telemetry_stream.length >= 50) await savePendingTrip(draft);
+        }
+    }
+    function removePendingTrip(id) { return transaction('readwrite', store => store.delete(id)); }
     async function getPendingTrips() {
-        const db = await openDB();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(STORE_TRIPS, "readonly");
-            const store = tx.objectStore(STORE_TRIPS);
-            const index = store.index("status");
-            const req = index.getAll("PENDING");
-            req.onsuccess = () => resolve(req.result || []);
-            req.onerror = () => reject(req.error);
-        });
+        const all = await transaction('readonly', store => store.index('status').getAll('PENDING'));
+        const owner = AutoXAKSession.getUserId();
+        return (all || []).filter(trip => trip.user_id === owner);
     }
-
-    async function countPendingTrips() {
+    async function reassignOwner(previous, next) {
+        if (AutoXAKSession.getUserId() !== previous) throw new Error('Session changed during account merge');
         const db = await openDB();
-        return new Promise((resolve, reject) => {
-            const tx = db.transaction(STORE_TRIPS, "readonly");
-            const store = tx.objectStore(STORE_TRIPS);
-            const index = store.index("status");
-            const req = index.count("PENDING");
-            req.onsuccess = () => resolve(req.result || 0);
-            req.onerror = () => reject(req.error);
-        });
-    }
-
-    async function syncPendingTrips(callbacks = {}) {
-        if (!navigator.onLine) return;
-        const pending = await getPendingTrips();
-        if (pending.length === 0) return;
-
-        for (const trip of pending) {
-            try {
-                const res = await fetch('/api/v1/telemetry/session', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...AutoXAKSession.getAuthHeaders()
-                    },
-                    body: JSON.stringify({
-                        session_id: trip.session_id,
-                        user_id: trip.user_id,
-                        car_id: trip.car_id,
-                        telemetry_stream: trip.telemetry_stream
-                    })
-                });
-
-                if (res.ok) {
-                    const data = await res.json();
-                    await removePendingTrip(trip.session_id);
-                    if (callbacks.onTripSynced) {
-                        callbacks.onTripSynced(data);
-                    }
-                } else if (res.status === 422) {
-                    // Невалидные данные (слишком короткая сессия) — удаляем, чтобы не блокировать очередь
-                    await removePendingTrip(trip.session_id);
-                }
-            } catch (err) {
-                // Сеть оборвалась в процессе — прерываем цикл до следующего online-события
-                break;
+        await new Promise((resolve, reject) => {
+            const tx = db.transaction([STORE, CONTROLS], 'readwrite');
+            for (const name of [STORE, CONTROLS]) {
+                const request = tx.objectStore(name).openCursor();
+                request.onsuccess = () => {
+                    const cursor = request.result;
+                    if (!cursor) return;
+                    if (cursor.value.user_id === previous) cursor.update({...cursor.value, user_id: next});
+                    cursor.continue();
+                };
             }
-        }
-
-        if (callbacks.onSyncComplete) {
-            callbacks.onSyncComplete();
+            tx.oncomplete = resolve;
+            tx.onerror = tx.onabort = () => reject(tx.error || new Error('Account merge storage failed'));
+        });
+    }
+    async function savePendingControl(session_id, value) {
+        return transaction('readwrite', store => store.put({session_id, user_id: AutoXAKSession.getUserId(), value}), CONTROLS);
+    }
+    async function syncControls(owner) {
+        const controls = await transaction('readonly', store => store.getAll(), CONTROLS);
+        for (const control of controls || []) {
+            if (control.user_id !== owner || AutoXAKSession.getUserId() !== owner) continue;
+            const response = await fetch(`/api/v1/trips/${encodeURIComponent(control.session_id)}/board-computer`, {method: 'POST',
+                headers: {'Content-Type': 'application/json', ...AutoXAKSession.getAuthHeaders()},
+                body: JSON.stringify({board_computer_consumption_l100km: control.value})});
+            if (response.ok) await transaction('readwrite', store => store.delete(control.session_id), CONTROLS);
         }
     }
+    async function countPendingTrips() { return (await getPendingTrips()).length; }
 
-    return {
-        savePendingTrip,
-        removePendingTrip,
-        getPendingTrips,
-        countPendingTrips,
-        syncPendingTrips
-    };
+    async function synchronize(callbacks) {
+        if (!navigator.onLine) return;
+        const owner = AutoXAKSession.getUserId();
+        for (const trip of await getPendingTrips()) {
+            if (owner !== AutoXAKSession.getUserId()) break;
+            try {
+                const {created_at, status, attempts, ...payload} = trip;
+                const response = await fetch('/api/v1/telemetry/session', {method: 'POST',
+                    headers: {'Content-Type': 'application/json', ...AutoXAKSession.getAuthHeaders()}, body: JSON.stringify(payload)});
+                if (!response.ok) break; // Preserve rejected records for recovery; never erase telemetry on 422.
+                const result = await response.json();
+                await removePendingTrip(trip.session_id);
+                if (callbacks.onTripSynced) await callbacks.onTripSynced(result, trip);
+            } catch (_) { break; }
+        }
+        try { await syncControls(owner); } catch (_) {}
+        if (callbacks.onSyncComplete) await callbacks.onSyncComplete();
+    }
+    function syncPendingTrips(callbacks = {}) {
+        if (!syncing) syncing = synchronize(callbacks).finally(() => { syncing = null; });
+        return syncing;
+    }
+    return {reassignOwner, savePendingControl, saveDraftTrip, recoverInterruptedTrips, savePendingTrip, removePendingTrip, getPendingTrips, countPendingTrips, syncPendingTrips};
 })();

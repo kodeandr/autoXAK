@@ -8,14 +8,17 @@ services:
       - .:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --ssl-keyfile /app/key.pem --ssl-certfile /app/cert.pem --reload
     environment:
+      - SECRET_KEY=${SECRET_KEY:?Set a persistent random SECRET_KEY in .env}
+      - YANDEX_ID_SALT=${YANDEX_ID_SALT:-}
+      - ENABLE_YANDEX_DEMO=${ENABLE_YANDEX_DEMO:-false}
       - PYTHONPATH=/app
-      - DATABASE_URL=postgresql+asyncpg://autoXAK_user:autoXAK_pass@postgres:5432/autoXAK_db
+      - DATABASE_URL=postgresql+asyncpg://autoXAK_user:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/autoXAK_db
       - REDIS_HOST=redis
       - REDIS_PORT=6379
-      - DGIS_API_KEY=a74637ec-409b-4a19-848b-cf09b21e1f28
-      - DGIS_USE_MOCK=false
-      - YANDEX_CLIENT_ID=${YANDEX_CLIENT_ID:-7057190c0d2249d2bff2da749f474e93}
-      - YANDEX_CLIENT_SECRET=${YANDEX_CLIENT_SECRET:-7d4a9608d5894e6eb6466c0201d2a51a}
+      - DGIS_API_KEY=${DGIS_API_KEY:-}
+      - DGIS_USE_MOCK=${DGIS_USE_MOCK:-true}
+      - YANDEX_CLIENT_ID=${YANDEX_CLIENT_ID:-}
+      - YANDEX_CLIENT_SECRET=${YANDEX_CLIENT_SECRET:-}
       - YANDEX_REDIRECT_URI=${YANDEX_REDIRECT_URI:-https://autoxak.ru/api/v1/auth/yandex/callback}     
 
     depends_on:
@@ -29,10 +32,10 @@ services:
     container_name: autoXAK_postgres
     environment:
       POSTGRES_USER: autoXAK_user
-      POSTGRES_PASSWORD: autoXAK_pass
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: autoXAK_db
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -45,7 +48,7 @@ services:
     image: redis:7.2-alpine
     container_name: autoXAK_redis
     ports:
-      - "6379:6379"
+      - "127.0.0.1:6379:6379"
 
 volumes:
   pgdata:

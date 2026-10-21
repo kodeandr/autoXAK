@@ -1,8 +1,10 @@
-﻿import json
+﻿"""Synthetic API sanity check; not evidence of real-world model accuracy."""
+import json
 import ssl
 import time
 import uuid
 import urllib.request
+from scripts.api_client import LocalAPIClient
 import numpy as np
 
 # 60-секундный ездовой цикл (3000 точек, dt = 0.02 с)
@@ -65,9 +67,10 @@ for i in range(total_points):
     load_list.append(round(float(load), 1))
     temp_list.append(round(float(temp), 1))
 
+api = LocalAPIClient()
 payload = {
     "session_id": f"obd-verified-cycle-{uuid.uuid4().hex[:8]}",
-    "user_id": "dev_dc231419f3be416d",
+    "user_id": api.user_id,
     "car_id": "haval_jolion_15t",
     "telemetry_stream": stream,
     "obd_ground_truth": {
@@ -77,24 +80,10 @@ payload = {
     }
 }
 
-data = json.dumps(payload).encode("utf-8")
-
-ctx = ssl.create_default_context()
-ctx.check_hostname = False
-ctx.verify_mode = ssl.CERT_NONE
-
-req = urllib.request.Request(
-    "https://127.0.0.1:8000/api/v1/analytics/verify-run",
-    data=data,
-    headers={"Content-Type": "application/json"}
-)
-
-with urllib.request.urlopen(req, context=ctx) as response:
-    res_body = response.read().decode("utf-8")
-    report = json.loads(res_body)
+report = api.call("/api/v1/analytics/verify-run", "POST", payload)
 
 print("\n" + "=" * 60)
-print("         РЕЗУЛЬТАТ ЭКСПЕРИМЕНТАЛЬНОЙ ВЕРИФИКАЦИИ        ")
+print("         РЕЗУЛЬТАТ СИНТЕТИЧЕСКОЙ ПРОВЕРКИ API        ")
 print("=" * 60)
 print(f"Длительность заезда            : {report.get('duration_minutes')} мин")
 print(f"Количество точек телеметрии    : {report.get('total_points')} точек")

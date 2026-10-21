@@ -5,10 +5,13 @@ import base64
 import json
 import time
 import secrets
-from datetime import datetime, timedelta, timezone
-from typing import Optional, Dict, Any, Union
+import math
+from datetime import timedelta
+from typing import Optional, Dict, Any
 
-SECRET_KEY = os.getenv("SECRET_KEY", "autoXAK_telemetry_secret_key_prod_salt")
+SECRET_KEY = os.getenv("SECRET_KEY", "").strip()
+if len(SECRET_KEY) < 32:
+    raise RuntimeError("Set SECRET_KEY to a private, persistent random signing key of at least 32 characters")
 ALGORITHM = "HS256"
 TOKEN_EXPIRE_SECONDS = int(os.getenv("ACCESS_TOKEN_EXPIRE_SECONDS", 60 * 60 * 24 * 365))  # 1 год по умолчанию
 
@@ -19,7 +22,7 @@ def _base64url_encode(data: bytes) -> str:
 
 def _base64url_decode(data: str) -> bytes:
     padding = "=" * (4 - (len(data) % 4)) if len(data) % 4 != 0 else ""
-    return base64.urlsafe_b64decode(data + padding)
+    return base64.b64decode(data + padding, altchars=b"-_", validate=True)
 
 
 def hash_password(password: str) -> str:
@@ -63,7 +66,7 @@ def create_access_token(
         claims.update(custom_claims)
 
     now = int(time.time())
-    if expires_delta:
+    if expires_delta is not None:
         exp = now + int(expires_delta.total_seconds())
     else:
         exp = now + TOKEN_EXPIRE_SECONDS
@@ -73,7 +76,7 @@ def create_access_token(
         "sub": user_id,
         "iat": now,
         "exp": exp,
-        **claims
+        **{k: v for k, v in claims.items() if k not in {"sub", "iat", "exp"}}
     }
 
     encoded_header = _base64url_encode(json.dumps(header, separators=(",", ":")).encode("utf-8"))
@@ -89,6 +92,8 @@ def create_access_token(
 def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
     """Декодирование и верификация подписи JWT-токена."""
     try:
+        if not isinstance(token, str) or len(token) > 8192:
+            return None
         parts = token.split(".")
         if len(parts) != 3:
             return None
@@ -102,10 +107,22 @@ def decode_access_token(token: str) -> Optional[Dict[str, Any]]:
         if not hmac.compare_digest(expected_sig, provided_sig):
             return None
 
+        header = json.loads(_base64url_decode(encoded_header))
+        if not isinstance(header, dict) or header.get("alg") != ALGORITHM or header.get("typ", "JWT") != "JWT":
+            return None
         payload_bytes = _base64url_decode(encoded_payload)
         payload = json.loads(payload_bytes.decode("utf-8"))
 
-        if payload.get("exp") and int(payload["exp"]) < int(time.time()):
+        if not isinstance(payload, dict):
+            return None
+        subject, expires = payload.get("sub"), payload.get("exp")
+        if not isinstance(subject, str) or not subject or len(subject) > 64:
+            return None
+        if isinstance(expires, bool) or not isinstance(expires, (int, float)):
+            return None
+        if not math.isfinite(expires) or expires <= time.time():
+            return None
+        if "nbf" in payload and (not isinstance(payload["nbf"], (int, float)) or not math.isfinite(payload["nbf"]) or payload["nbf"] > time.time()):
             return None
 
         return payload
