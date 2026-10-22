@@ -94,7 +94,7 @@ case "$action" in
             exit 1
         fi
         backup
-        git pull --ff-only origin main
+        git pull --ff-only
         export APP_IMAGE_TAG="$(git rev-parse --short=12 HEAD)"
         compose build api
         # Database/cache images are deliberately upgraded in a separate maintenance window.

@@ -40,6 +40,7 @@ from app.models.db_models import User, Trip, VehicleMake, VehicleModel, VehicleT
 from app.core.dsp.filters import SignalFilter
 from app.core.dsp.alignment import IMUAlignmentService
 from app.services.wear_engine import WearEngine
+from app.services.capture_storage import capture_quality, store_raw_capture, unscored_trip
 
 try:
     from app.services.twin_engine import TwinEngine, AggressiveTwinEngine
@@ -116,6 +117,7 @@ class TripPeriodItem(BaseModel):
     hard_brake_count: int = 0
     bumps_count: int = 0
     idle_minutes: int = 0
+    capture_quality: Optional[Dict[str, Any]] = None
 
 
 class TripsPeriodSummaryMetrics(BaseModel):
@@ -609,7 +611,7 @@ async def process_telemetry_session(
     
     logger.info(f"Получена сессия {session_ref} (user={payload.user_id}, точек={points_count})")
 
-    if points_count < 50:
+    if points_count < 50 and payload.raw_recording is None:
         raise HTTPException(
             status_code=422, 
             detail="Недостаточно точек телеметрии для валидации (минимум 50 точек)."
@@ -617,7 +619,8 @@ async def process_telemetry_session(
 
     try:
         parsed_uuid = str(uuid.UUID(session_ref)) if _is_uuid(session_ref) else str(uuid.uuid5(uuid.NAMESPACE_URL, f"autoxak:{owner.id}:{session_ref}"))
-        digest = hashlib.sha256(json.dumps(payload.model_dump(mode="json", exclude={"user_id"}), sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
+        excluded = {"user_id"} if payload.raw_recording is not None else {"user_id", "raw_recording"}
+        digest = hashlib.sha256(json.dumps(payload.model_dump(mode="json", exclude=excluded), sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
         user = (await db.execute(select(User).where(User.id == owner.id).with_for_update().execution_options(populate_existing=True))).scalar_one()
         existing_trip = (await db.execute(select(Trip).where(or_(Trip.id == parsed_uuid, and_(Trip.user_id == owner.id, Trip.client_session_id == session_ref))))).scalar_one_or_none()
         if existing_trip is not None:
@@ -626,6 +629,20 @@ async def process_telemetry_session(
             if existing_trip.calculation_result:
                 return ExtendedTripCalculationResult.model_validate(existing_trip.calculation_result)
             return _stored_trip_result(existing_trip)
+        quality = None
+        if payload.raw_recording is not None:
+            quality = capture_quality(payload)
+            profile = await resolve_car_profile_async(payload.car_id, db, user)
+            vehicle = {"vehicle_id": payload.car_id, "fuel_type": "unknown",
+                       "mass_kg": float(profile.curb_weight_kg), "displacement_l": float(profile.engine_displacement_l)}
+            await store_raw_capture(db, payload, parsed_uuid, digest, vehicle, quality)
+            if quality["analysis_status"] != "available":
+                trip, result = unscored_trip(payload, parsed_uuid, digest, user, quality)
+                db.add(trip)
+                calculation = ExtendedTripCalculationResult.model_validate(result)
+                trip.calculation_result = calculation.model_dump(mode="json")
+                await db.commit()
+                return calculation
         times = np.array([p.t for p in stream], dtype=np.float64)
         raw_ax = np.array([p.ax for p in stream], dtype=np.float64)
         raw_ay = np.array([p.ay for p in stream], dtype=np.float64)
@@ -840,6 +857,8 @@ async def process_telemetry_session(
             "throttle_hunting_detected": hunting_detected,
             "cost_savings_rub": round(total_savings_rub, 2)
         }
+        if quality is not None:
+            metrics_payload["capture_quality"] = quality
 
         calculation = ExtendedTripCalculationResult(
             session_id=parsed_uuid,
@@ -865,6 +884,8 @@ async def process_telemetry_session(
             metrics=metrics_payload
         )
 
+        if payload.raw_recording is not None:
+            new_trip.created_at = datetime.fromtimestamp(payload.raw_recording.started_at_ms / 1000, tz=timezone.utc)
         new_trip.calculation_result = calculation.model_dump(mode="json")
         await db.commit()
         return calculation
@@ -1150,7 +1171,7 @@ async def get_period_analytics(
                 session_id=str(t.id),
                 created_at=t.created_at,
                 duration_seconds=dur_s,
-                distance_km=round(float(t.distance_km or 0.0), 2),
+                distance_km=round(float(t.distance_km or 0.0), 3),
                 idle_ratio=idle_r,
                 oil_wear_percent=round(float(t.oil_wear_percent or 0.0), 4),
                 total_savings_rub=round(float(t.total_savings_rub or 0.0), 2),
@@ -1164,7 +1185,8 @@ async def get_period_analytics(
                 hard_accel_count=h_acc,
                 hard_brake_count=h_brk,
                 bumps_count=bumps,
-                idle_minutes=int(round(jam_s / 60.0))
+                idle_minutes=int(round(jam_s / 60.0)),
+                capture_quality=((t.calculation_result or {}).get("metrics") or {}).get("capture_quality")
             )
         )
 

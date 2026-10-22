@@ -1087,6 +1087,31 @@
     let draftTimerInterval = null;
     let lastGpsFixMs = 0;
     let startingTrip = false;
+    let gpsSamples = [], motionSamples = [];
+    let captureGeoPermission = 'unknown', captureMotionPermission = 'unknown';
+    let saveActiveDraft = null, draftSaveChain = Promise.resolve();
+    let pendingFinishedPayload = null, finishingTrip = false;
+    let releaseRecordingLock = null;
+
+    function rawRecording(endReason = 'user') {
+        const end=Math.max(Date.now(), tripStartTime, gpsSamples[gpsSamples.length-1]?.timestamp_ms || 0, motionSamples[motionSamples.length-1]?.timestamp_ms || 0);
+        return {
+            started_at_ms: tripStartTime,
+            ended_at_ms: Math.min(end,tripStartTime+86400000),
+            gps: [...gpsSamples], motion: [...motionSamples], end_reason: end>tripStartTime+86400000?'duration_limit':endReason,
+            permissions: {motion: captureMotionPermission, geolocation: captureGeoPermission},
+            device: {app_version:'1.9.0', user_agent:navigator.userAgent.slice(0,1000)}
+        };
+    }
+
+    document.addEventListener('visibilitychange', () => {
+        if (tripActive && document.hidden && saveActiveDraft) saveActiveDraft();
+        if (tripActive && !document.hidden && 'wakeLock' in navigator && (!wakeLock || wakeLock.released)) {
+            const sessionId=activeSessionId;
+            navigator.wakeLock.request('screen').then(lock=>{if(tripActive && activeSessionId===sessionId) wakeLock=lock; else lock.release();}).catch(()=>{});
+        }
+    });
+    window.addEventListener('pagehide', () => {if (tripActive && saveActiveDraft) saveActiveDraft();});
 
     // Реальные координаты и скорость GPS
     let currentSpeedMps = 0.0;
@@ -1142,6 +1167,11 @@
         if (isNaN(num)) return "+0.0 ₽";
         const str = (Math.round(num * 100) % 10 === 0) ? num.toFixed(1) : num.toFixed(2);
         return `+${str} ₽`;
+    }
+
+    function formatDistance(km) {
+        const value=Math.max(0,Number(km)||0);
+        return value>0 && value<1 ? `${Math.round(value*1000)} м` : `${value.toFixed(1).replace(/\.0$/,'')} км`;
     }
 
     function formatDurationHoursMins(totalSec) {
@@ -1260,41 +1290,26 @@
     }
 
     async function requestStartTrip(forceStartOnDesktop = false) {
-        if (tripActive) return;
-
-        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+        if (tripActive || startingTrip || finishingTrip) return;
+        if (pendingFinishedPayload) { await finishActiveTrip(); return; }
+        let permission = Promise.resolve();
+        if (typeof DeviceMotionEvent === 'undefined') {
+            captureMotionPermission = 'unsupported';
+        } else if (typeof DeviceMotionEvent.requestPermission === 'function' && captureMotionPermission === 'unknown') {
             try {
-                if (await DeviceMotionEvent.requestPermission() !== 'granted') { return; }
-            } catch (_) { return; }
+                // iOS requires this call directly in the button's user gesture.
+                permission = DeviceMotionEvent.requestPermission().then(value=>{
+                    captureMotionPermission = value === 'granted' ? 'granted' : 'denied';
+                }).catch(()=>{captureMotionPermission='denied';});
+            } catch (_) { captureMotionPermission = 'denied'; }
+        } else if (typeof DeviceMotionEvent.requestPermission !== 'function') {
+            captureMotionPermission = 'granted';
         }
-
-        if (!('geolocation' in navigator)) {
-            document.getElementById('modal-geo-disabled').classList.add('active');
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                if (pos && pos.coords) {
-                    currentLat = pos.coords.latitude;
-                    currentLon = pos.coords.longitude;
-                    lastGpsFixMs = Number(pos.timestamp) || Date.now();
-                }
-                beginActiveTrip();
-            },
-            (err) => {
-                if (forceStartOnDesktop) {
-                    beginActiveTrip();
-                    return;
-                }
-                if (err.code === 1) {
-                    document.getElementById('modal-geo-denied').classList.add('active');
-                } else {
-                    document.getElementById('modal-geo-disabled').classList.add('active');
-                }
-            },
-            { enableHighAccuracy: true, timeout: 6000, maximumAge: 10000 }
-        );
+        // One watch per trip: do not request a separate initial position. GPS
+        // and motion permission prompts are independent and may settle later.
+        const start = beginActiveTrip();
+        await permission;
+        await start;
     }
 
     // ==================== АКТИВНАЯ ПОЕЗДКА ====================
@@ -1308,25 +1323,37 @@
         if (tripActive || startingTrip) return;
         startingTrip = true;
 
-        if ('wakeLock' in navigator) {
-            try { wakeLock = await navigator.wakeLock.request('screen'); } catch (_) {}
-        }
-
         tripActive = true;
         startingTrip = false;
         activeSessionId = globalThis.crypto?.randomUUID ? crypto.randomUUID() : 'session_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        if (navigator.locks) {
+            const sessionId=activeSessionId;
+            const held=new Promise(resolve=>{releaseRecordingLock=resolve;});
+            navigator.locks.request('autoxak-recorder:'+sessionId,()=>held).catch(error=>console.warn('[Recording]',error));
+        }
         telemetryStream = [];
-        const saveDraft = () => {
-            if (tripActive && telemetryStream.length) AutoXAKOfflineStore.saveDraftTrip({session_id: activeSessionId, user_id: currentUserId, car_id: currentCarId, telemetry_stream: [...telemetryStream]}).catch(error => console.warn('[Recording]', error));
-        };
-        draftTimerInterval = setInterval(saveDraft, 10000);
+        gpsSamples = []; motionSamples = [];
+        captureGeoPermission = 'unknown';
         tripStartTime = Date.now();
+        draftSaveChain = Promise.resolve();
+        saveActiveDraft = () => {
+            if (!tripActive) return draftSaveChain;
+            const draft = {session_id:activeSessionId, user_id:currentUserId, car_id:currentCarId,
+                telemetry_stream:[...telemetryStream], raw_recording:rawRecording('interrupted')};
+            draftSaveChain = draftSaveChain.catch(()=>{}).then(()=>AutoXAKOfflineStore.saveDraftTrip(draft));
+            draftSaveChain.catch(error=>console.warn('[Recording]',error));
+            return draftSaveChain;
+        };
+        saveActiveDraft();
+        draftTimerInterval = setInterval(saveActiveDraft, 5000);
         lastTickMs = tripStartTime;
         currentSpeedMps = 0.0;
         prevGpsLat = null;
         prevGpsLon = null;
         prevGpsTimeMs = null;
         previousNativeSpeedMps = null;
+        lastGpsFixMs = 0; currentLat = currentLon = null;
+        lastBumpTime = lastEventTime = 0;
 
         liveDistanceKm = 0.0;
         liveBumpsCount = 0;
@@ -1337,18 +1364,18 @@
 
         setTripGlowState('green');
         document.getElementById('trip-timer-display').innerText = "00:00";
-        document.getElementById('trip-live-savings').innerText = "+0 ₽";
+        document.getElementById('trip-live-savings').innerText = "— ₽";
+        document.getElementById('trip-live-savings').title = 'Расчёт после завершения поездки';
         document.getElementById('trip-live-distance').innerText = "0 км";
         document.getElementById('trip-live-bumps').innerText = "0";
-        document.getElementById('trip-live-smooth').innerText = "100/100";
+        document.getElementById('trip-live-smooth').innerText = "—";
         document.getElementById('pill-net-status').innerHTML = navigator.onLine ? "Интернет<br>подключен" : "Интернет<br>оффлайн";
-        document.getElementById('pill-gps-status').innerHTML = "GPS<br>подключен";
+        document.getElementById('pill-gps-status').innerHTML = "GPS<br>поиск...";
 
         document.getElementById('active-trip-screen').classList.add('active');
 
         tripTimerInterval = setInterval(() => {
             const nowMs = Date.now();
-            const dtSec = Math.max(0.1, (nowMs - lastTickMs) / 1000.0);
             lastTickMs = nowMs;
 
             const elapsed = Math.floor((nowMs - tripStartTime) / 1000);
@@ -1356,22 +1383,38 @@
             const s = String(elapsed % 60).padStart(2, '0');
             document.getElementById('trip-timer-display').innerText = `${m}:${s}`;
 
-            // Интегрируем дистанцию по текущему шагу времени dtSec
-            if (nowMs - lastGpsFixMs > 5000) currentSpeedMps = 0;
+            // Distance is integrated only on actual GPS callbacks, never twice by a timer.
+            if (nowMs - lastGpsFixMs > 5000) {
+                currentSpeedMps = 0;
+                document.getElementById('pill-gps-status').innerHTML = captureGeoPermission==='denied' ? 'GPS<br>нет доступа'
+                    : captureGeoPermission==='unsupported' ? 'GPS<br>недоступен'
+                    : gpsSamples.length && (gpsSamples[gpsSamples.length-1].accuracy_m===null || gpsSamples[gpsSamples.length-1].accuracy_m>50)
+                        ? 'GPS<br>неточный' : 'GPS<br>поиск...';
+            }
+            if (nowMs - tripStartTime >= 86400000) { finishActiveTrip('duration_limit'); return; }
 
-            // Согласованная с бэкендом формула живой экономии (топливо + масло за вычетом штрафа резких маневров)
-            const grossRub = liveDistanceKm * 2.05;
-            const penaltyRub = (liveHarshStarts + liveHarshBrakes) * 3.5;
-            const liveRub = Math.max(0, grossRub - penaltyRub);
-
-            document.getElementById('trip-live-distance').innerText = `${liveDistanceKm.toFixed(1).replace(/\.0$/, '')} км`;
-            document.getElementById('trip-live-savings').innerText = `+${Math.round(liveRub)} ₽`;
+            document.getElementById('trip-live-distance').innerText = formatDistance(liveDistanceKm);
             document.getElementById('pill-net-status').innerHTML = navigator.onLine ? "Интернет<br>подключен" : "Интернет<br>оффлайн";
         }, 1000);
 
         motionHandler = (event) => {
+            if (!tripActive) return;
             const hasLinear = event.acceleration && ['x','y','z'].every(axis=>Number.isFinite(event.acceleration[axis]));
             const hasGravity = event.accelerationIncludingGravity && ['x','y','z'].every(axis=>Number.isFinite(event.accelerationIncludingGravity[axis]));
+            const nowMs = Date.now();
+            if (nowMs - tripStartTime >= 86400000) {finishActiveTrip('duration_limit');return;}
+            const includesGravity = event.accelerationIncludingGravity && ['x','y','z'].some(axis=>Number.isFinite(event.accelerationIncludingGravity[axis]));
+            const source = hasLinear ? event.acceleration : (includesGravity ? event.accelerationIncludingGravity : event.acceleration || {});
+            const rotation = event.rotationRate || {};
+            const finite = value=>Number.isFinite(value) ? value : null;
+            if (!['x','y','z'].some(axis=>Number.isFinite(source[axis])) && !['alpha','beta','gamma'].some(axis=>Number.isFinite(rotation[axis]))) return;
+            if (nowMs < tripStartTime || (motionSamples.length && nowMs <= motionSamples[motionSamples.length-1].timestamp_ms)) return;
+            if (motionSamples.length >= 499999) { finishActiveTrip('duration_limit'); return; }
+            motionSamples.push({timestamp_ms:nowMs, event_timestamp_ms:Number.isFinite(event.timeStamp) && event.timeStamp>=0 ? event.timeStamp : null,
+                ax:finite(source.x), ay:finite(source.y), az:finite(source.z),
+                gx:finite(rotation.beta), gy:finite(rotation.gamma), gz:finite(rotation.alpha),
+                acceleration_includes_gravity:!hasLinear && !!includesGravity,
+                interval_ms:Number.isFinite(event.interval) && event.interval>=0 ? event.interval : null});
             if (!hasLinear && !hasGravity) return;
             const gravityRaw = hasGravity ? event.accelerationIncludingGravity : null;
             const raw = gravityRaw || event.acceleration || {};
@@ -1380,7 +1423,6 @@
             const rx = Number(raw.x ?? 0.0);
             const ry = Number(raw.y ?? 0.0);
             const rz = Number(raw.z ?? (gravityRaw ? 9.81 : 0));
-            const nowMs = Date.now();
 
             // Выделение чистого линейного ускорения (устранение влияния наклона телефона в держателе)
             if (!gravInitialized) {
@@ -1396,26 +1438,28 @@
             const linX = hasLinear ? Number(event.acceleration.x || 0.0) : (rx - gravX);
             const linY = hasLinear ? Number(event.acceleration.y || 0.0) : (ry - gravY);
             const linZ = hasLinear ? Number(event.acceleration.z || 0.0) : (rz - gravZ);
+            if ([linX,linY,9.81+linZ].some(value=>!Number.isFinite(value) || Math.abs(value)>200)) return;
 
-            if (currentLat === null || currentLon === null || nowMs - lastGpsFixMs > 5000) return;
+            const hasRecentGps = currentLat !== null && currentLon !== null && nowMs - lastGpsFixMs <= 5000;
             if (telemetryStream.length && nowMs / 1000 <= telemetryStream[telemetryStream.length - 1].t) return;
-            if (telemetryStream.length >= 499999) { finishActiveTrip(); return; }
+            if (telemetryStream.length >= 499999) { finishActiveTrip('duration_limit'); return; }
             // Сохраняем в поток значения, приведенные к горизонтальному базису для серверного фильтра Баттерворта
             telemetryStream.push({
                 t: Number((nowMs / 1000).toFixed(3)),
                 ax: Number(linX.toFixed(4)),
                 ay: Number(linY.toFixed(4)),
                 az: Number((9.81 + linZ).toFixed(4)),
-                gx: Number((rot.beta || 0.0).toFixed(4)),
-                gy: Number((rot.gamma || 0.0).toFixed(4)),
-                gz: Number((rot.alpha || 0.0).toFixed(4)),
-                speed: Number(currentSpeedMps.toFixed(2)),
-                lat: Number(currentLat.toFixed(6)),
-                lon: Number(currentLon.toFixed(6))
+                gx: Number((Number.isFinite(rot.beta) ? rot.beta : 0).toFixed(4)),
+                gy: Number((Number.isFinite(rot.gamma) ? rot.gamma : 0).toFixed(4)),
+                gz: Number((Number.isFinite(rot.alpha) ? rot.alpha : 0).toFixed(4)),
+                speed: hasRecentGps ? Number(currentSpeedMps.toFixed(2)) : 0,
+                lat: hasRecentGps ? Number(currentLat.toFixed(6)) : null,
+                lon: hasRecentGps ? Number(currentLon.toFixed(6)) : null
             });
+            document.getElementById('trip-live-smooth').innerText = `${liveSmoothScore}/100`;
 
             // 1. Инвариантный к наклону детектор неровностей (Z-Shock Veto по вертикальному удару linZ)
-            if (currentSpeedMps > 0.8 && Math.abs(linZ) > 3.8 && (nowMs - lastBumpTime > 850)) {
+            if (hasRecentGps && currentSpeedMps > 0.8 && Math.abs(linZ) > 3.8 && (nowMs - lastBumpTime > 850)) {
                 lastBumpTime = nowMs;
                 liveBumpsCount++;
                 document.getElementById('trip-live-bumps').innerText = String(liveBumpsCount);
@@ -1426,7 +1470,7 @@
             const horizMag = Math.hypot(linX, linY);
             const signedLong = Math.abs(linX) >= Math.abs(linY) ? linX : linY;
 
-            if (horizMag > 2.3 && (nowMs - lastEventTime > 1400)) {
+            if (hasRecentGps && currentSpeedMps > 0.8 && horizMag > 2.3 && (nowMs - lastEventTime > 1400)) {
                 lastEventTime = nowMs;
                 if (signedLong >= 0) liveHarshStarts++; else liveHarshBrakes++;
                 liveSmoothScore = Math.max(40, 100 - (liveHarshStarts + liveHarshBrakes) * 4);
@@ -1441,11 +1485,21 @@
         window.addEventListener('devicemotion', motionHandler);
 
         if ('geolocation' in navigator) {
-            geoWatchId = navigator.geolocation.watchPosition(
+            try {geoWatchId = navigator.geolocation.watchPosition(
                 (pos) => {
+                    if (!tripActive || !pos || !pos.coords) return;
                     const c = pos.coords;
-                    const nowMs = Number(pos.timestamp) || Date.now();
-                    const isAccurateGps = Number.isFinite(c.accuracy) && c.accuracy >= 0 && c.accuracy <= 35 && Number.isFinite(c.latitude) && Number.isFinite(c.longitude);
+                    const nowMs = Math.round(Number(pos.timestamp) || Date.now());
+                    if (nowMs - tripStartTime >= 86400000) {finishActiveTrip('duration_limit');return;}
+                    if (nowMs < tripStartTime || nowMs > Date.now() + 1000 || (gpsSamples.length && nowMs <= gpsSamples[gpsSamples.length-1].timestamp_ms)) return;
+                    if (!Number.isFinite(c.latitude) || !Number.isFinite(c.longitude) || Math.abs(c.latitude)>90 || Math.abs(c.longitude)>180) return;
+                    if (gpsSamples.length >= 99999) {finishActiveTrip('duration_limit');return;}
+                    const accuracy = Number.isFinite(c.accuracy) && c.accuracy>=0 && c.accuracy<=100000 ? c.accuracy : null;
+                    const recordedSpeed = Number.isFinite(c.speed) && c.speed>=0 && c.speed<=150 ? c.speed : null;
+                    gpsSamples.push({timestamp_ms:nowMs, latitude:c.latitude, longitude:c.longitude,
+                        accuracy_m:accuracy, speed_mps:recordedSpeed, speed_source:recordedSpeed===null?'missing':'gps'});
+                    captureGeoPermission = 'granted';
+                    const isAccurateGps = accuracy !== null && accuracy <= 50;
                     const nativeSpeed = Number.isFinite(c.speed) && c.speed >= 0 && c.speed <= 75 ? c.speed : null;
                     let derivedSpeed = 0;
                     if (isAccurateGps) {
@@ -1471,15 +1525,30 @@
                         lastGpsFixMs = 0;
                         previousNativeSpeedMps = prevGpsLat = prevGpsLon = prevGpsTimeMs = null;
                     }
-                    document.getElementById('pill-gps-status').innerHTML = "GPS<br>подключен";
+                    document.getElementById('pill-gps-status').innerHTML = isAccurateGps ? "GPS<br>подключен" : "GPS<br>неточный";
                 },
-                () => {
+                (error) => {
+                    if (!tripActive) return;
+                    captureGeoPermission = error.code===1?'denied':'unavailable';
                     currentSpeedMps = 0; lastGpsFixMs = 0;
                     previousNativeSpeedMps = prevGpsLat = prevGpsLon = prevGpsTimeMs = null;
-                    document.getElementById('pill-gps-status').innerHTML = "GPS<br>поиск...";
+                    document.getElementById('pill-gps-status').innerHTML = error.code===1 ? "GPS<br>нет доступа" : "GPS<br>поиск...";
                 },
-                { enableHighAccuracy: true, maximumAge: 2000 }
-            );
+                { enableHighAccuracy: true, maximumAge: 0, timeout:15000 }
+            );} catch (_) {
+                captureGeoPermission='unavailable';
+                document.getElementById('pill-gps-status').innerHTML='GPS<br>недоступен';
+            }
+        } else {
+            captureGeoPermission = 'unsupported';
+            document.getElementById('pill-gps-status').innerHTML = "GPS<br>недоступен";
+        }
+        if ('wakeLock' in navigator) {
+            const sessionId=activeSessionId;
+            try {
+                const lock = await navigator.wakeLock.request('screen');
+                if (tripActive && activeSessionId===sessionId) wakeLock = lock; else await lock.release();
+            } catch (_) {}
         }
     }
 
@@ -1537,38 +1606,44 @@
     })();
 
     // ==================== ЗАВЕРШЕНИЕ И ОТКРЫТИЕ ЭКРАНА "ИТОГ ПОЕЗДКИ" ====================
-    async function finishActiveTrip() {
-        if (!tripActive) return;
+    async function finishActiveTrip(endReason = 'user') {
+        if (finishingTrip || (!tripActive && !pendingFinishedPayload)) return;
+        finishingTrip = true;
         tripActive = false;
 
         clearInterval(tripTimerInterval);
         if (motionHandler) window.removeEventListener('devicemotion', motionHandler);
         if (geoWatchId !== null) navigator.geolocation.clearWatch(geoWatchId);
+        geoWatchId = null;
         clearInterval(draftTimerInterval);
         if (wakeLock) { try { await wakeLock.release(); } catch (_) {} }
 
-        document.getElementById('active-trip-screen').classList.remove('active');
-
         const elapsedSec = Math.max(1, Math.floor((Date.now() - tripStartTime) / 1000));
-
-        // Do not manufacture IMU readings when a device has no sensors.
-        if (telemetryStream.length < 50) {
-            window.alert('Недостаточно данных датчиков для сохранения поездки. Проверьте разрешения устройства.');
-            return;
-        }
         const sessionId = activeSessionId;
         lastFinishedSessionId = sessionId;
-        const payload = {
+        const payload = pendingFinishedPayload || {
             session_id: sessionId,
             user_id: currentUserId,
             car_id: currentCarId,
-            telemetry_stream: telemetryStream
+            telemetry_stream: [...telemetryStream],
+            raw_recording: rawRecording(endReason)
         };
+        pendingFinishedPayload = payload;
 
-        try { await AutoXAKOfflineStore.savePendingTrip(payload); }
-        catch (error) { window.alert("Не удалось сохранить поездку на устройстве. Освободите место и повторите сохранение."); return; }
+        try {
+            await draftSaveChain.catch(()=>{});
+            await AutoXAKOfflineStore.savePendingTrip(payload);
+        } catch (error) {
+            finishingTrip = false;
+            window.alert("Не удалось сохранить поездку на устройстве. Данные остаются в этой вкладке. Освободите место и повторите завершение.");
+            return;
+        }
+        pendingFinishedPayload = null;
+        if (releaseRecordingLock) {releaseRecordingLock();releaseRecordingLock=null;}
+        document.getElementById('active-trip-screen').classList.remove('active');
 
-        let savedRub = Math.max(0, Number((liveDistanceKm * 2.05 - (liveHarshStarts + liveHarshBrakes) * 3.5).toFixed(2)));
+        // Credit only results confirmed by the calculation endpoint.
+        let savedRub = 0;
         let startsCount = liveHarshStarts;
         let brakesCount = liveHarshBrakes;
         let idleMins = 0;
@@ -1576,21 +1651,26 @@
         let distKm = liveDistanceKm;
         let durSec = elapsedSec;
         let isOffline = !navigator.onLine;
+        let quality = null;
 
         try {
             if (!navigator.onLine) throw new Error('Offline');
 
-            const res = await fetch('/api/v1/telemetry/session', {
+            const controller = new AbortController();
+            const timeout = setTimeout(()=>controller.abort(),15000);
+            let res;
+            try { res = await fetch('/api/v1/telemetry/session', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     ...(typeof AutoXAKSession !== 'undefined' ? AutoXAKSession.getAuthHeaders() : {})
                 },
-                body: JSON.stringify(payload)
-            });
+                body: JSON.stringify(payload), signal:controller.signal
+            }); } finally {clearTimeout(timeout);}
 
             if (res.ok) {
                 const result = await res.json();
+                quality = result.metrics?.capture_quality || null;
                 await AutoXAKOfflineStore.removePendingTrip(sessionId);
                 lastFinishedSessionId = result.session_id;
                 savedRub = Number(result.cost_savings_rub ?? savedRub);
@@ -1611,16 +1691,15 @@
                     distance_km: distKm,
                     duration_seconds: durSec,
                     total_savings_rub: savedRub,
-                    created_at: new Date().toISOString()
+                    capture_quality: quality,
+                    created_at: new Date(tripStartTime).toISOString()
                 }, false);
             } else {
                 throw new Error('HTTP ' + res.status);
             }
         } catch (_) {
             isOffline = true;
-            if (typeof AutoXAKOfflineStore !== 'undefined') {
-                await AutoXAKOfflineStore.savePendingTrip(payload);
-            }
+            // The durable copy already exists. Never overwrite it with a later draft.
             saveTripDetailsLocally(sessionId, {
                 session_id: sessionId,
                 hard_accel_count: startsCount,
@@ -1630,7 +1709,8 @@
                 distance_km: distKm,
                 duration_seconds: durSec,
                 total_savings_rub: savedRub,
-                created_at: new Date().toISOString()
+                capture_quality: {analysis_status:'unavailable',style_metrics_available:false},
+                created_at: new Date(tripStartTime).toISOString()
             }, true);
         }
 
@@ -1639,17 +1719,25 @@
         document.getElementById('sum-brakes').innerText = String(brakesCount);
         document.getElementById('sum-idle').innerText = `${idleMins} мин`;
         document.getElementById('sum-bumps').innerText = String(bumpsCount);
-        document.getElementById('sum-distance').innerText = `${distKm.toFixed(1).replace(/\.0$/, '')} км`;
+        document.getElementById('sum-distance').innerText = formatDistance(distKm);
         document.getElementById('sum-duration').innerText = formatDurationHoursMins(durSec);
 
         const offlineBanner = document.getElementById('sum-offline-banner');
         if (isOffline) {
+            offlineBanner.innerText = 'Поездка сохранена на устройстве и появится на сервере после синхронизации.';
+            offlineBanner.classList.add('visible');
+        } else if (quality && quality.analysis_status !== 'available') {
+            offlineBanner.innerText = `Поездка сохранена. GPS: ${quality.gps_samples}, датчики движения: ${quality.motion_samples}. Для полного расчёта данных недостаточно.`;
             offlineBanner.classList.add('visible');
         } else {
             offlineBanner.classList.remove('visible');
         }
+        if (isOffline || (quality && !quality.style_metrics_available)) {
+            for (const id of ['sum-starts','sum-brakes','sum-idle','sum-bumps']) document.getElementById(id).innerText = '—';
+        }
 
         document.getElementById('summary-modal').classList.add('active');
+        finishingTrip = false;
     }
 
     function saveTripDetailsLocally(sid, details, isOfflineTrip = false) {

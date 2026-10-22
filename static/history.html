@@ -567,7 +567,8 @@
         const idleMin = t.idle_minutes !== undefined
             ? t.idle_minutes
             : Math.round(((Number(t.idle_ratio) || 0) * durSec) / 60);
-        const distKm = Number(t.distance_km || 0).toFixed(1).replace(/\.0$/, '');
+        const distance = Math.max(0,Number(t.distance_km)||0);
+        const distLabel = distance>0 && distance<1 ? `${Math.round(distance*1000)} м` : `${distance.toFixed(1).replace(/\.0$/,'')} км`;
 
         document.getElementById('det-date').innerText = formatRuDateTime(t.created_at);
         document.getElementById('det-savings').innerText = `+${rub} ₽`;
@@ -575,8 +576,11 @@
         document.getElementById('det-brakes').innerText = String(t.hard_brake_count ?? 0);
         document.getElementById('det-idle').innerText = `${idleMin} мин`;
         document.getElementById('det-bumps').innerText = String(t.bumps_count ?? t.z_veto_count ?? 0);
-        document.getElementById('det-distance').innerText = `${distKm} км`;
+        document.getElementById('det-distance').innerText = distLabel;
         document.getElementById('det-duration').innerText = formatDurationHoursMins(durSec);
+        if (t.capture_quality && !t.capture_quality.style_metrics_available) {
+            for (const id of ['det-starts','det-brakes','det-idle','det-bumps']) document.getElementById(id).innerText = '—';
+        }
 
         document.getElementById('details-modal').classList.add('active');
     }

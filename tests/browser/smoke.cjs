@@ -123,7 +123,7 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
         assert.equal(sensors.emptyCount,0);
         assert.equal(sensors.samples,49);
         assert.equal(sensors.cleared,0);
-        assert.equal(sensors.hasAlert,true);
+        assert.equal(sensors.hasAlert,false);
         console.log('Browser: profile recovery after 503, single GPS distance integration, no fabricated IMU samples, geolocation watcher 0 cleanup passed');
         // A signing-key rotation invalidates the signature while local JWT
         // expiry still looks valid. Reauthentication must not require clearing storage.

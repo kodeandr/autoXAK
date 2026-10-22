@@ -48,8 +48,16 @@ const AutoXAKOfflineStore = window.AutoXAKOfflineStore = (() => {
     }
     async function recoverInterruptedTrips() {
         const drafts = await transaction('readonly', store => store.index('status').getAll('RECORDING'));
+        let active = new Set();
+        if (navigator.locks) {
+            try {
+                const locks = await navigator.locks.query();
+                active = new Set([...locks.held,...locks.pending].map(lock=>lock.name));
+            } catch (_) {return;}
+        }
         for (const draft of drafts || []) {
-            if (draft.user_id === AutoXAKSession.getUserId() && draft.telemetry_stream.length >= 50) await savePendingTrip(draft);
+            if (active.has('autoxak-recorder:'+draft.session_id)) continue;
+            if (draft.user_id === AutoXAKSession.getUserId() && (draft.raw_recording || (Array.isArray(draft.telemetry_stream) && draft.telemetry_stream.length >= 50))) await savePendingTrip(draft);
         }
     }
     function removePendingTrip(id) { return transaction('readwrite', store => store.delete(id)); }
@@ -98,9 +106,18 @@ const AutoXAKOfflineStore = window.AutoXAKOfflineStore = (() => {
             if (owner !== AutoXAKSession.getUserId()) break;
             try {
                 const {created_at, status, attempts, ...payload} = trip;
-                const response = await fetch('/api/v1/telemetry/session', {method: 'POST',
-                    headers: {'Content-Type': 'application/json', ...AutoXAKSession.getAuthHeaders()}, body: JSON.stringify(payload)});
-                if (!response.ok) break; // Preserve rejected records for recovery; never erase telemetry on 422.
+                const controller = new AbortController();
+                const timeout = setTimeout(()=>controller.abort(),15000);
+                let response;
+                try { response = await fetch('/api/v1/telemetry/session', {method: 'POST',
+                    headers: {'Content-Type': 'application/json', ...AutoXAKSession.getAuthHeaders()}, body: JSON.stringify(payload), signal:controller.signal});
+                } finally {clearTimeout(timeout);}
+                if (!response.ok) {
+                    // Retain a rejected record without preventing independent trips
+                    // from syncing. Stop on authentication/rate/server failures.
+                    if ([400,409,413,422].includes(response.status)) continue;
+                    break;
+                }
                 const result = await response.json();
                 await removePendingTrip(trip.session_id);
                 if (callbacks.onTripSynced) await callbacks.onTripSynced(result, trip);
