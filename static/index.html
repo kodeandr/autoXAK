@@ -1092,6 +1092,44 @@
     let saveActiveDraft = null, draftSaveChain = Promise.resolve();
     let pendingFinishedPayload = null, finishingTrip = false;
     let releaseRecordingLock = null;
+    let estimateController = null, lastEstimateRequestMs = 0;
+
+    async function updateLiveEstimate() {
+        if (!tripActive || estimateController || !navigator.onLine || telemetryStream.length < 50) return;
+        const now = Date.now();
+        if (now - lastEstimateRequestMs < 15000 || now - lastGpsFixMs > 5000) return;
+        const firstGps = telemetryStream.findIndex(point=>point.lat!==null && point.lon!==null);
+        if (firstGps<0) return;
+        const usable = telemetryStream.slice(firstGps);
+        if (usable.length<50 || usable.filter(point=>point.lat!==null && point.lon!==null).length / usable.length < 0.9) return;
+        if (usable.some((point,i)=>i && point.t-usable[i-1].t>2)) return;
+        lastEstimateRequestMs = now;
+        const sessionId = activeSessionId;
+        const stride = Math.max(1, Math.ceil((usable.length-1)/5999));
+        const samples = usable.filter((_,i)=>i%stride===0);
+        if ((usable.length-1)%stride) samples.push(usable[usable.length-1]);
+        const controller = new AbortController();
+        estimateController = controller;
+        const timeout = setTimeout(()=>controller.abort(),8000);
+        try {
+            const response = await fetch('/api/v1/telemetry/preview', {
+                method:'POST', headers:{'Content-Type':'application/json', ...AutoXAKSession.getAuthHeaders()},
+                body:JSON.stringify({session_id:sessionId,user_id:currentUserId,car_id:currentCarId,
+                    telemetry_stream:samples,sampling_stride:stride}), signal:controller.signal
+            });
+            if (!response.ok) return;
+            const result = await response.json();
+            if (!tripActive || activeSessionId!==sessionId || result.session_id!==sessionId
+                || result.status!=='PREVIEW' || !Number.isFinite(result.cost_savings_rub)) return;
+            document.getElementById('trip-live-savings').innerText = `+${Math.max(0,result.cost_savings_rub).toFixed(2)} ₽`;
+            document.getElementById('trip-live-savings').title = 'Предварительная оценка по модели. Итог уточняется после завершения поездки.';
+        } catch (_) {
+            if (tripActive && activeSessionId===sessionId) document.getElementById('trip-live-savings').title = 'Последняя предварительная оценка. Обновление после восстановления связи.';
+        } finally {
+            clearTimeout(timeout);
+            if (estimateController===controller) estimateController=null;
+        }
+    }
 
     function rawRecording(endReason = 'user') {
         const end=Math.max(Date.now(), tripStartTime, gpsSamples[gpsSamples.length-1]?.timestamp_ms || 0, motionSamples[motionSamples.length-1]?.timestamp_ms || 0);
@@ -1134,6 +1172,7 @@
     // Экспоненциальный фильтр вектора гравитации (EMA LPF) для защиты от наклона телефона в держателе
     let gravX = 0.0, gravY = 0.0, gravZ = 9.81;
     let gravInitialized = false;
+    let lastMotionMs = 0, shockFiltered = 0, shockArmed = true, shockQuietSince = 0;
 
     let motionHandler = null;
     let geoWatchId = null;
@@ -1361,11 +1400,13 @@
         liveHarshBrakes = 0;
         liveSmoothScore = 100;
         gravInitialized = false;
+        lastMotionMs = 0; shockFiltered = 0; shockArmed = true; shockQuietSince = 0;
+        lastEstimateRequestMs = 0;
 
         setTripGlowState('green');
         document.getElementById('trip-timer-display').innerText = "00:00";
-        document.getElementById('trip-live-savings').innerText = "— ₽";
-        document.getElementById('trip-live-savings').title = 'Расчёт после завершения поездки';
+        document.getElementById('trip-live-savings').innerText = "+0.00 ₽";
+        document.getElementById('trip-live-savings').title = 'Предварительная оценка. Ожидаем GPS и датчики; без пробега экономия равна нулю.';
         document.getElementById('trip-live-distance').innerText = "0 км";
         document.getElementById('trip-live-bumps').innerText = "0";
         document.getElementById('trip-live-smooth').innerText = "—";
@@ -1395,6 +1436,10 @@
 
             document.getElementById('trip-live-distance').innerText = formatDistance(liveDistanceKm);
             document.getElementById('pill-net-status').innerHTML = navigator.onLine ? "Интернет<br>подключен" : "Интернет<br>оффлайн";
+            document.getElementById('trip-live-bumps').title = motionSamples.length
+                ? `Датчики: ${motionSamples.length} отсчётов. Вертикальные импульсы; дорожные события подтверждаются после поездки.`
+                : 'Ожидаем датчики движения. Проверьте разрешение движения и ориентации.';
+            updateLiveEstimate();
         }, 1000);
 
         motionHandler = (event) => {
@@ -1424,20 +1469,47 @@
             const ry = Number(raw.y ?? 0.0);
             const rz = Number(raw.z ?? (gravityRaw ? 9.81 : 0));
 
-            // Выделение чистого линейного ускорения (устранение влияния наклона телефона в держателе)
-            if (!gravInitialized) {
+            const motionDt = lastMotionMs ? Math.min(0.2,Math.max(0.005,(nowMs-lastMotionMs)/1000)) : 0.02;
+            if (lastMotionMs && nowMs-lastMotionMs>2000) {shockFiltered=0;shockArmed=true;}
+            lastMotionMs = nowMs;
+            // When both streams exist, their difference gives gravity without
+            // absorbing real vertical acceleration into an EMA estimate.
+            if (hasGravity && hasLinear) {
+                gravX = rx-event.acceleration.x;
+                gravY = ry-event.acceleration.y;
+                gravZ = rz-event.acceleration.z;
+                gravInitialized = Math.hypot(gravX,gravY,gravZ)>1;
+            } else if (!gravInitialized && hasGravity) {
                 gravX = rx; gravY = ry; gravZ = rz;
                 gravInitialized = true;
-            } else {
-                // ФНЧ первого порядка (alpha = 0.04 при 50 Гц соответствует срезу ~0.35 Гц для вектора гравитации)
-                gravX = 0.96 * gravX + 0.04 * rx;
-                gravY = 0.96 * gravY + 0.04 * ry;
-                gravZ = 0.96 * gravZ + 0.04 * rz;
+            } else if (hasGravity) {
+                const alpha = 1-Math.exp(-motionDt/0.8);
+                gravX += alpha*(rx-gravX);
+                gravY += alpha*(ry-gravY);
+                gravZ += alpha*(rz-gravZ);
             }
+            if (!gravInitialized) return;
 
-            const linX = hasLinear ? Number(event.acceleration.x || 0.0) : (rx - gravX);
-            const linY = hasLinear ? Number(event.acceleration.y || 0.0) : (ry - gravY);
-            const linZ = hasLinear ? Number(event.acceleration.z || 0.0) : (rz - gravZ);
+            const deviceX = hasLinear ? event.acceleration.x : rx-gravX;
+            const deviceY = hasLinear ? event.acceleration.y : ry-gravY;
+            const deviceZ = hasLinear ? event.acceleration.z : rz-gravZ;
+            const norm = Math.hypot(gravX,gravY,gravZ);
+            if (!Number.isFinite(norm) || norm<1) return;
+            const up = [gravX/norm,gravY/norm,gravZ/norm];
+            const reference = Math.abs(up[0])<0.8 ? [1,0,0] : [0,1,0];
+            const dot = reference[0]*up[0]+reference[1]*up[1]+reference[2]*up[2];
+            const horizontal = reference.map((value,i)=>value-dot*up[i]);
+            const hnorm = Math.hypot(...horizontal);
+            const forward = horizontal.map(value=>value/hnorm);
+            const lateral = [up[1]*forward[2]-up[2]*forward[1],up[2]*forward[0]-up[0]*forward[2],up[0]*forward[1]-up[1]*forward[0]];
+            const linear = [deviceX,deviceY,deviceZ];
+            const linX = linear.reduce((sum,value,i)=>sum+value*forward[i],0);
+            const linY = linear.reduce((sum,value,i)=>sum+value*lateral[i],0);
+            // Without OS-provided linear acceleration, gravity magnitude is
+            // rotation invariant; an EMA direction alone produces false shocks
+            // when the phone changes orientation.
+            const linZ = hasLinear ? linear.reduce((sum,value,i)=>sum+value*up[i],0)
+                : Math.hypot(rx,ry,rz)-9.80665;
             if ([linX,linY,9.81+linZ].some(value=>!Number.isFinite(value) || Math.abs(value)>200)) return;
 
             const hasRecentGps = currentLat !== null && currentLon !== null && nowMs - lastGpsFixMs <= 5000;
@@ -1458,9 +1530,20 @@
             });
             document.getElementById('trip-live-smooth').innerText = `${liveSmoothScore}/100`;
 
-            // 1. Инвариантный к наклону детектор неровностей (Z-Shock Veto по вертикальному удару linZ)
-            if (hasRecentGps && currentSpeedMps > 0.8 && Math.abs(linZ) > 3.8 && (nowMs - lastBumpTime > 850)) {
+            // Live sensor impulses are visible during a stationary device check.
+            // They do not create distance, driving violations or financial credit.
+            const previousShock = shockFiltered;
+            shockFiltered += (1-Math.exp(-motionDt/0.04))*(linZ-shockFiltered);
+            const jerk = (shockFiltered-previousShock)/motionDt;
+            if (Math.abs(shockFiltered)<0.5) {
+                if (!shockQuietSince) shockQuietSince=nowMs;
+                if (nowMs-shockQuietSince>=120) shockArmed=true;
+            } else {shockQuietSince=0;}
+            const rotating = Math.hypot(...['alpha','beta','gamma'].map(axis=>Number.isFinite(rot[axis])?rot[axis]:0))>45;
+            const shock = Math.abs(shockFiltered)>3.5 || (Math.abs(shockFiltered)>0.8 && Math.abs(jerk)>15);
+            if (!rotating && shockArmed && shock && nowMs-lastBumpTime>700 && nowMs-tripStartTime>=120) {
                 lastBumpTime = nowMs;
+                shockArmed=false;
                 liveBumpsCount++;
                 document.getElementById('trip-live-bumps').innerText = String(liveBumpsCount);
                 return; // Игнорируем продольный отклик во время проезда ямы/лежачего полицейского
@@ -1610,6 +1693,7 @@
         if (finishingTrip || (!tripActive && !pendingFinishedPayload)) return;
         finishingTrip = true;
         tripActive = false;
+        if (estimateController) {estimateController.abort();estimateController=null;}
 
         clearInterval(tripTimerInterval);
         if (motionHandler) window.removeEventListener('devicemotion', motionHandler);
@@ -1726,14 +1810,17 @@
         if (isOffline) {
             offlineBanner.innerText = 'Поездка сохранена на устройстве и появится на сервере после синхронизации.';
             offlineBanner.classList.add('visible');
-        } else if (quality && quality.analysis_status !== 'available') {
-            offlineBanner.innerText = `Поездка сохранена. GPS: ${quality.gps_samples}, датчики движения: ${quality.motion_samples}. Для полного расчёта данных недостаточно.`;
-            offlineBanner.classList.add('visible');
         } else {
             offlineBanner.classList.remove('visible');
         }
         if (isOffline || (quality && !quality.style_metrics_available)) {
-            for (const id of ['sum-starts','sum-brakes','sum-idle','sum-bumps']) document.getElementById(id).innerText = '—';
+            for (const id of ['sum-starts','sum-brakes','sum-idle']) document.getElementById(id).innerText = '—';
+        }
+        if (isOffline || (quality && !quality.style_metrics_available) || distKm===0) {
+            document.getElementById('sum-bumps').innerText = motionSamples.length ? String(liveBumpsCount) : '—';
+            document.getElementById('sum-bumps').title = 'Вертикальные импульсы датчика. Без подтверждённого движения они не считаются дорожными событиями.';
+        } else {
+            document.getElementById('sum-bumps').title = 'Дорожные события по данным поездки';
         }
 
         document.getElementById('summary-modal').classList.add('active');

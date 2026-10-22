@@ -76,7 +76,7 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
         assert.deepEqual(inaccurate.point_counts,{gps:1,motion:120});
         assert.equal(inaccurate.gps[0].accuracy_m,200);
         assert(inaccurate.fuel_estimate.capture_quality.quality_flags.includes('insufficient_accurate_gps'));
-        assert((await page.locator('#sum-offline-banner').innerText()).includes('Поездка сохранена'));
+        assert.equal(await page.locator('#sum-offline-banner').evaluate(element=>element.classList.contains('visible')),false);
         await closeSummary();
 
         await start();

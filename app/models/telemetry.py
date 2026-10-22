@@ -61,3 +61,10 @@ class TripSessionPayload(BaseModel):
         if self.raw_recording and times and (times[0] * 1000 < self.raw_recording.started_at_ms - 1 or times[-1] * 1000 > self.raw_recording.ended_at_ms + 1):
             raise ValueError("Derived telemetry must be inside its raw recording interval")
         return self
+
+
+class TelemetryPreviewPayload(TripSessionPayload):
+    """Bounded, non-persistent input for a provisional calculation."""
+    telemetry_stream: list[TelemetryPoint] = Field(min_length=50, max_length=6000)
+    raw_recording: None = None
+    sampling_stride: int = Field(default=1, ge=1, le=10000)
