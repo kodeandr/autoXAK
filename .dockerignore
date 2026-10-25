@@ -10,6 +10,7 @@ pgdata/
 backups/
 backups-migration-*/
 .migration-secrets.json
+.staging/
 *.db
 .pytest-tmp*/
 logs/

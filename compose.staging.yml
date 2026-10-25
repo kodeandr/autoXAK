@@ -1,0 +1,116 @@
+name: autoxak-staging
+
+x-logging: &logging
+  driver: local
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  api:
+    image: autoxak-api:staging-${APP_IMAGE_TAG:-local}
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile
+    restart: unless-stopped
+    command:
+      - uvicorn
+      - app.main:app
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --proxy-headers
+      - --forwarded-allow-ips
+      - ${PROXY_TRUSTED_IPS:-172.29.251.1}
+      - --timeout-graceful-shutdown
+      - "90"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?Set a persistent SECRET_KEY in .env.staging}
+      POSTGRES_USER: autoXAK_user
+      POSTGRES_DB: autoXAK_staging
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.staging}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      DGIS_USE_MOCK: "true"
+      DGIS_API_KEY: ${DGIS_API_KEY:-}
+      ENABLE_YANDEX_DEMO: "false"
+      YANDEX_CLIENT_ID: ${YANDEX_CLIENT_ID:-}
+      YANDEX_CLIENT_SECRET: ${YANDEX_CLIENT_SECRET:-}
+      YANDEX_REDIRECT_URI: https://${APP_DOMAIN:?Set APP_DOMAIN}/api/v1/auth/yandex/callback
+      YANDEX_ID_SALT: ${YANDEX_ID_SALT:-}
+    ports:
+      - "127.0.0.1:18000:8000"
+    networks:
+      proxy:
+        ipv4_address: ${PROXY_API_IP:-172.29.251.3}
+      backend: {}
+    volumes:
+      - api_logs:/var/log/autoxak
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=256m
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    mem_limit: 768m
+    cpus: 1.0
+    pids_limit: 256
+    stop_grace_period: 100s
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=5).read()"]
+      interval: 30s
+      timeout: 7s
+      start_period: 60s
+      retries: 3
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    logging: *logging
+
+  postgres:
+    mem_limit: 256m
+    image: postgres:16-alpine@sha256:721873c34ceb9f8d8fc265984940dc982404c105f19ad51be9fdc5970a6080ea
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: autoXAK_user
+      POSTGRES_DB: autoXAK_staging
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env.staging}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    stop_grace_period: 60s
+    logging: *logging
+
+  redis:
+    mem_limit: 128m
+    image: redis:7.2-alpine@sha256:29e8589c3f9ba699b5f7aa4b3c7733c58852a3626439e619aa0ee78de08c6ca0
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no", "--maxmemory", "64mb", "--maxmemory-policy", "allkeys-lru"]
+    networks: [backend]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    logging: *logging
+
+networks:
+  proxy:
+    ipam:
+      config:
+        - subnet: ${PROXY_SUBNET:-172.29.251.0/24}
+          gateway: ${PROXY_GATEWAY:-172.29.251.1}
+  backend:
+    internal: true
+
+volumes:
+  pgdata:
+    name: autoxak-staging_pgdata
+  api_logs:
