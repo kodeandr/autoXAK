@@ -1169,7 +1169,7 @@
 
         const fullCarName = `${makeName} ${modelName} ${trimBadge}`.replace(/\s+/g, ' ').trim();
 
-        let fuelPass = 8.2;
+        let fuelPass = null;
         for (const mk of catalogTree) {
             for (const md of mk.models) {
                 const tr = md.trims.find(x => String(x.id) === String(trimId));
@@ -1197,9 +1197,7 @@
         const driveType = document.getElementById('select-drive').value;
         const transType = document.getElementById('select-transmission').value;
 
-        const driveAddon = driveType === 'AWD' ? 0.6 : 0.0;
-        const estimatedFuelRate = Number((4.2 + (massKg / 1000) * 1.8 + engineL * 0.9 + driveAddon).toFixed(1));
-        let synthesizedCarId = `custom_${bodyType}_${Math.round(engineL * 10)}_${driveType.toLowerCase()}`;
+        let synthesizedCarId = null;
 
         try {
             const {response:synRes, data:synData} = await AutoXAKSession.fetchJSON('/api/v1/vehicles/synthesize', {
@@ -1222,10 +1220,11 @@
             }
         } catch (_) { window.alert('Не удалось сохранить характеристики автомобиля. Проверьте соединение и повторите.'); return; }
 
+        if (!synthesizedCarId) {window.alert('Сервер не вернул идентификатор автомобиля. Повторите сохранение.');return;}
         await persistVehicleSelection({
             car_id: synthesizedCarId,
             car_name: customCarName,
-            fuel_consumption: estimatedFuelRate,
+            fuel_consumption: null,
             curb_weight_kg: massKg,
             engine_displacement_l: engineL,
             drivetrain_type: driveType,
@@ -1239,13 +1238,14 @@
         localStorage.setItem('autoXAK_car_name', vehicleData.car_name);
         localStorage.setItem('autoXAK_selected_car_id', vehicleData.car_id);
         localStorage.setItem('autoXAK_selected_car_name', vehicleData.car_name);
-        localStorage.setItem('autoXAK_fuel_pass', String(vehicleData.fuel_consumption || 8.2));
+        if (Number.isFinite(vehicleData.fuel_consumption)) localStorage.setItem('autoXAK_fuel_pass',String(vehicleData.fuel_consumption));
+        else localStorage.removeItem('autoXAK_fuel_pass');
 
         const profilePayload = {
             user_id: currentUserId,
             car_id: vehicleData.car_id,
             car_name: vehicleData.car_name,
-            fuel_consumption: vehicleData.fuel_consumption || 8.2
+            fuel_consumption: vehicleData.fuel_consumption ?? null
         };
         localStorage.setItem('autoXAK_profile', JSON.stringify(profilePayload));
 

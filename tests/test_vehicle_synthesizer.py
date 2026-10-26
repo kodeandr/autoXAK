@@ -1,4 +1,3 @@
-﻿import pytest
 from app.services.profile_synthesizer import ProfileSynthesizer
 from app.schemas.vehicle import CustomVehicleInput
 
@@ -18,8 +17,9 @@ def test_synthesizer_compact_sedan():
 
     profile = synthesizer.synthesize_profile(input_data)
     assert profile.curb_weight_kg == 1280
-    assert 0.55 <= profile.drag_coefficient_area <= 0.85
-    assert profile.drivetrain_efficiency >= 0.88
+    assert profile.drag_coefficient_area is None
+    assert profile.drivetrain_efficiency is None
+    assert profile.parameter_status=='user_declared_incomplete_not_calibrated'
 
 
 def test_synthesizer_heavy_suv():
@@ -37,5 +37,5 @@ def test_synthesizer_heavy_suv():
 
     profile = synthesizer.synthesize_profile(input_data)
     assert profile.curb_weight_kg == 2250
-    assert profile.drag_coefficient_area > 0.80
-    assert profile.oil_capacity_l >= 4.5
+    assert profile.drag_coefficient_area is None
+    assert profile.oil_capacity_l is None

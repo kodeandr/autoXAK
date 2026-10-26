@@ -82,20 +82,24 @@ async def store_raw_capture(db, payload, trip_id, digest, vehicle, quality):
                                   motion_count=len(points) if name == "motion" else 0))
             sequence += 1
     recording.chunk_count = sequence
+    return recording
 
 
 def unscored_trip(payload, trip_id, digest, owner, quality):
     raw = payload.raw_recording
     duration = (raw.ended_at_ms - raw.started_at_ms) / 1000
-    distance = round(measured_distance(raw), 3)
+    distance = measured_distance(raw)
     result = {"session_id": trip_id, "duration_seconds": duration, "distance_km": distance,
-              "oil_wear_percent": 0.0, "cost_savings_rub": 0.0, "status": "RECORDED",
-              "metrics": {"capture_quality": quality}}
+              "oil_wear_percent": None, "cost_savings_rub": None, "status": "RECORDED",
+              "metrics": {"capture_quality": quality, "math_status": {
+                  "version":"reference-math-1", "fuel_savings":{"status":"unavailable","reason":"matched_reference_fuel_required"},
+                  "oil_wear":{"status":"unavailable","reason":"oil_condition_reference_required"},
+                  "monetary_credit_status":"not_verified"}}}
     trip = Trip(id=trip_id, client_session_id=payload.session_id, user_id=owner.id, car_id=payload.car_id,
                 created_at=datetime.fromtimestamp(raw.started_at_ms / 1000, tz=timezone.utc),
                 request_hash=digest, calculation_result=result, duration_seconds=duration, distance_km=distance,
                 equivalent_engine_hours=0.0, oil_wear_percent=0.0,
                 board_computer_consumption_l100km=payload.board_computer_consumption_l100km)
     owner.total_trips = int(owner.total_trips or 0) + 1
-    owner.total_distance_km = round(float(owner.total_distance_km or 0) + distance, 3)
+    owner.total_distance_km = float(owner.total_distance_km or 0) + distance
     return trip, result

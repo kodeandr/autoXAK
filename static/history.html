@@ -510,7 +510,7 @@
                 offlineList.push({...localDetails[trip.session_id], user_id:owner, session_id:trip.session_id,
                     created_at:new Date(raw?.started_at_ms ?? trip.created_at).toISOString(),
                     duration_seconds:raw ? (raw.ended_at_ms-raw.started_at_ms)/1000 : 0,
-                    total_savings_rub:0, capture_quality:{style_metrics_available:false}});
+                    total_savings_rub:null, capture_quality:{style_metrics_available:false}});
             }
         } catch (_) {}
 
@@ -561,12 +561,12 @@
         }
 
         container.innerHTML = trips.map((t, idx) => {
-            const rub = (Number(t.total_savings_rub) || 0).toFixed(2);
+            const rub = t.total_savings_rub===null ? null : (Number(t.total_savings_rub) || 0).toFixed(2);
             const dateStr = formatRuDateTime(t.created_at);
             return `
                 <div class="trip-row-card">
                     <div class="trip-row-left">
-                        <span class="trip-row-amount">+${rub} ₽</span>
+                        <span class="trip-row-amount">${rub===null?'—':`${Number(rub)>=0?'+':''}${rub} ₽`}</span>
                         <span class="trip-row-date">${dateStr}</span>
                     </div>
                     <button class="btn-trip-details" onclick="openDetailsModal(${idx})">Подробнее</button>
@@ -579,7 +579,7 @@
         const t = loadedTrips[index];
         if (!t) return;
 
-        const rub = (Number(t.total_savings_rub) || 0).toFixed(2);
+        const rub = t.total_savings_rub===null ? null : (Number(t.total_savings_rub) || 0).toFixed(2);
         const durSec = Number(t.duration_seconds) || 0;
         const idleMin = t.idle_minutes !== undefined
             ? t.idle_minutes
@@ -588,10 +588,12 @@
         const distLabel = distance>0 && distance<1 ? `${Math.round(distance*1000)} м` : `${distance.toFixed(1).replace(/\.0$/,'')} км`;
 
         document.getElementById('det-date').innerText = formatRuDateTime(t.created_at);
-        document.getElementById('det-savings').innerText = `+${rub} ₽`;
-        document.getElementById('det-starts').innerText = String(t.hard_accel_count ?? 0);
-        document.getElementById('det-brakes').innerText = String(t.hard_brake_count ?? 0);
+        document.getElementById('det-savings').innerText = rub===null?'—':`${Number(rub)>=0?'+':''}${rub} ₽`;
+        document.querySelector('#details-modal .details-sub-caption').innerText = rub===null?'Данные поездки сохранены':'Сохранённая оценка поездки';
+        document.getElementById('det-starts').innerText = t.hard_accel_count===null?'—':String(t.hard_accel_count ?? 0);
+        document.getElementById('det-brakes').innerText = t.hard_brake_count===null?'—':String(t.hard_brake_count ?? 0);
         document.getElementById('det-idle').innerText = `${idleMin} мин`;
+        if (t.math_status?.version==='reference-math-1') document.getElementById('det-idle').parentElement.querySelector('.stat-cell-label').innerText='Малая скорость';
         document.getElementById('det-bumps').innerText = String(t.bumps_count ?? t.z_veto_count ?? 0);
         document.getElementById('det-distance').innerText = distLabel;
         document.getElementById('det-duration').innerText = formatDurationHoursMins(durSec);

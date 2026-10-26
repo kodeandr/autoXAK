@@ -7,7 +7,7 @@ const assert = require('node:assert/strict');
 (async()=>{
     const handlers={}, entries=new Map(), buckets=new Map();
     const bucket={match:async key=>entries.get(key)?.clone(),put:async(key,value)=>entries.set(key,value.clone())};
-    buckets.set('autoxak-shell-v3',bucket);
+    buckets.set('autoxak-shell-v4',bucket);
     buckets.set('autoxak-shell-v2',{});
     buckets.set('unrelated-app',{});
     let request;
@@ -54,6 +54,6 @@ const assert = require('node:assert/strict');
     let activation;
     handlers.activate({waitUntil:promise=>{activation=promise;}});
     await activation;
-    assert(buckets.has('autoxak-shell-v3') && buckets.has('unrelated-app') && !buckets.has('autoxak-shell-v2'));
+    assert(buckets.has('autoxak-shell-v4') && buckets.has('unrelated-app') && !buckets.has('autoxak-shell-v2'));
     console.log('Service worker: fresh/cached shell, 503, redirected login, stalled headers/body, query canonicalization, API bypass, cache upgrade passed');
 })().catch(error=>{console.error(error);process.exit(1);});

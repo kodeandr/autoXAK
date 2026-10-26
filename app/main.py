@@ -25,6 +25,8 @@ from sqlalchemy.exc import IntegrityError
 from app.core.logger import logger
 from app.api.auth import router as auth_router
 from app.api.recordings import router as recordings_router
+from app.api.reference_math import router as reference_math_router
+from app.services.reference_math import VERSION as MATH_VERSION, trajectory_metrics, threshold_events
 
 from app.core.database import engine, get_db, initialize_schema
 from app.api.dependencies import require_user, require_owner
@@ -80,20 +82,20 @@ class AuthResponse(BaseModel):
 
 
 class ExtendedTripCalculationResult(TripCalculationResult):
-    fuel_saved_liters: float = Field(default=0.0, description="Сбереженное топливо, л")
-    fuel_saved_rub: float = Field(default=0.0, description="Сбережения на топливе, ₽")
-    oil_saved_rub: float = Field(default=0.0, description="Сбережения на масле, ₽")
-    range_bonus_km: float = Field(default=0.0, description="Добавленный запас хода, км")
-    autonomy_days_extended: float = Field(default=0.0, description="Продление дней до заправки")
-    smooth_score: int = Field(default=100, description="Индекс плавности вождения 0..100")
+    fuel_saved_liters: Optional[float] = Field(default=None, description="Сбереженное топливо, л")
+    fuel_saved_rub: Optional[float] = Field(default=None, description="Сбережения на топливе, ₽")
+    oil_saved_rub: Optional[float] = Field(default=None, description="Сбережения на масле, ₽")
+    range_bonus_km: Optional[float] = Field(default=None, description="Добавленный запас хода, км")
+    autonomy_days_extended: Optional[float] = Field(default=None, description="Продление дней до заправки")
+    smooth_score: Optional[int] = Field(default=None, description="Индекс плавности вождения 0..100")
     road_anomalies_count: int = Field(default=0, description="Пройденные лежачие полицейские и ямы")
-    throttle_hunting_detected: bool = Field(default=False, description="Обнаружено рыскание газом")
+    throttle_hunting_detected: Optional[bool] = Field(default=None, description="Обнаружено рыскание газом")
 
-    harsh_accel_count: int = Field(default=0, description="Число резких разгонов")
-    harsh_brake_count: int = Field(default=0, description="Число резких торможений")
-    traffic_jam_seconds: float = Field(default=0.0, description="Время в заторах / холостой ход, с")
-    rush_cost_rub: float = Field(default=0.0, description="Потери выгоды от резких маневров, ₽")
-    base_potential_rub: float = Field(default=0.0, description="Потенциальная экономия при идеальной плавности, ₽")
+    harsh_accel_count: Optional[int] = Field(default=None, description="Число резких разгонов")
+    harsh_brake_count: Optional[int] = Field(default=None, description="Число резких торможений")
+    traffic_jam_seconds: float = Field(default=0.0, description="Время ниже порога скорости; не измерение работы двигателя, с")
+    rush_cost_rub: Optional[float] = Field(default=None, description="Потери выгоды от резких маневров, ₽")
+    base_potential_rub: Optional[float] = Field(default=None, description="Потенциальная экономия при идеальной плавности, ₽")
 
     metrics: Optional[Dict[str, Any]] = Field(default=None, description="Полный словарь метрик для PWA")
 
@@ -104,21 +106,22 @@ class TripPeriodItem(BaseModel):
     duration_seconds: float
     distance_km: float
     idle_ratio: float
-    oil_wear_percent: float
-    total_savings_rub: float
-    fuel_saved_liters: float = 0.0
-    range_bonus_km: float = 0.0
-    smooth_score: int = 100
+    oil_wear_percent: Optional[float]
+    total_savings_rub: Optional[float]
+    fuel_saved_liters: Optional[float] = None
+    range_bonus_km: Optional[float] = None
+    smooth_score: Optional[int] = None
     road_anomalies_count: int = 0
-    harsh_accel_count: int = 0
-    harsh_brake_count: int = 0
-    rush_cost_rub: float = 0.0
+    harsh_accel_count: Optional[int] = None
+    harsh_brake_count: Optional[int] = None
+    rush_cost_rub: Optional[float] = None
     # Поля совместимости с модальным окном "Подробнее" в history.html
-    hard_accel_count: int = 0
-    hard_brake_count: int = 0
+    hard_accel_count: Optional[int] = None
+    hard_brake_count: Optional[int] = None
     bumps_count: int = 0
     idle_minutes: int = 0
     capture_quality: Optional[Dict[str, Any]] = None
+    math_status: Optional[Dict[str, Any]] = None
 
 
 class TripsPeriodSummaryMetrics(BaseModel):
@@ -126,11 +129,12 @@ class TripsPeriodSummaryMetrics(BaseModel):
     total_distance_km: float = Field(..., description="Суммарная дистанция, км")
     total_duration_hours: float = Field(..., description="Суммарное время за рулем, ч")
     total_savings_rub: float = Field(..., description="Совокупная экономия, ₽")
-    total_oil_wear_percent: float = Field(..., description="Накопленный износ масла, %")
+    total_oil_wear_percent: Optional[float] = Field(default=None, description="Накопленный износ масла, %")
     avg_speed_kmh: float = Field(..., description="Средняя скорость движения, км/ч")
-    avg_idle_ratio: float = Field(..., description="Средняя доля пробок / холостого хода")
+    avg_idle_ratio: float = Field(..., description="Доля времени ниже порога скорости, взвешенная по длительности поездок")
     total_fuel_saved_liters: float = Field(default=0.0, description="Всего сбережено топлива, л")
     total_range_bonus_km: float = Field(default=0.0, description="Всего добавлено запаса хода, км")
+    balance_provenance: str = 'legacy_or_user_reported_not_reference_validated'
 
 
 class PeriodAnalyticsResponse(BaseModel):
@@ -152,13 +156,16 @@ class DashboardResponse(BaseModel):
     month_savings_rub: float = Field(default=0.0, description="Сэкономлено за месяц, ₽")
     total_trips: int = Field(default=0, description="Всего завершенных поездок")
     total_distance_km: float = Field(default=0.0, description="Суммарный подтвержденный пробег, км")
-    oil_remaining_percent: float = Field(default=100.0, description="Остаточный ресурс масла, %")
-    ghost_twin_status: str = Field(default="Базовый лихач (дефолт)", description="Статус модели сравнения")
+    oil_remaining_percent: Optional[float] = Field(default=None, description="Остаточный ресурс масла, %")
+    ghost_twin_status: str = Field(default="Для сравнения нужна контрольная поездка", description="Статус модели сравнения")
+    math_version: str = MATH_VERSION
+    balance_provenance: str = 'legacy_or_user_reported_not_reference_validated'
+    oil_resource_status: str = 'unavailable_without_validated_degradation_model'
     cpa_recommended: bool = Field(default=False, description="Флаг рекомендации замены масла")
     cpa_offer_text: Optional[str] = Field(default=None, description="Текст партнерского предложения")
     range_bank_km: float = Field(default=0.0, description="Накопленный банк автономности, км")
     total_fuel_saved_liters: float = Field(default=0.0, description="Всего сбережено топлива, л")
-    autonomy_days_extended: float = Field(default=0.0, description="Продлено дней до АЗС")
+    autonomy_days_extended: Optional[float] = Field(default=None, description="Продлено дней до АЗС")
 
 
 class ProfileUpdateRequest(BaseModel):
@@ -193,7 +200,7 @@ class VerificationPayload(BaseModel):
             if len(self.obd_ground_truth.get(key, [])) != expected:
                 raise ValueError("Every OBD signal must match telemetry length")
         BenchmarkEngine.calculate_obd_ground_truth_hours(
-            self.obd_ground_truth["engine_rpm"], self.obd_ground_truth["engine_load"], self.obd_ground_truth["oil_temperature"])
+            self.obd_ground_truth["engine_rpm"], self.obd_ground_truth["engine_load"], self.obd_ground_truth["oil_temperature"],times_s=times)
         return self
 
 
@@ -222,29 +229,7 @@ def get_default_profile() -> Any:
             return VEHICLE_REGISTRY["haval_jolion_15t"]
         return next(iter(VEHICLE_REGISTRY.values()))
 
-    class _FallbackOilProfile:
-        nominal_service_hours: float = 250.0
-        base_activation_energy_jmol: float = 75000.0
-        aged_activation_energy_jmol: float = 45000.0
-        zddp_activation_volume_m3: float = 1.2e-29
-        zddp_activation_energy_jmol: float = 85000.0
-        oil_grade: str = "0W-20"
-
-    class _FallbackProfile:
-        car_id: str = "haval_jolion_15t_4wd"
-        brand: str = "Haval"
-        model: str = "Jolion 1.5T 4WD"
-        curb_weight_kg: float = 1505.0
-        rolling_resistance_coeff: float = 0.0135
-        drag_coefficient_area: float = 0.86
-        drivetrain_efficiency: float = 0.87
-        base_city_fuel_rate_l100km: float = 9.8
-        engine_displacement_l: float = 1.5
-        rated_power_kw: float = 110.0
-        oil_capacity_l: float = 3.8
-        oil_profile: Any = _FallbackOilProfile()
-
-    return _FallbackProfile()
+    return VehiclePhysicalProfile(car_id='unknown',brand='Unknown',model='Unknown')
 
 
 async def resolve_car_profile_async(car_id: Optional[str], db: AsyncSession, user: Optional[User] = None) -> Any:
@@ -259,64 +244,30 @@ async def resolve_car_profile_async(car_id: Optional[str], db: AsyncSession, use
     trim = res.scalar_one_or_none()
 
     if trim:
-        class _DynamicOilProfile:
-            nominal_service_hours: float = float(getattr(trim, "nominal_service_hours", 250.0) or 250.0)
-            base_activation_energy_jmol: float = 75000.0
-            aged_activation_energy_jmol: float = 45000.0
-            zddp_activation_volume_m3: float = 1.2e-29
-            zddp_activation_energy_jmol: float = 85000.0
-            oil_grade: str = getattr(trim, "oil_grade", "5W-30") or "5W-30"
-
-        class _DynamicProfile:
-            car_id: str = trim.id
-            brand: str = "Auto"
-            model: str = trim.badge_name
-            curb_weight_kg: float = float(trim.curb_weight_kg or 1500.0)
-            rolling_resistance_coeff: float = float(trim.rolling_resistance_coeff or 0.012)
-            drag_coefficient_area: float = float(trim.drag_coefficient_area or 0.76)
-            drivetrain_efficiency: float = float(trim.drivetrain_efficiency or 0.90)
-            base_city_fuel_rate_l100km: float = 8.5
-            engine_displacement_l: float = float(trim.engine_displacement_l or 1.5)
-            rated_power_kw: float = float(trim.rated_power_kw or 110.0)
-            oil_capacity_l: float = float(trim.oil_capacity_l or 4.0)
-            recommended_oil_brand: str = getattr(trim, "recommended_oil_brand", "LUKOIL GENESIS") or "LUKOIL GENESIS"
-            oil_profile: Any = _DynamicOilProfile()
-
-        return _DynamicProfile()
-
+        return VehiclePhysicalProfile(
+            car_id=trim.id,brand='Catalogue',model=trim.badge_name,
+            curb_weight_kg=trim.curb_weight_kg,rolling_resistance_coeff=trim.rolling_resistance_coeff,
+            drag_coefficient_area=trim.drag_coefficient_area,drivetrain_efficiency=trim.drivetrain_efficiency,
+            engine_displacement_l=trim.engine_displacement_l,rated_power_kw=trim.rated_power_kw,
+            oil_capacity_l=trim.oil_capacity_l)
     if VEHICLE_REGISTRY and car_id in VEHICLE_REGISTRY:
         return VEHICLE_REGISTRY[car_id]
-
-    return get_default_profile()
+    # An unknown ID must not silently inherit the physics of a Haval.
+    return VehiclePhysicalProfile(car_id=car_id,brand='Unknown',model='Unknown')
 
 
 # =====================================================================
 # Вспомогательные алгоритмы геодезии и кластеризации маневров
 # =====================================================================
 
-def count_maneuver_events(signal: np.ndarray, threshold: float, is_greater: bool = True, min_points: int = 5, dt: float = 0.02) -> int:
-    """Группирует высокочастотные отсчеты (50 Гц) в дискретные события маневров с подавлением дребезга."""
-    if len(signal) == 0:
+def count_maneuver_events(signal: np.ndarray, threshold: float, is_greater: bool = True, min_points: int = 5, dt: float = 0.02, min_duration_s=None) -> int:
+    if len(signal)<2:
         return 0
-    condition = (signal > threshold) if is_greater else (signal < threshold)
-    events = 0
-    in_event = False
-    current_length = 0
-    cooldown = 0
-
-    for state in condition:
-        if cooldown > 0:
-            cooldown -= 1
-        if state:
-            current_length += 1
-            if current_length >= min_points and not in_event and cooldown == 0:
-                events += 1
-                in_event = True
-                cooldown = max(1, math.ceil(0.5 / dt))
-        else:
-            in_event = False
-            current_length = 0
-    return events
+    if not math.isfinite(dt) or dt<=0:
+        raise ValueError('A positive finite sample period is required')
+    return threshold_events(np.arange(len(signal))*dt,signal,threshold=threshold,above=is_greater,
+                            min_duration_s=min_points*dt if min_duration_s is None else min_duration_s,
+                            refractory_s=.5)['count']
 
 
 def calculate_haversine_distance_km(coords: List[Dict[str, float]]) -> float:
@@ -358,12 +309,13 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title="autoXAK Fuel Autonomy & Telematics Engine",
     description="Пайплайн Sensor Fusion, фильтрации неровностей, топливной автономии и трибологии ДВС",
-    version="1.8.0",
+    version="2.0.0",
     lifespan=lifespan
 )
 
 app.include_router(auth_router)
 app.include_router(recordings_router)
+app.include_router(reference_math_router)
 
 app.add_middleware(
     CORSMiddleware,
@@ -485,8 +437,8 @@ def health_check():
     return {
         "status": "ok",
         "service": "autoXAK Fuel Autonomy & Wear Engine",
-        "engine": "Wear & Cost Processor active",
-        "version": "1.8.0"
+        "engine": "Reference mathematics and durable recordings",
+        "version": "2.0.0"
     }
 
 
@@ -603,209 +555,272 @@ async def _calculate_session_values(payload, db, user, *, max_gap_seconds=2.0):
     """Shared calculation only: no trip writes, balance changes or commits."""
     resolved_car_id = payload.car_id or getattr(user, "car_id", "haval_jolion_15t_4wd")
     profile = await resolve_car_profile_async(resolved_car_id, db, user)
-    coords = []
-    for point in payload.telemetry_stream:
-        if point.lat is not None and point.lon is not None:
-            coordinate = {"lat": point.lat, "lon": point.lon}
-            if not coords or coordinate != coords[-1]:
-                coords.append(coordinate)
-    moving = any(point.speed > 0.5 for point in payload.telemetry_stream)
-    road_context = await gis_service.get_route_context(coords) if moving else None
-    # DSP and maneuver loops can cover 500k points. Keep the event loop available
-    # for readiness, authentication and other trips while they run.
-    return await run_in_threadpool(_calculate_session_values_sync, payload, profile, user, road_context,
-                                  max_gap_seconds=max_gap_seconds)
+    values = await run_in_threadpool(
+        _calculate_session_values_sync,
+        payload,
+        profile,
+        user,
+        None,
+        max_gap_seconds=max_gap_seconds,
+    )
+    if payload.raw_recording is not None:
+        from app.models.recordings import RecordingVehicle
+        from app.services.fuel_prediction import predict_fuel
+
+        vehicle = await db.get(RecordingVehicle, user.id)
+        research_profile = (
+            vehicle.profile
+            if vehicle is not None
+            and vehicle.profile.get("vehicle_id") == payload.car_id
+            else {}
+        )
+        raw = payload.raw_recording
+        # Research inference is separate from reference fuel observations and credits.
+        values["math_status"]["research_fuel_estimate"] = await run_in_threadpool(
+            predict_fuel,
+            [point.model_dump(mode="json") for point in raw.gps],
+            research_profile,
+            raw.started_at_ms,
+            raw.ended_at_ms,
+        )
+    return values
 
 
-def _calculate_session_values_sync(payload, profile, user, road_context, *, max_gap_seconds=2.0):
+async def _evaluate_reference_evidence(payload):
+    """Bind externally supplied model inputs to the recorded trajectory, atomically."""
+    from app.api.reference_math import evaluate_run
+    from app.services.reference_math import compare_fuel, timeline
+
+    evidence = payload.reference_math
+    if evidence is None:
+        return None
+    run = evidence.run
+    if payload.raw_recording is not None:
+        gps = payload.raw_recording.gps
+        actual_times = [point.timestamp_ms / 1000 for point in gps]
+        actual_speeds = [point.speed_mps for point in gps]
+        if any(
+            point.speed_mps is None or point.accuracy_m is None or point.accuracy_m > 50
+            for point in gps
+        ):
+            return {
+                "status": "rejected",
+                "reason": "Reference run requires complete accurate GPS speed observations",
+                "math_version": MATH_VERSION,
+                "raw_recording_retained": True,
+            }
+    else:
+        actual_times = [point.t for point in payload.telemetry_stream]
+        actual_speeds = [point.speed for point in payload.telemetry_stream]
+    try:
+        if len(run.times_s) != len(actual_times) or not np.allclose(
+            timeline(run.times_s), timeline(actual_times), rtol=0, atol=1e-6
+        ):
+            raise ValueError("Reference timestamps do not match recorded observations")
+        if not np.allclose(run.speeds_mps, actual_speeds, rtol=0, atol=1e-9):
+            raise ValueError("Reference speeds do not match recorded observations")
+        evaluated = await run_in_threadpool(evaluate_run, run)
+        if evidence.fuel_comparison is not None:
+            comparison = evidence.fuel_comparison
+            actual = comparison.actual
+            if (
+                actual.vehicle_id != payload.car_id
+                or not math.isclose(
+                    actual.distance_m,
+                    evaluated["kinematics"]["distance_m"],
+                    rel_tol=1e-9,
+                    abs_tol=1e-6,
+                )
+                or not math.isclose(
+                    actual.duration_s,
+                    evaluated["kinematics"]["duration_s"],
+                    rel_tol=1e-9,
+                    abs_tol=1e-6,
+                )
+            ):
+                raise ValueError(
+                    "Actual fuel comparison must describe this recorded trajectory"
+                )
+            if evaluated["observed_fuel_l"] is not None and not math.isclose(
+                actual.fuel_l, evaluated["observed_fuel_l"], rel_tol=1e-9, abs_tol=1e-9
+            ):
+                raise ValueError(
+                    "Actual fuel volume conflicts with the supplied observed fuel flow"
+                )
+            evaluated["fuel_comparison"] = compare_fuel(
+                actual.model_dump(),
+                comparison.reference.model_dump(),
+                price_rub_per_l=comparison.price_rub_per_l,
+            )
+        evaluated["trajectory_binding"] = (
+            "recorded_gps"
+            if payload.raw_recording is not None
+            else "recorded_legacy_telemetry"
+        )
+        if payload.raw_recording is not None:
+            raw = payload.raw_recording
+            evaluated["recording_coverage"] = {
+                "recording_duration_s": (raw.ended_at_ms - raw.started_at_ms) / 1000,
+                "evaluated_duration_s": evaluated["kinematics"]["duration_s"],
+                "start_offset_s": (gps[0].timestamp_ms - raw.started_at_ms) / 1000,
+                "end_offset_s": (raw.ended_at_ms - gps[-1].timestamp_ms) / 1000,
+            }
+        return evaluated
+    except (
+        ValueError,
+        OverflowError,
+        FloatingPointError,
+        np.linalg.LinAlgError,
+    ) as error:
+        return {
+            "status": "rejected",
+            "reason": str(error),
+            "math_version": MATH_VERSION,
+            "raw_recording_retained": payload.raw_recording is not None,
+        }
+
+
+async def _persist_math_evidence(db, payload, trip_id, result):
+    if payload.reference_math is None:
+        return
+    from app.models.recordings import TripMathEvidenceRecord
+    from app.services.reference_math import fingerprint
+
+    inputs = payload.reference_math.model_dump(mode="json")
+    # Flush the trip parent before its dependent immutable evidence.
+    await db.flush()
+    db.add(
+        TripMathEvidenceRecord(
+            trip_id=trip_id,
+            math_version=MATH_VERSION,
+            inputs_sha256=fingerprint(inputs),
+            inputs=inputs,
+            result=result,
+        )
+    )
+
+
+def _calculate_session_values_sync(
+    payload, profile, user, road_context, *, max_gap_seconds=2.0
+):
     stream = payload.telemetry_stream
     points_count = len(stream)
     times = np.array([p.t for p in stream], dtype=np.float64)
     raw_ax = np.array([p.ax for p in stream], dtype=np.float64)
     raw_ay = np.array([p.ay for p in stream], dtype=np.float64)
     raw_az = np.array([p.az for p in stream], dtype=np.float64)
-    speeds = np.clip(np.array([p.speed for p in stream], dtype=np.float64), 0.0, 75.0)
+    speeds = np.array([p.speed for p in stream], dtype=np.float64)
 
     # 1. Вычисление реального шага времени dt по меткам времени (защита от плавающей частоты браузера)
+    times -= times[0]
     raw_diffs = np.diff(times)
     dt = float(np.mean(raw_diffs))
     if not math.isfinite(dt) or dt < 0.001:
-        raise HTTPException(422, "Telemetry sampling period must be at least one millisecond")
+        raise HTTPException(
+            422, "Telemetry sampling period must be at least one millisecond"
+        )
     if np.max(raw_diffs) > max_gap_seconds:
         raise HTTPException(422, "Telemetry contains gaps longer than two seconds")
 
     span_sec = float(times[-1] - times[0]) if times[-1] > times[0] else 0.0
     duration_sec = span_sec
-    integration_dt = duration_sec / points_count
 
     # 2. Выделение чистого линейного ускорения без гравитации (filt_z в покое = 0.0, а не 9.81)
     local_filter = SignalFilter(sample_rate_hz=1.0 / dt, cutoff_hz=min(2.5, 0.45 / dt))
-    aligned = IMUAlignmentService(sample_rate_hz=1.0 / dt).calibrate_and_transform(raw_ax, raw_ay, raw_az, speeds)
+    grid = np.linspace(times[0], times[-1], points_count)
+    axes = [np.interp(grid, times, axis) for axis in (raw_ax, raw_ay, raw_az)]
+    aligned = IMUAlignmentService(sample_rate_hz=1.0 / dt).calibrate_and_transform(
+        *axes, np.interp(grid, times, speeds)
+    )
     filt_x = local_filter.apply_butterworth_lpf(aligned[0])
 
-    shock_z = SignalFilter(sample_rate_hz=1.0 / dt, cutoff_hz=min(12.0, 0.45 / dt)).apply_butterworth_lpf(aligned[2])
+    shock_z = SignalFilter(
+        sample_rate_hz=1.0 / dt, cutoff_hz=min(12.0, 0.45 / dt)
+    ).apply_butterworth_lpf(aligned[2])
 
-    # Определяем, было ли реальное движение (скорость > 0.5 м/с или динамическое ускорение > 0.35 м/с²)
-    is_moving_session = bool(np.max(speeds) > 0.5 or np.std(filt_x) > 0.25)
-
-    # 3. Расчет дистанции: отсекаем Wi-Fi/IP дрейф координат на стоящем ПК
-    speed_distance_km = float(np.trapz(speeds, times) / 1000.0)
-    distance_km = speed_distance_km if is_moving_session else 0.0
-    if distance_km < 0.03:
-        distance_km = 0.0
-
-    if distance_km == 0:
-        road_context = None
+    kinematics = trajectory_metrics(times, speeds, idle_threshold_mps=1.0)
+    duration_sec = kinematics["duration_s"]
+    distance_km = kinematics["distance_m"] / 1000
+    is_moving_session = bool(np.max(speeds) > 0.5)
 
     # 4. Вертикальные удары сохраняют полосу до 12 Гц; продольный сигнал сглажен до 2.5 Гц.
     if is_moving_session and hasattr(TwinEngine, "filter_road_anomalies"):
-        clean_signed_ax, detected_bumps = TwinEngine.filter_road_anomalies(filt_x, raw_az=shock_z, dt=dt)
+        clean_signed_ax, detected_bumps = TwinEngine.filter_road_anomalies(
+            filt_x, raw_az=shock_z, dt=dt
+        )
     else:
         clean_signed_ax, detected_bumps = filt_x, 0
 
     # 5. Подсчет дискретных резких разгонов и торможений
     maneuver_points = max(1, math.ceil(0.1 / dt))
-    harsh_accel_count = count_maneuver_events(clean_signed_ax, threshold=2.0, is_greater=True, min_points=maneuver_points, dt=dt)
-    harsh_brake_count = count_maneuver_events(clean_signed_ax, threshold=-2.3, is_greater=False, min_points=maneuver_points, dt=dt)
+    harsh_accel_count = count_maneuver_events(
+        clean_signed_ax,
+        threshold=2.0,
+        is_greater=True,
+        min_points=maneuver_points,
+        dt=dt,
+        min_duration_s=0.1,
+    )
+    harsh_brake_count = count_maneuver_events(
+        clean_signed_ax,
+        threshold=-2.3,
+        is_greater=False,
+        min_points=maneuver_points,
+        dt=dt,
+        min_duration_s=0.1,
+    )
 
-    traffic_jam_seconds = float(np.trapz((speeds < 1.0).astype(float), times))
-    idle_ratio = min(1.0, (traffic_jam_seconds / duration_sec)) if duration_sec > 0 else 0.0
-
-    resolved_car_id = payload.car_id or getattr(user, "car_id", "haval_jolion_15t_4wd")
-    user_fuel_price = float(getattr(user, "fuel_price_rub", 72.40) or 72.40)
-    user_service_cost = float(getattr(user, "service_cost_rub", 9500.0) or 9500.0)
-
-    try:
-        trip_wear_engine = WearEngine(profile=profile)
-    except TypeError:
-        trip_wear_engine = WearEngine(profile)
-
-    try:
-        trip_twin_engine = TwinEngine(profile=profile)
-    except TypeError:
-        trip_twin_engine = TwinEngine(profile)
-
-    current_life_pct = max(0.0, 100.0 - float(user.current_oil_wear_percent or 0.0))
-
-    # 7. Расчет износа моторного масла (передаем знаковое продольное ускорение clean_signed_ax)
-    if hasattr(trip_wear_engine, "evaluate_trip_wear"):
-        wear_stats = trip_wear_engine.evaluate_trip_wear(
-            dt=integration_dt,
-            speed_mps=speeds,
-            ax_mps2=clean_signed_ax,
-            traffic_score=getattr(road_context, 'traffic_score', 1.0) if road_context else 1.0,
-            current_life_pct=current_life_pct
+    if not aligned[3].get("is_aligned"):
+        horizontal_norm = np.hypot(
+            filt_x, local_filter.apply_butterworth_lpf(aligned[1])
         )
-        equiv_hours = float(wear_stats["equivalent_hours"])
-        oil_wear_pct = float(wear_stats["oil_wear_percent"])
-    else:
-        wear_stats = trip_wear_engine.compute_oil_wear(
-            speeds_mps=speeds,
-            horizontal_acc=clean_signed_ax,
-            traffic_score=getattr(road_context, 'traffic_score', 1.0) if road_context else 1.0,
-            dt=dt
-        )
-        equiv_hours = float(wear_stats.get("equivalent_engine_hours", wear_stats.get("equivalent_hours", 0.0)))
-        oil_wear_pct = float(wear_stats.get("oil_wear_percent", 0.0))
-
-    # 8. Расчет финансовой экономии относительно агрессивного двойника (TwinEngine)
-    if hasattr(trip_twin_engine, "evaluate_financial_delta") and hasattr(trip_twin_engine, "simulate_aggressive_twin_kinematics"):
-        twin_speed, twin_ax = trip_twin_engine.simulate_aggressive_twin_kinematics(speeds, dt=dt)
-        twin_wear_stats = trip_wear_engine.evaluate_trip_wear(
-            dt=integration_dt,
-            speed_mps=twin_speed,
-            ax_mps2=twin_ax,
-            traffic_score=getattr(road_context, 'traffic_score', 1.0) if road_context else 1.0,
-            current_life_pct=current_life_pct
-        ) if hasattr(trip_wear_engine, "evaluate_trip_wear") else wear_stats
-
-        twin_equiv_hours = float(twin_wear_stats.get("equivalent_hours", equiv_hours))
-
-        savings = trip_twin_engine.evaluate_financial_delta(
-            distance_km=distance_km,
-            user_equiv_hours=equiv_hours,
-            user_ax=clean_signed_ax,
-            raw_az=shock_z,
-            speeds_mps=speeds,
-            twin_equiv_hours=twin_equiv_hours,
-            fuel_price_rub=user_fuel_price,
-            service_cost_rub=user_service_cost,
-            dt=dt
-        )
-    else:
-        savings = trip_twin_engine.simulate_twin_and_delta(
-            speeds_mps=speeds,
-            user_wear_percent=oil_wear_pct,
-            dt=dt,
-            fuel_price_rub=user_fuel_price,
-            service_cost_rub=user_service_cost,
-            distance_km=distance_km
-        )
-
-    fuel_saved_rub = float(savings.get("fuel_savings_rub", savings.get("fuel_saved_rub", 0.0)))
-    oil_saved_rub = float(savings.get("oil_savings_rub", savings.get("oil_saved_rub", 0.0)))
-    total_savings_rub = float(savings.get("total_savings_rub", fuel_saved_rub + oil_saved_rub))
-
-    # 9. Финансовая декомпозиция маневров
-    harsh_events_total = harsh_accel_count + harsh_brake_count
-    rush_cost_rub = round(float(harsh_events_total * 3.5), 2)
-    base_potential_rub = round(total_savings_rub + rush_cost_rub, 2)
-
-    fuel_saved_liters = float(savings.get("fuel_saved_liters", savings.get("saved_fuel_liters", 0.0)))
-    if fuel_saved_liters == 0.0 and fuel_saved_rub > 0.0 and user_fuel_price > 0.0:
-        fuel_saved_liters = round(fuel_saved_rub / user_fuel_price, 3)
-
-    base_city_l100 = float(getattr(profile, "base_city_fuel_rate_l100km", 8.5) or 8.5)
-    range_bonus_km = float(savings.get("range_bonus_km", 0.0))
-    if range_bonus_km == 0.0 and fuel_saved_liters > 0.0:
-        range_bonus_km = round((fuel_saved_liters * 100.0) / base_city_l100, 2)
-
-    autonomy_days = float(savings.get("autonomy_days_extended", 0.0))
-    if autonomy_days == 0.0 and fuel_saved_liters > 0.0:
-        autonomy_days = round(fuel_saved_liters / 4.2, 2)
-
-    smooth_score = max(40, min(100, int(100 - (harsh_events_total * 4))))
-    road_anomalies = int(detected_bumps) if distance_km > 0.0 else 0
-    hunting_detected = bool(savings.get("throttle_hunting_detected", False)) if distance_km > 0.0 else False
-
-    # Если реального перемещения не было (тест на месте / стационарный ПК), обнуляем экономию топлива
-    if distance_km == 0.0:
-        fuel_saved_rub = 0.0
-        oil_saved_rub = 0.0
-        total_savings_rub = 0.0
-        fuel_saved_liters = 0.0
-        range_bonus_km = 0.0
-        autonomy_days = 0.0
-        harsh_accel_count = 0
-        harsh_brake_count = 0
-        rush_cost_rub = 0.0
-        base_potential_rub = 0.0
-        smooth_score = 100
-
+        if np.max(horizontal_norm) >= 2.0:
+            harsh_accel_count = harsh_brake_count = None
+    traffic_jam_seconds = kinematics["below_threshold_s"]
+    idle_ratio = traffic_jam_seconds / duration_sec
+    # A numerical output is not evidence of oil condition or counterfactual fuel.
+    # Legacy public entry points now return unavailable instead of fitted constants.
+    wear = WearEngine(profile=profile).evaluate_trip_wear(
+        times_s=times, speed_mps=speeds, ax_mps2=clean_signed_ax
+    )
+    savings = TwinEngine(profile=profile).evaluate_financial_delta()
+    if distance_km == 0:
+        harsh_accel_count = harsh_brake_count = detected_bumps = 0
+    math_status = {
+        "version": MATH_VERSION,
+        "kinematics": kinematics,
+        "imu_alignment": aligned[3],
+        "low_speed_time_is_not_engine_runtime": True,
+        "dsp_interpolation": "linear_regular_grid_for_filtering_only",
+        "fuel_savings": {"status": savings["status"], "reason": savings["reason"]},
+        "oil_wear": {"status": wear["status"], "reason": wear["reason"]},
+        "monetary_credit_status": "not_verified",
+        "style_score_status": "unavailable_without_validated_scoring_policy",
+        "counterfactual_status": "explicit_matched_reference_required",
+    }
     return {
         "duration_sec": duration_sec,
         "distance_km": distance_km,
-        "equiv_hours": equiv_hours,
-        "oil_wear_pct": oil_wear_pct,
         "idle_ratio": idle_ratio,
-        "resolved_car_id": resolved_car_id,
-        "total_savings_rub": total_savings_rub,
-        "fuel_saved_liters": fuel_saved_liters,
-        "range_bonus_km": range_bonus_km,
-        "oil_saved_rub": oil_saved_rub,
-        "fuel_saved_rub": fuel_saved_rub,
-        "autonomy_days": autonomy_days,
+        "resolved_car_id": payload.car_id,
+        "equiv_hours": None,
+        "oil_wear_pct": None,
+        "total_savings_rub": None,
+        "fuel_saved_liters": None,
+        "range_bonus_km": None,
+        "oil_saved_rub": None,
+        "fuel_saved_rub": None,
+        "autonomy_days": None,
         "harsh_accel_count": harsh_accel_count,
         "harsh_brake_count": harsh_brake_count,
-        "rush_cost_rub": rush_cost_rub,
-        "base_potential_rub": base_potential_rub,
-        "smooth_score": smooth_score,
-        "road_anomalies": road_anomalies,
-        "hunting_detected": hunting_detected,
+        "rush_cost_rub": None,
+        "base_potential_rub": None,
+        "smooth_score": None,
+        "road_anomalies": int(detected_bumps),
+        "hunting_detected": None,
         "traffic_jam_seconds": traffic_jam_seconds,
+        "math_status": math_status,
     }
-
-
 @app.post("/api/v1/telemetry/preview")
 async def preview_telemetry_session(payload: TelemetryPreviewPayload,
                                     db: AsyncSession = Depends(get_db),
@@ -817,7 +832,7 @@ async def preview_telemetry_session(payload: TelemetryPreviewPayload,
         raise HTTPException(422, "Accurate GPS coverage is required for a provisional estimate")
     values = await _calculate_session_values(payload, db, owner, max_gap_seconds=2.0 * payload.sampling_stride)
     return {"status": "PREVIEW", "provisional": True, "session_id": payload.session_id,
-            "cost_savings_rub": round(values["total_savings_rub"], 2),
+            "cost_savings_rub": None, "math_status": values["math_status"],
             "distance_km": round(values["distance_km"], 3),
             "duration_seconds": round(values["duration_sec"], 2),
             "sample_count": len(stream), "sampling_stride": payload.sampling_stride}
@@ -847,6 +862,8 @@ async def process_telemetry_session(
     try:
         parsed_uuid = str(uuid.UUID(session_ref)) if _is_uuid(session_ref) else str(uuid.uuid5(uuid.NAMESPACE_URL, f"autoxak:{owner.id}:{session_ref}"))
         excluded = {"user_id"} if payload.raw_recording is not None else {"user_id", "raw_recording"}
+        if payload.reference_math is None:
+            excluded.add('reference_math')  # Preserve canonical hashes of pre-v2 queued requests.
         digest = hashlib.sha256(json.dumps(payload.model_dump(mode="json", exclude=excluded), sort_keys=True, separators=(",", ":"), allow_nan=False).encode()).hexdigest()
         user = (await db.execute(select(User).where(User.id == owner.id).with_for_update().execution_options(populate_existing=True))).scalar_one()
         existing_trip = (await db.execute(select(Trip).where(or_(Trip.id == parsed_uuid, and_(Trip.user_id == owner.id, Trip.client_session_id == session_ref))))).scalar_one_or_none()
@@ -856,21 +873,29 @@ async def process_telemetry_session(
             if existing_trip.calculation_result:
                 return ExtendedTripCalculationResult.model_validate(existing_trip.calculation_result)
             return _stored_trip_result(existing_trip)
+        reference_evaluation=await _evaluate_reference_evidence(payload)
         quality = None
         if payload.raw_recording is not None:
             quality = capture_quality(payload)
             profile = await resolve_car_profile_async(payload.car_id, db, user)
             vehicle = {"vehicle_id": payload.car_id, "fuel_type": "unknown",
-                       "mass_kg": float(profile.curb_weight_kg), "displacement_l": float(profile.engine_displacement_l)}
-            await store_raw_capture(db, payload, parsed_uuid, digest, vehicle, quality)
+                       "mass_kg": profile.curb_weight_kg, "displacement_l": profile.engine_displacement_l, "parameter_status":"declared_not_reference_validated"}
+            recording=await store_raw_capture(db, payload, parsed_uuid, digest, vehicle, quality)
+            if reference_evaluation is not None:
+                recording.fuel_estimate={**recording.fuel_estimate,'reference_evaluation':reference_evaluation}
             if quality["analysis_status"] != "available":
                 trip, result = unscored_trip(payload, parsed_uuid, digest, user, quality)
+                if reference_evaluation is not None:
+                    result['metrics']['math_status']['reference_evaluation']=reference_evaluation
                 db.add(trip)
                 calculation = ExtendedTripCalculationResult.model_validate(result)
                 trip.calculation_result = calculation.model_dump(mode="json")
+                await _persist_math_evidence(db,payload,parsed_uuid,reference_evaluation)
                 await db.commit()
                 return calculation
         values = await _calculate_session_values(payload, db, user)
+        if reference_evaluation is not None:
+            values['math_status']['reference_evaluation']=reference_evaluation
         user.total_savings_rub = float(getattr(user, "total_savings_rub", 0.0) or 0.0)
         user.total_fuel_saved_liters = float(getattr(user, "total_fuel_saved_liters", 0.0) or 0.0)
         user.range_bank_km = float(getattr(user, "range_bank_km", 0.0) or 0.0)
@@ -899,36 +924,33 @@ async def process_telemetry_session(
         hunting_detected = values["hunting_detected"]
         traffic_jam_seconds = values["traffic_jam_seconds"]
 
-        # 10. Идемпотентная запись поездки и обновление баланса пользователя
-        user.total_savings_rub = round(user.total_savings_rub + total_savings_rub, 2)
-        user.total_fuel_saved_liters = round(user.total_fuel_saved_liters + fuel_saved_liters, 3)
-        user.range_bank_km = round(user.range_bank_km + range_bonus_km, 2)
-        user.total_distance_km = round(user.total_distance_km + distance_km, 2)
+        # Only measured trajectory counters change. Legacy balances are retained;
+        # unavailable reference quantities cannot create new financial/oil credits.
+        user.total_distance_km = float(user.total_distance_km) + distance_km
         user.total_trips += 1
-        user.current_oil_wear_percent = min(100.0, round(user.current_oil_wear_percent + oil_wear_pct, 5))
 
         new_trip = Trip(
             id=parsed_uuid,
             client_session_id=session_ref,
             user_id=payload.user_id,
             car_id=resolved_car_id,
-            duration_seconds=round(duration_sec, 2),
-            distance_km=round(distance_km, 2),
-            equivalent_engine_hours=round(equiv_hours, 5),
-            oil_wear_percent=round(oil_wear_pct, 5),
-            idle_ratio=round(idle_ratio, 3),
-            fuel_saved_rub=round(fuel_saved_rub, 2),
-            oil_saved_rub=round(oil_saved_rub, 2),
-            total_savings_rub=round(total_savings_rub, 2),
-            fuel_saved_liters=round(fuel_saved_liters, 3),
-            range_bonus_km=round(range_bonus_km, 2),
-            smooth_score=smooth_score,
-            harsh_accel_count=harsh_accel_count,
-            harsh_brake_count=harsh_brake_count,
+            duration_seconds=duration_sec,
+            distance_km=distance_km,
+            equivalent_engine_hours=round(equiv_hours or 0.0, 5),
+            oil_wear_percent=round(oil_wear_pct or 0.0, 5),
+            idle_ratio=idle_ratio,
+            fuel_saved_rub=round(fuel_saved_rub or 0.0, 2),
+            oil_saved_rub=round(oil_saved_rub or 0.0, 2),
+            total_savings_rub=round(total_savings_rub or 0.0, 2),
+            fuel_saved_liters=round(fuel_saved_liters or 0.0, 3),
+            range_bonus_km=round(range_bonus_km or 0.0, 2),
+            smooth_score=smooth_score if smooth_score is not None else 100,
+            harsh_accel_count=harsh_accel_count or 0,
+            harsh_brake_count=harsh_brake_count or 0,
             road_anomalies_count=road_anomalies,
-            rush_cost_rub=rush_cost_rub,
+            rush_cost_rub=rush_cost_rub or 0.0,
             board_computer_consumption_l100km=getattr(payload, 'board_computer_consumption_l100km', None),
-            traffic_jam_seconds=round(traffic_jam_seconds, 2),
+            traffic_jam_seconds=traffic_jam_seconds,
             request_hash=digest
         )
         db.add(new_trip)
@@ -947,17 +969,18 @@ async def process_telemetry_session(
             "rush_cost_rub": rush_cost_rub,
             "base_potential_rub": base_potential_rub,
             "throttle_hunting_detected": hunting_detected,
-            "cost_savings_rub": round(total_savings_rub, 2)
+            "cost_savings_rub": total_savings_rub,
+            "math_status": values["math_status"]
         }
         if quality is not None:
             metrics_payload["capture_quality"] = quality
 
         calculation = ExtendedTripCalculationResult(
             session_id=parsed_uuid,
-            duration_seconds=round(duration_sec, 2),
-            distance_km=round(distance_km, 2),
-            oil_wear_percent=round(oil_wear_pct, 5),
-            cost_savings_rub=round(total_savings_rub, 2),
+            duration_seconds=duration_sec,
+            distance_km=distance_km,
+            oil_wear_percent=oil_wear_pct,
+            cost_savings_rub=total_savings_rub,
             status="PROCESSED",
             fuel_saved_liters=fuel_saved_liters,
             fuel_saved_rub=fuel_saved_rub,
@@ -969,7 +992,7 @@ async def process_telemetry_session(
             throttle_hunting_detected=hunting_detected,
             harsh_accel_count=harsh_accel_count,
             harsh_brake_count=harsh_brake_count,
-            traffic_jam_seconds=round(traffic_jam_seconds, 2),
+            traffic_jam_seconds=traffic_jam_seconds,
             rush_cost_rub=rush_cost_rub,
                 board_computer_consumption_l100km=getattr(payload, 'board_computer_consumption_l100km', None),
             base_potential_rub=base_potential_rub,
@@ -979,6 +1002,7 @@ async def process_telemetry_session(
         if payload.raw_recording is not None:
             new_trip.created_at = datetime.fromtimestamp(payload.raw_recording.started_at_ms / 1000, tz=timezone.utc)
         new_trip.calculation_result = calculation.model_dump(mode="json")
+        await _persist_math_evidence(db,payload,parsed_uuid,reference_evaluation)
         await db.commit()
         return calculation
 
@@ -1022,7 +1046,7 @@ async def get_user_vehicle_profile(
         "user_id": user.id,
         "car_id": user.car_id or "haval_jolion_15t_4wd",
         "car_name": user.car_name,
-        "fuel_consumption": float((user.custom_profile or {}).get("base_city_fuel_rate_l100km", 8.5)),
+        "fuel_consumption": (user.custom_profile or {}).get("base_city_fuel_rate_l100km"),
         "fuel_price_rub": user.fuel_price_rub if user.fuel_price_rub is not None else 72.40,
         "service_cost_rub": user.service_cost_rub if user.service_cost_rub is not None else 9500.0,
         "current_oil_wear_percent": user.current_oil_wear_percent if user.current_oil_wear_percent is not None else 0.0,
@@ -1036,10 +1060,9 @@ async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db),
     res = await db.execute(stmt)
     user = res.scalar_one_or_none()
 
-    oil_wear = float(getattr(user, "current_oil_wear_percent", 0.0) or 0.0)
-    remaining_oil = max(0.0, round(100.0 - oil_wear, 1))
+    remaining_oil = None
     # Исправленный порог CPA <= 20.0% (в соответствии с README.md и test_cpa_funnel.py)
-    cpa_active = remaining_oil <= 20.0
+    cpa_active = False
     cpa_text = "Пора менять масло. Скидка 15% на рекомендованное масло" if cpa_active else None
 
     fuel_price = float(getattr(user, "fuel_price_rub", 72.40) or 72.40)
@@ -1051,7 +1074,7 @@ async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db),
     saved_liters = float(getattr(user, "total_fuel_saved_liters", 0.0) or 0.0)
     saved_range_km = float(getattr(user, "range_bank_km", 0.0) or 0.0)
 
-    est_autonomy_days = round(saved_liters / 4.2, 1) if saved_liters > 0 else 0.0
+    est_autonomy_days = None
 
     month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     month_savings = await db.scalar(select(func.coalesce(func.sum(Trip.total_savings_rub), 0.0)).where(Trip.user_id == user_id, Trip.created_at >= month_start))
@@ -1065,7 +1088,7 @@ async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db),
         total_trips=total_trips,
         total_distance_km=round(total_dist, 2),
         oil_remaining_percent=remaining_oil,
-        ghost_twin_status="Базовый лихач (дефолт)",
+        ghost_twin_status="Для сравнения нужна контрольная поездка",
         cpa_recommended=cpa_active,
         cpa_offer_text=cpa_text,
         range_bank_km=round(saved_range_km, 1),
@@ -1081,9 +1104,9 @@ async def get_cpa_personalized_offer(user_id: str, db: AsyncSession = Depends(ge
     car_id = user.car_id if user else "haval_jolion_15t_4wd"
     profile = await resolve_car_profile_async(car_id, db, user)
 
-    oil_vol = float(getattr(profile, "oil_capacity_l", 3.8) or 3.8)
-    oil_grade = getattr(getattr(profile, "oil_profile", None), "oil_grade", "0W-20")
-    oil_brand = getattr(profile, "recommended_oil_brand", "TotalEnergies Quartz 9000")
+    oil_vol = getattr(profile, "oil_capacity_l", None)
+    oil_grade = getattr(getattr(profile, "oil_profile", None), "oil_grade", None)
+    oil_brand = getattr(profile, "recommended_oil_brand", None)
     car_name = f"{getattr(profile, 'brand', 'Auto')} {getattr(profile, 'model', car_id)}"
     savings_discount = min(1500.0, max(500.0, round(float(getattr(user, "total_savings_rub", 500.0) or 500.0), 0)))
 
@@ -1091,6 +1114,7 @@ async def get_cpa_personalized_offer(user_id: str, db: AsyncSession = Depends(ge
         "user_id": user_id,
         "car_id": car_id,
         "car_name": car_name,
+        "offer_status": "oem_specification_required" if not (oil_brand and oil_grade and oil_vol) else "catalogue_information_not_model_verified",
         "recommended_oil": oil_brand,
         "oil_viscosity": oil_grade,
         "oil_volume_liters": oil_vol,
@@ -1140,8 +1164,8 @@ async def get_user_trips(user_id: str, limit: int = Query(100, ge=1, le=200), db
             created_at=t.created_at,
             duration_seconds=t.duration_seconds,
             distance_km=t.distance_km,
-            total_savings_rub=t.total_savings_rub,
-            oil_wear_percent=t.oil_wear_percent
+            total_savings_rub=(t.calculation_result or {}).get("cost_savings_rub",t.total_savings_rub),
+            oil_wear_percent=(t.calculation_result or {}).get("oil_wear_percent",t.oil_wear_percent)
         )
         for t in trips
     ]
@@ -1224,7 +1248,6 @@ async def get_period_analytics(
     total_dist = float(agg_row.total_dist or 0.0)
     total_secs = float(agg_row.total_seconds or 0.0)
     total_savings = float(agg_row.total_savings or 0.0)
-    total_wear = float(agg_row.total_oil_wear or 0.0)
     avg_idle = float(agg_row.idle_seconds or 0.0) / total_secs if total_secs > 0 else 0.0
     period_fuel_liters = round(float(agg_row.total_liters or 0.0), 2)
     period_range_km = round(float(agg_row.total_range or 0.0), 1)
@@ -1237,7 +1260,7 @@ async def get_period_analytics(
         total_distance_km=round(total_dist, 2),
         total_duration_hours=round(total_hours, 2),
         total_savings_rub=round(total_savings, 2),
-        total_oil_wear_percent=round(total_wear, 4),
+        total_oil_wear_percent=None,
         avg_speed_kmh=round(avg_speed, 1),
         avg_idle_ratio=round(avg_idle, 3),
         total_fuel_saved_liters=period_fuel_liters,
@@ -1258,8 +1281,8 @@ async def get_period_analytics(
         dur_s = round(float(t.duration_seconds or 0.0), 1)
         idle_r = round(float(t.idle_ratio or 0.0), 3)
         jam_s = float(getattr(t, "traffic_jam_seconds", 0.0) or (dur_s * idle_r))
-        h_acc = int(getattr(t, "harsh_accel_count", 0) or 0)
-        h_brk = int(getattr(t, "harsh_brake_count", 0) or 0)
+        h_acc = (t.calculation_result or {}).get("harsh_accel_count",t.harsh_accel_count)
+        h_brk = (t.calculation_result or {}).get("harsh_brake_count",t.harsh_brake_count)
         bumps = int(getattr(t, "road_anomalies_count", 0) or 0)
 
         trip_items.append(
@@ -1269,20 +1292,21 @@ async def get_period_analytics(
                 duration_seconds=dur_s,
                 distance_km=round(float(t.distance_km or 0.0), 3),
                 idle_ratio=idle_r,
-                oil_wear_percent=round(float(t.oil_wear_percent or 0.0), 4),
-                total_savings_rub=round(float(t.total_savings_rub or 0.0), 2),
-                fuel_saved_liters=float(getattr(t, "fuel_saved_liters", 0.0) or 0.0),
-                range_bonus_km=float(getattr(t, "range_bonus_km", 0.0) or 0.0),
-                smooth_score=int(getattr(t, "smooth_score", 100) or 100),
+                oil_wear_percent=(t.calculation_result or {}).get("oil_wear_percent",t.oil_wear_percent),
+                total_savings_rub=(t.calculation_result or {}).get("cost_savings_rub",t.total_savings_rub),
+                fuel_saved_liters=(t.calculation_result or {}).get("fuel_saved_liters", t.fuel_saved_liters),
+                range_bonus_km=(t.calculation_result or {}).get("range_bonus_km", t.range_bonus_km),
+                smooth_score=(t.calculation_result or {}).get("smooth_score",t.smooth_score),
                 road_anomalies_count=bumps,
                 harsh_accel_count=h_acc,
                 harsh_brake_count=h_brk,
-                rush_cost_rub=float(getattr(t, "rush_cost_rub", 0.0) or 0.0),
+                rush_cost_rub=(t.calculation_result or {}).get("rush_cost_rub", t.rush_cost_rub),
                 hard_accel_count=h_acc,
                 hard_brake_count=h_brk,
                 bumps_count=bumps,
                 idle_minutes=int(round(jam_s / 60.0)),
-                capture_quality=((t.calculation_result or {}).get("metrics") or {}).get("capture_quality")
+                capture_quality=((t.calculation_result or {}).get("metrics") or {}).get("capture_quality"),
+                math_status=((t.calculation_result or {}).get("metrics") or {}).get("math_status")
             )
         )
 
@@ -1381,38 +1405,9 @@ async def verify_experiment_run(payload: VerificationPayload, db: AsyncSession =
     if payload.user_id != owner.id:
         raise HTTPException(403, "Access to another user is forbidden")
 
-    stream = payload.telemetry_stream
-    if not stream or len(stream) < 50:
-        raise HTTPException(status_code=422, detail="Недостаточный объем телеметрии.")
-
-    raw_ax = np.array([p.ax for p in stream], dtype=np.float64)
-    raw_ay = np.array([p.ay for p in stream], dtype=np.float64)
-    raw_az = np.array([p.az for p in stream], dtype=np.float64)
-    speeds = np.array([p.speed for p in stream], dtype=np.float64)
-
-    dt = float(np.mean(np.diff([point.t for point in stream])))
-    local_filter = SignalFilter(sample_rate_hz=1 / dt, cutoff_hz=min(2.5, 0.45 / dt))
-    aligned = IMUAlignmentService(sample_rate_hz=1 / dt).calibrate_and_transform(raw_ax, raw_ay, raw_az, speeds)
-    filt_x, filt_y, filt_z = (local_filter.apply_butterworth_lpf(axis) for axis in aligned[:3])
-    clean_signed_ax, _ = TwinEngine.filter_road_anomalies(filt_x, raw_az=filt_z, dt=dt)
-
-    profile = await resolve_car_profile_async(payload.car_id, db, owner)
-    engine_inst = WearEngine(profile=profile)
-    
-    if hasattr(engine_inst, "evaluate_trip_wear"):
-        wear_stats = engine_inst.evaluate_trip_wear(dt=dt, speed_mps=speeds, ax_mps2=clean_signed_ax)
-        autoxak_hours = float(wear_stats["equivalent_hours"])
-    else:
-        wear_stats = engine_inst.compute_oil_wear(speeds_mps=speeds, horizontal_acc=clean_signed_ax, dt=dt)
-        autoxak_hours = float(wear_stats.get("equivalent_engine_hours", wear_stats.get("equivalent_hours", 0.0)))
-
-    obd = payload.obd_ground_truth
-    report = benchmark_engine.evaluate_experiment(
-        autoxak_engine_hours=autoxak_hours,
-        obd_rpm=obd.get("engine_rpm", []),
-        obd_load=obd.get("engine_load", []),
-        obd_temp=obd.get("oil_temperature", []),
-        user_savings=payload.user_savings,
-        dt=dt
-    )
-    return report
+    return benchmark_engine.evaluate_experiment(
+        autoxak_engine_hours=None,
+        obd_rpm=payload.obd_ground_truth['engine_rpm'],
+        obd_load=payload.obd_ground_truth['engine_load'],
+        obd_temp=payload.obd_ground_truth['oil_temperature'],
+        user_savings=[], times_s=[point.t for point in payload.telemetry_stream])

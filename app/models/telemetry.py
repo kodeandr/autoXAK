@@ -3,6 +3,7 @@ import uuid
 from typing import Optional, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from app.schemas.recordings import DeviceMetadata, GPSPoint, MotionPoint, MAX_TIMESTAMP_MS
+from app.schemas.reference_math import TripMathEvidence
 
 
 class RawCapture(BaseModel):
@@ -48,6 +49,7 @@ class TripSessionPayload(BaseModel):
     telemetry_stream: list[TelemetryPoint] = Field(default_factory=list, max_length=500000)
     raw_recording: Optional[RawCapture] = None
     board_computer_consumption_l100km: Optional[float] = Field(default=None, gt=0, le=100)
+    reference_math: Optional[TripMathEvidence] = None
 
     @model_validator(mode="after")
     def ordered_samples(self):
@@ -67,4 +69,5 @@ class TelemetryPreviewPayload(TripSessionPayload):
     """Bounded, non-persistent input for a provisional calculation."""
     telemetry_stream: list[TelemetryPoint] = Field(min_length=50, max_length=6000)
     raw_recording: None = None
+    reference_math: None = None
     sampling_stride: int = Field(default=1, ge=1, le=10000)

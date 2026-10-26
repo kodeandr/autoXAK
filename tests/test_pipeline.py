@@ -1,4 +1,4 @@
-﻿import pytest
+import pytest
 import numpy as np
 from app.core.dsp.filters import SignalFilter
 from app.core.dsp.simplifier import PathSimplifier
@@ -42,7 +42,7 @@ def test_dsp_gravity_removal():
     _, _, filt_z = filter_mod.isolate_linear_acceleration(ax, ay, az)
     assert abs(np.mean(filt_z)) < 0.1
 
-def test_wear_engine_traffic_stress(default_profile):
+def test_phone_only_oil_state_remains_unavailable(default_profile):
     engine = WearEngine(profile=default_profile)
     n = 1000
     dt = 0.02
@@ -54,25 +54,24 @@ def test_wear_engine_traffic_stress(default_profile):
     stress_acc = np.full(n, 2.5)
     res_stress = engine.evaluate_trip_wear(dt=dt, speed_mps=stress_speeds, ax_mps2=stress_acc)
 
-    assert res_stress['equivalent_hours'] > res_idle['equivalent_hours']
-    assert res_idle['oil_wear_percent'] > 0.0
+    assert res_stress['equivalent_hours'] is res_idle['equivalent_hours'] is None
+    assert res_idle['oil_wear_percent'] is None
 
-def test_twin_engine_savings_positive(default_profile):
+def test_explicit_matched_observations_support_signed_fuel_arithmetic(default_profile):
     twin = AggressiveTwinEngine(profile=default_profile)
     n = 500
     dt = 0.02
     user_speeds = np.linspace(0.0, 15.0, n)
-    twin_speed, twin_ax = twin.simulate_aggressive_twin_kinematics(user_speeds, dt=dt)
-    user_ax = np.gradient(user_speeds, dt)
-    res = twin.evaluate_financial_delta(
-        distance_km=2.5,
-        user_equiv_hours=0.01,
-        user_ax=user_ax,
-        twin_equiv_hours=0.03
-    )
-    assert res['fuel_savings_rub'] >= 0.0
-    assert res['oil_savings_rub'] >= 0.0
-    assert res['total_savings_rub'] > 0.0
+    with pytest.raises(ValueError):
+        twin.simulate_aggressive_twin_kinematics(user_speeds,dt=dt)
+    reference_speed,reference_ax=twin.simulate_aggressive_twin_kinematics(user_speeds,dt=dt,reference_speed_mps=user_speeds)
+    np.testing.assert_array_equal(reference_speed,user_speeds)
+    np.testing.assert_allclose(reference_ax,np.gradient(user_speeds,dt))
+    actual={'vehicle_id':'car','route_id':'route','context_id':'conditions','distance_m':2500,'duration_s':300,'fuel_l':.3,'source':'synthetic test'}
+    res=twin.evaluate_financial_delta(comparison={'actual':actual,'reference':dict(actual,fuel_l=.4)},fuel_price_rub=70)
+    assert res['fuel_savings_rub']==pytest.approx(7)
+    assert res['oil_savings_rub'] is None
+    assert res['causal_savings_verified'] is False
 
 @pytest.mark.anyio
 async def test_gis_route_context():

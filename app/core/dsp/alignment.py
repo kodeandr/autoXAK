@@ -1,4 +1,4 @@
-﻿import numpy as np
+import numpy as np
 from typing import Tuple, Dict, Any
 
 
@@ -30,12 +30,12 @@ class IMUAlignmentService:
         gps_diff = np.diff(speeds_mps, prepend=speeds_mps[0]) / self.dt
         static_mask = (speeds_mps < 0.4) & (np.abs(gps_diff) < 0.20)
 
-        if np.sum(static_mask) >= 15:
+        if np.sum(static_mask)*self.dt >= 0.3:
             g_estimate = np.mean(raw_signals[static_mask], axis=0)
         else:
             # Если остановок не было (трасса) — ищем участки движения с постоянной скоростью
             quasi_mask = np.abs(gps_diff) < 0.15
-            if np.sum(quasi_mask) >= 20:
+            if np.sum(quasi_mask)*self.dt >= 0.4:
                 g_estimate = np.median(raw_signals[quasi_mask], axis=0)
             else:
                 g_estimate = np.median(raw_signals, axis=0)
@@ -63,12 +63,14 @@ class IMUAlignmentService:
         # --- 2. Определение направления движения (Forward Vector) ---
         accel_mask = (gps_diff > 0.3) & (speeds_mps > 0.4)
 
-        if np.sum(accel_mask) >= 10:
+        forward_identified = False
+        if np.sum(accel_mask)*self.dt >= 0.2:
             weights = gps_diff[accel_mask, np.newaxis]
             fwd_estimate = np.sum(horiz_signals[accel_mask] * weights, axis=0)
             fwd_norm = np.linalg.norm(fwd_estimate)
             if fwd_norm > 1e-4:
                 x_veh = fwd_estimate / fwd_norm
+                forward_identified = True
             else:
                 x_veh = self._fallback_orthogonal(z_veh)
         else:
@@ -98,8 +100,11 @@ class IMUAlignmentService:
         meta = {
             "pitch_deg": round(float(np.degrees(pitch_rad)), 1),
             "roll_deg": round(float(np.degrees(roll_rad)), 1),
-            "alignment_confidence": round(float(min(1.0, np.sum(accel_mask) / 30.0)), 2),
-            "is_aligned": True
+            "alignment_confidence": round(float(min(1.0, np.sum(accel_mask)*self.dt / 0.6)), 2) if forward_identified else 0.0,
+            "is_aligned": forward_identified,
+            "vertical_aligned": True,
+            "forward_axis_identified": forward_identified,
+            "assumption": "phone_fixed_relative_to_vehicle"
         }
 
         return a_long, a_lat, a_vert, meta

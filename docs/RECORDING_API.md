@@ -101,3 +101,16 @@ authenticated owner access; serving the application and this API over HTTPS is
 required for browser sensors outside localhost. Browser closure can interrupt
 collection; restore only points actually persisted and end at the last recorded
 time, never fabricate a background continuation.
+
+
+## Математическое ядро 2.0
+
+GPSPoint дополнительно принимает altitude_m, altitude_accuracy_m, heading_deg и
+speed_accuracy_mps; неизвестные значения не вычисляются автоматически. Новые
+неизвестные поля исключаются из канонической сериализации для совместимости
+с хешами ранее записанных данных.
+
+В API v1 можно передать reference_math с явными данными математического опыта.
+Входы и результаты сохраняются в trip_math_evidence вместе с поездкой; они
+доступны только владельцу. В API 2.0 неподтверждённые экономия и масло возвращаются
+как null, а не нули. Полный контракт: [REFERENCE_MATH.md](REFERENCE_MATH.md).

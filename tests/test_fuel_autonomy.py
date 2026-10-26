@@ -1,4 +1,4 @@
-﻿import numpy as np
+import numpy as np
 import pytest
 from app.services.twin_engine import TwinEngine
 from app.models.vehicle_profiles import VEHICLE_REGISTRY
@@ -18,7 +18,7 @@ def test_z_shock_veto_suppresses_road_bumps():
     assert np.max(clean_ax) < 1.0
 
 
-def test_throttle_hunting_detector_and_penalty():
+def test_speed_oscillations_do_not_measure_throttle_or_fuel_penalty():
     engine = TwinEngine()
     dt = 0.02
     n = 1500
@@ -27,9 +27,10 @@ def test_throttle_hunting_detector_and_penalty():
     ax = np.gradient(speeds, dt)
 
     hunting_detected, penalty_liters, pke = engine.detect_throttle_hunting(speeds, ax, dt=dt)
-    assert hunting_detected is True
-    assert pke > 10.0
-    assert penalty_liters > 0.0
+    assert hunting_detected is None
+    expected=np.maximum(np.diff(speeds**2),0).sum()/2 / np.trapz(speeds,dx=dt)
+    assert pke == pytest.approx(expected)
+    assert penalty_liters is None
 
 
 def test_fuel_autonomy_range_calculation():
@@ -43,7 +44,7 @@ def test_fuel_autonomy_range_calculation():
         fuel_price_rub=72.0,
         service_cost_rub=9500.0
     )
-    assert 1.5 <= res["range_bonus_km"] <= 3.0
-    assert res["saved_fuel_liters"] > 0.0
-    assert res["autonomy_days_extended"] > 0.0
-    assert res["smooth_score"] == 100
+    assert res['range_bonus_km'] is None
+    assert res['saved_fuel_liters'] is None
+    assert res['autonomy_days_extended'] is None
+    assert res['smooth_score'] is None

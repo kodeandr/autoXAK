@@ -131,7 +131,7 @@ async def test_manual_vehicle_endpoint_and_real_parameters(async_client):
     assert response.status_code == 200
     result = response.json()
     assert result['engine_displacement_l'] == 3.0
-    assert result['drivetrain_efficiency'] == pytest.approx(0.86)
+    assert result['drivetrain_efficiency'] is None
     assert result['curb_weight_kg'] == 2100
     assert result['car_name'] == 'My Car'
     await async_client.post('/api/v1/users/test_user_coverage/profile', json={'car_id': result['car_id']})
@@ -209,7 +209,6 @@ async def test_invalid_verification_is_422(async_client):
 
 
 async def test_concurrent_retries_and_distinct_sessions_do_not_lose_totals(committed_client, synthetic_telemetry_batch):
-    import asyncio
     body = dict(synthetic_telemetry_batch, user_id=committed_client.audit_user_id)
     responses = await asyncio.gather(*(committed_client.post('/api/v1/telemetry/session', json=body) for _ in range(3)))
     assert [response.status_code for response in responses] == [200] * 3
@@ -219,7 +218,8 @@ async def test_concurrent_retries_and_distinct_sessions_do_not_lose_totals(commi
     assert all(response.status_code == 200 for response in responses)
     dashboard = (await committed_client.get('/api/v1/users/' + committed_client.audit_user_id + '/dashboard')).json()
     assert dashboard['total_trips'] == 2
-    assert dashboard['total_savings_rub'] == pytest.approx(sum(response.json()['cost_savings_rub'] for response in responses), abs=0.01)
+    assert dashboard['total_savings_rub'] == 0
+    assert all(response.json()['cost_savings_rub'] is None for response in responses)
 
 
 async def test_recording_chunks_completion_ownership_and_streaming_export(committed_client):
@@ -251,7 +251,7 @@ async def test_recording_chunks_completion_ownership_and_streaming_export(commit
 async def test_guest_merge_moves_all_data_once_and_preserves_retry_identity(committed_client, synthetic_telemetry_batch):
     from sqlalchemy import select, delete
     from app.core.database import async_session_factory
-    from app.models.db_models import User, Trip, CPALead
+    from app.models.db_models import User, CPALead
     from app.models.recordings import TripRecording, RecordingVehicle
     from app.api.auth import _get_or_merge_yandex_user, _build_anonymized_yandex_id
     client = committed_client
@@ -269,7 +269,8 @@ async def test_guest_merge_moves_all_data_once_and_preserves_retry_identity(comm
             async with async_session_factory() as session:
                 target = await _get_or_merge_yandex_user(session, raw_yandex_id, guest_id)
                 assert target.total_trips == 1
-                assert target.total_savings_rub == original['cost_savings_rub']
+                assert target.total_savings_rub == 0
+                assert original['cost_savings_rub'] is None
         response = await client.post('/api/v1/telemetry/session', json=dict(body, user_id=ya_id), headers={'Authorization': 'Bearer ' + create_access_token(ya_id)})
         assert response.status_code == 200, response.text
         assert response.json() == original
@@ -319,7 +320,6 @@ async def test_additive_migration_preserves_old_data_and_is_repeatable(monkeypat
 
 
 async def test_cross_owner_concurrent_uuid_collision_is_409_not_500(committed_client, synthetic_telemetry_batch):
-    import asyncio
     from app.core.database import async_session_factory
     from app.models.db_models import User
     from sqlalchemy import delete

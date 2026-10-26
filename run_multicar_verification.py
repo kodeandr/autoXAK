@@ -1,4 +1,4 @@
-﻿"""Synthetic multi-profile API check, not a measured OBD validation study."""
+"""Synthetic multi-profile API check, not a measured OBD validation study."""
 import json
 import ssl
 import time
@@ -136,5 +136,5 @@ print(f"{'Модификация автомобиля':<42} | {'autoXAK (ч)':<1
 print("-" * 90)
 for r in results:
     status = "OK (<=10%)" if r["confirmed"] else "FAIL (>10%)"
-    print(f"{r['title']:<42} | {r['autoxak_h']:<11} | {r['obd_h']:<10} | {r['mape']:<8.2f} | {status}")
+    print(f"{r['title']:<42} | {r['autoxak_h']:<11} | {r['obd_h']:<10} | {('—' if r['mape'] is None else format(r['mape'],'.2f')):<8} | {status}")
 print("=" * 90 + "\n")

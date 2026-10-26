@@ -1,69 +1,70 @@
-"""
-Метрологический верификационный стенд (Evaluation Suite).
-Сравнивает безаппаратную оценку T_App со стендовым эталоном CAN-шины T_OBD.
-Проверяет гипотезу: MAPE <= 10.0%, p-value < 0.05.
-"""
-import numpy as np
-from scipy import stats
-from typing import List, Dict
+"""Validate declared paired fuel observations; never generate pseudo-real evidence.
 
-class BenchmarkEngine:
-    @staticmethod
-    def calculate_obd_ground_truth_hours(time_sec: np.ndarray, rpm: np.ndarray, 
-                                        engine_load: np.ndarray) -> float:
-        """
-        Аппаратный эталон CAN: физическое интегрирование оборотов коленчатого вала
-        с весовым коэффициентом циклового наполнения цилиндров (PID 0104 Engine Load).
-        """
-        dt = np.diff(time_sec, prepend=time_sec[0])
-        idle_rpm_ref = 800.0
-        load_factor = 1.0 + (engine_load / 100.0) * 0.5
-        severity = (rpm / idle_rpm_ref) * load_factor
-        
-        equiv_seconds = np.sum(severity * dt)
-        return float(equiv_seconds / 3600.0)
+Run from the repository root: python -m scripts.benchmark_suite dataset.json
+Wire format is the same as POST /api/v3/math/validate-fuel.
+"""
 
-    @staticmethod
-    def evaluate_cohort_metrics(t_app_list: List[float], t_obd_list: List[float]) -> Dict[str, float]:
-        """
-        Статистическая валидация гипотезы H1 против H0.
-        """
-        app_arr = np.array(t_app_list)
-        obd_arr = np.array(t_obd_list)
-        
-        errors_abs = np.abs(obd_arr - app_arr)
-        percentage_errors = (errors_abs / np.maximum(1e-5, obd_arr)) * 100.0
-        
-        mape = float(np.mean(percentage_errors))
-        rmse = float(np.sqrt(np.mean((obd_arr - app_arr) ** 2)))
-        r_pearson, _ = stats.pearsonr(app_arr, obd_arr)
-        
-        # Парный t-тест Стьюдента
-        t_stat, p_value_student = stats.ttest_rel(app_arr, obd_arr)
-        # Тест знаковых рангов Уилкоксона
-        w_stat, p_value_wilcoxon = stats.wilcoxon(app_arr, obd_arr)
-        
-        hypothesis_confirmed = bool(mape <= 10.0 and p_value_student < 0.05)
-        
-        return {
-            "mape_percent": round(mape, 3),
-            "rmse_hours": round(rmse, 4),
-            "pearson_r": round(float(r_pearson), 4),
-            "p_value_student": float(p_value_student),
-            "p_value_wilcoxon": float(p_value_wilcoxon),
-            "hypothesis_status": "CONFIRMED (H1)" if hypothesis_confirmed else "REJECTED (H0)"
-        }
+import argparse
+import json
+from pathlib import Path
+
+from app.schemas.reference_math import FuelValidation
+from app.services.reference_math import VERSION, validation_metrics
+
+
+def evaluate_dataset(data):
+    body = FuelValidation.model_validate(data)
+
+    def metrics(rows):
+        return validation_metrics(
+            [row.predicted_fuel_l for row in rows],
+            [row.observed_fuel_l for row in rows],
+        )
+
+    return {
+        "overall": metrics(body.samples),
+        "per_source": {
+            source: metrics(
+                [row for row in body.samples if row.reference_source == source]
+            )
+            for source in sorted({row.reference_source for row in body.samples})
+        },
+        "independent_vehicle_count": len({row.vehicle_id for row in body.samples}),
+        "training_overlap": False,
+        "accuracy_certified": False,
+        "math_version": VERSION,
+        "provenance_status": "caller_declared_not_independently_verified",
+    }
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "dataset",
+        type=Path,
+        help="JSON with paired fuel observations, sources and training vehicle IDs",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        help="Optional NEW private JSON report; never overwrites existing evidence",
+    )
+    args = parser.parse_args()
+    try:
+        report = evaluate_dataset(
+            json.loads(args.dataset.read_text(encoding="utf-8-sig"))
+        )
+    except (ValueError, OSError) as error:
+        parser.error(str(error))
+    encoded = json.dumps(report, ensure_ascii=False, allow_nan=False, indent=2)
+    if args.output:
+        import os
+
+        descriptor = os.open(args.output, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            stream.write(encoded + "\n")
+    print(encoded)
+
 
 if __name__ == "__main__":
-    # Пример верификации на калибровочной когорте из 40 реальных заездов
-    np.random.seed(42)
-    sample_size = 40
-    # Генерация синтезированных контрольных данных для проверки пайплайна
-    obd_ground_truth = np.random.uniform(0.3, 1.8, sample_size)
-    # Погрешность модели со случайным шумом ~2%
-    app_estimates = obd_ground_truth * (1.0 + np.random.normal(0.0, 0.02, sample_size))
-    
-    metrics = BenchmarkEngine.evaluate_cohort_metrics(list(app_estimates), list(obd_ground_truth))
-    print("=== ОТЧЕТ МЕТРОЛОГИЧЕСКОЙ ВЕРИФИКАЦИИ АВТОХАК ===")
-    for k, v in metrics.items():
-        print(f"{k}: {v}")
+    main()

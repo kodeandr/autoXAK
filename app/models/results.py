@@ -7,8 +7,8 @@ class TripCalculationResult(BaseModel):
     session_id: uuid.UUID
     duration_seconds: float
     distance_km: float
-    oil_wear_percent: float
-    cost_savings_rub: float
+    oil_wear_percent: Optional[float]
+    cost_savings_rub: Optional[float]
     status: str = "PROCESSED"
 
 class DashboardResponse(BaseModel):
@@ -24,8 +24,8 @@ class TripSummaryItem(BaseModel):
     created_at: datetime
     duration_seconds: float
     distance_km: float
-    total_savings_rub: float
-    oil_wear_percent: float
+    total_savings_rub: Optional[float]
+    oil_wear_percent: Optional[float]
 
 class TripHistoryResponse(BaseModel):
     user_id: str

@@ -52,3 +52,14 @@ class RecordingChunk(Base):
     max_timestamp_ms = Column(BigInteger, nullable=False)
     gps_count = Column(Integer, nullable=False)
     motion_count = Column(Integer, nullable=False)
+
+
+class TripMathEvidenceRecord(Base):
+    """Immutable per-request inputs; never load large maps with history summaries."""
+    __tablename__ = 'trip_math_evidence'
+    trip_id = Column(String(64),ForeignKey('trips.id',ondelete='CASCADE'),primary_key=True)
+    math_version = Column(String(100),nullable=False)
+    inputs_sha256 = Column(String(64),nullable=False)
+    inputs = Column(JSON,nullable=False)
+    result = Column(JSON,nullable=False)
+    created_at = Column(DateTime(timezone=True),default=utcnow,nullable=False)

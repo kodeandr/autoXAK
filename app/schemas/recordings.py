@@ -2,7 +2,7 @@
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, model_serializer
 
 MAX_TIMESTAMP_MS = 253402300799999
 MAX_CHUNKS = 120000
@@ -37,6 +37,19 @@ class GPSPoint(RecordingModel):
     speed_mps: float | None = Field(default=None, ge=0, le=150)
     accuracy_m: float | None = Field(default=None, ge=0, le=100000)
     speed_source: Literal["gps", "derived", "missing"]
+    altitude_m: float | None = Field(default=None,ge=-100000,le=100000)
+    altitude_accuracy_m: float | None = Field(default=None,ge=0,le=100000)
+    heading_deg: float | None = Field(default=None,ge=0,le=360)
+    speed_accuracy_mps: float | None = Field(default=None,ge=0,le=150)
+
+    @model_serializer(mode='wrap')
+    def preserve_legacy_wire_hash(self, handler):
+        data=handler(self)
+        # New unknown optional metadata must not alter hashes of old pending trips.
+        for name in ('altitude_m','altitude_accuracy_m','heading_deg','speed_accuracy_mps'):
+            if data.get(name) is None:
+                data.pop(name,None)
+        return data
 
     @model_validator(mode="after")
     def speed_and_source_agree(self):
