@@ -43,8 +43,18 @@ const AutoXAKOfflineStore = window.AutoXAKOfflineStore = (() => {
     function savePendingTrip(payload) {
         return transaction('readwrite', store => store.put({...payload, created_at: Date.now(), status: 'PENDING'}));
     }
-    function saveDraftTrip(payload) {
-        return transaction('readwrite', store => store.put({...payload, created_at: Date.now(), status: 'RECORDING'}));
+    async function saveDraftTrip(payload) {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(STORE, 'readwrite'), store = tx.objectStore(STORE);
+            const request = store.get(payload.session_id);
+            request.onsuccess = () => {
+                // A delayed write from another tab must not undo finalization.
+                if (request.result?.status !== 'PENDING') store.put({...payload, created_at:Date.now(), status:'RECORDING'});
+            };
+            tx.oncomplete = resolve;
+            tx.onerror = tx.onabort = () => reject(tx.error || new Error('Draft save failed'));
+        });
     }
     async function recoverInterruptedTrips() {
         const drafts = await transaction('readonly', store => store.index('status').getAll('RECORDING'));
@@ -85,19 +95,54 @@ const AutoXAKOfflineStore = window.AutoXAKOfflineStore = (() => {
         });
     }
     async function savePendingControl(session_id, value) {
-        return transaction('readwrite', store => store.put({session_id, user_id: AutoXAKSession.getUserId(), value}), CONTROLS);
+        const revision = globalThis.crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}:${Math.random()}`;
+        return transaction('readwrite', store => store.put({session_id, user_id: AutoXAKSession.getUserId(), value, revision}), CONTROLS);
+    }
+    async function acknowledgeControl(control) {
+        const db = await openDB();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(CONTROLS, 'readwrite'), store = tx.objectStore(CONTROLS);
+            const request = store.get(control.session_id);
+            request.onsuccess = () => {
+                const current = request.result;
+                if (current && current.user_id === control.user_id && current.revision === control.revision && current.value === control.value) store.delete(control.session_id);
+            };
+            tx.oncomplete = resolve;
+            tx.onerror = tx.onabort = () => reject(tx.error || new Error('Control acknowledgement failed'));
+        });
     }
     async function syncControls(owner) {
         const controls = await transaction('readonly', store => store.getAll(), CONTROLS);
         for (const control of controls || []) {
             if (control.user_id !== owner || AutoXAKSession.getUserId() !== owner) continue;
-            const response = await fetch(`/api/v1/trips/${encodeURIComponent(control.session_id)}/board-computer`, {method: 'POST',
+            const {response} = await AutoXAKSession.fetchJSON(`/api/v1/trips/${encodeURIComponent(control.session_id)}/board-computer`, {method: 'POST',
                 headers: {'Content-Type': 'application/json', ...AutoXAKSession.getAuthHeaders()},
                 body: JSON.stringify({board_computer_consumption_l100km: control.value})});
-            if (response.ok) await transaction('readwrite', store => store.delete(control.session_id), CONTROLS);
+            if (response.ok) await acknowledgeControl(control);
+            else if ([401,403,429].includes(response.status) || response.status >= 500) break;
         }
     }
     async function countPendingTrips() { return (await getPendingTrips()).length; }
+
+    function rememberSyncedTrip(result, trip) {
+        if (AutoXAKSession.getUserId() !== trip.user_id) return;
+        try {
+            const offline = JSON.parse(localStorage.getItem('autoXAK_offline_trips') || '[]');
+            localStorage.setItem('autoXAK_offline_trips', JSON.stringify(offline.filter(item => item.session_id !== trip.session_id)));
+            const map = JSON.parse(localStorage.getItem('autoXAK_trip_details_map') || '{}');
+            const details = {user_id:trip.user_id, session_id:result.session_id,
+                created_at:new Date(trip.raw_recording?.started_at_ms ?? trip.created_at ?? Date.now()).toISOString(),
+                duration_seconds:result.duration_seconds, distance_km:result.distance_km,
+                total_savings_rub:result.cost_savings_rub, hard_accel_count:result.harsh_accel_count,
+                hard_brake_count:result.harsh_brake_count, bumps_count:result.road_anomalies_count,
+                idle_minutes:Math.round((result.traffic_jam_seconds || 0)/60), capture_quality:result.metrics?.capture_quality};
+            if (trip.session_id !== result.session_id) delete map[trip.session_id];
+            map[result.session_id] = details;
+            localStorage.setItem('autoXAK_trip_details_map', JSON.stringify(map));
+            const archive = JSON.parse(localStorage.getItem('autoXAK_local_history') || '[]');
+            localStorage.setItem('autoXAK_local_history', JSON.stringify([details,...archive.filter(item=>item.user_id===trip.user_id && ![trip.session_id,result.session_id].includes(item.session_id))]));
+        } catch (_) { /* The server acknowledgement remains authoritative if cache storage is full. */ }
+    }
 
     async function synchronize(callbacks) {
         if (!navigator.onLine) return;
@@ -106,29 +151,29 @@ const AutoXAKOfflineStore = window.AutoXAKOfflineStore = (() => {
             if (owner !== AutoXAKSession.getUserId()) break;
             try {
                 const {created_at, status, attempts, ...payload} = trip;
-                const controller = new AbortController();
-                const timeout = setTimeout(()=>controller.abort(),15000);
-                let response;
-                try { response = await fetch('/api/v1/telemetry/session', {method: 'POST',
-                    headers: {'Content-Type': 'application/json', ...AutoXAKSession.getAuthHeaders()}, body: JSON.stringify(payload), signal:controller.signal});
-                } finally {clearTimeout(timeout);}
+                const {response, data:result} = await AutoXAKSession.fetchJSON('/api/v1/telemetry/session', {method: 'POST',
+                    headers: {'Content-Type': 'application/json', ...AutoXAKSession.getAuthHeaders()}, body: JSON.stringify(payload)}, 15000);
                 if (!response.ok) {
                     // Retain a rejected record without preventing independent trips
                     // from syncing. Stop on authentication/rate/server failures.
                     if ([400,409,413,422].includes(response.status)) continue;
                     break;
                 }
-                const result = await response.json();
                 await removePendingTrip(trip.session_id);
-                if (callbacks.onTripSynced) await callbacks.onTripSynced(result, trip);
+                rememberSyncedTrip(result, trip);
+                if (owner === AutoXAKSession.getUserId() && callbacks.onTripSynced) await callbacks.onTripSynced(result, trip);
             } catch (_) { break; }
         }
         try { await syncControls(owner); } catch (_) {}
-        if (callbacks.onSyncComplete) await callbacks.onSyncComplete();
+        if (owner === AutoXAKSession.getUserId() && callbacks.onSyncComplete) await callbacks.onSyncComplete();
     }
     function syncPendingTrips(callbacks = {}) {
-        if (!syncing) syncing = synchronize(callbacks).finally(() => { syncing = null; });
+        if (!syncing) {
+            const owner = AutoXAKSession.getUserId();
+            const run = () => synchronize(callbacks);
+            syncing = (navigator.locks ? navigator.locks.request('autoxak-sync:'+owner, run) : run()).finally(() => { syncing = null; });
+        }
         return syncing;
     }
-    return {reassignOwner, savePendingControl, saveDraftTrip, recoverInterruptedTrips, savePendingTrip, removePendingTrip, getPendingTrips, countPendingTrips, syncPendingTrips};
+    return {rememberSyncedTrip, reassignOwner, savePendingControl, saveDraftTrip, recoverInterruptedTrips, savePendingTrip, removePendingTrip, getPendingTrips, countPendingTrips, syncPendingTrips};
 })();

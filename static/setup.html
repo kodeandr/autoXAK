@@ -1040,9 +1040,8 @@
 
     async function initCatalog() {
         try {
-            const res = await fetch('/api/v1/vehicles/catalog');
+            const {response:res, data:raw} = await AutoXAKSession.fetchJSON('/api/v1/vehicles/catalog');
             if (res.ok) {
-                const raw = await res.json();
                 catalogTree = normalizeCatalogData(raw);
             } else {
                 catalogTree = FALLBACK_CATALOG;
@@ -1134,11 +1133,16 @@
             const headers = (window.AutoXAKSession && typeof window.AutoXAKSession.getAuthHeaders === 'function')
                 ? window.AutoXAKSession.getAuthHeaders()
                 : {};
-            const res = await fetch(`/api/v1/users/${encodeURIComponent(currentUserId)}/profile`, { headers });
+            const {response:res, data:prof} = await AutoXAKSession.fetchJSON(`/api/v1/users/${encodeURIComponent(currentUserId)}/profile`, { headers });
             if (res.ok) {
-                const prof = await res.json();
-                if (prof.car_name && !carName) carName = prof.car_name;
-                if (prof.car_id && !carId) carId = prof.car_id;
+                if (!localStorage.getItem('autoXAK_pending_profile')) {
+                    carName = prof.car_name || '';
+                    carId = prof.car_id || '';
+                    for (const prefix of ['autoXAK_', 'autoXAK_selected_']) {
+                        localStorage.setItem(prefix+'car_id', carId);
+                        localStorage.setItem(prefix+'car_name', carName);
+                    }
+                }
             }
         } catch (_) {}
 
@@ -1198,7 +1202,7 @@
         let synthesizedCarId = `custom_${bodyType}_${Math.round(engineL * 10)}_${driveType.toLowerCase()}`;
 
         try {
-            const synRes = await fetch('/api/v1/vehicles/synthesize', {
+            const {response:synRes, data:synData} = await AutoXAKSession.fetchJSON('/api/v1/vehicles/synthesize', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', ...AutoXAKSession.getAuthHeaders() },
                 body: JSON.stringify({
@@ -1212,7 +1216,6 @@
             });
             if (!synRes.ok) throw new Error(`HTTP ${synRes.status}`);
             if (synRes.ok) {
-                const synData = await synRes.json();
                 if (synData.car_id || synData.id) {
                     synthesizedCarId = synData.car_id || synData.id;
                 }
@@ -1232,8 +1235,6 @@
 
     // ---------------- ЕДИНАЯ ФУНКЦИЯ СОХРАНЕНИЯ И СИНХРОНИЗАЦИИ ----------------
     async function persistVehicleSelection(vehicleData) {
-        const fuelPrice = parseFloat(localStorage.getItem('autoXAK_fuel_price')) || 62.0;
-
         localStorage.setItem('autoXAK_car_id', vehicleData.car_id);
         localStorage.setItem('autoXAK_car_name', vehicleData.car_name);
         localStorage.setItem('autoXAK_selected_car_id', vehicleData.car_id);
@@ -1244,8 +1245,7 @@
             user_id: currentUserId,
             car_id: vehicleData.car_id,
             car_name: vehicleData.car_name,
-            fuel_consumption: vehicleData.fuel_consumption || 8.2,
-            fuel_price_rub: fuelPrice
+            fuel_consumption: vehicleData.fuel_consumption || 8.2
         };
         localStorage.setItem('autoXAK_profile', JSON.stringify(profilePayload));
 
@@ -1259,6 +1259,7 @@
     window.addEventListener('DOMContentLoaded', async () => {
         const session = await AutoXAKSession.ensureAuthenticated();
         currentUserId = session.userId;
+        await AutoXAKSession.syncPendingProfile();
         initCustomDropdowns();
         await initCatalog();
         await loadUserGarageState();

@@ -18,6 +18,8 @@ def capture_quality(payload):
         reasons.append("insufficient_motion_samples")
     elif any(b.t - a.t > 2 for a, b in zip(stream, stream[1:])):
         reasons.append("motion_interrupted")
+    if len(stream) > 1 and (stream[-1].t - stream[0].t) / (len(stream) - 1) < 0.001:
+        reasons.append("unsupported_motion_rate")
     if len(good_gps) < 2:
         reasons.append("insufficient_accurate_gps")
     if stream:

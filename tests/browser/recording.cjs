@@ -126,7 +126,15 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
         await page.evaluate(()=>finishActiveTrip());
         assert.equal(await page.evaluate(()=>!!pendingFinishedPayload),true);
         const retryId=await page.evaluate(()=>pendingFinishedPayload.session_id);
-        const retried=await finish();
+        // Retry through the visible swipe control, not a direct function call.
+        const thumb=await page.locator('#swipe-thumb').boundingBox();
+        const track=await page.locator('#swipe-container').boundingBox();
+        await page.mouse.move(thumb.x+thumb.width/2,thumb.y+thumb.height/2);
+        await page.mouse.down();
+        await page.mouse.move(track.x+track.width-10,thumb.y+thumb.height/2,{steps:10});
+        await page.mouse.up();
+        await page.waitForFunction(()=>!pendingFinishedPayload && !finishingTrip && document.getElementById('summary-modal').classList.contains('active'));
+        const retried=await (await page.request.get(`${base}/api/v2/trips/${retryId}/export`,{headers:identity.headers})).json();
         assert.equal(retried.trip_id,retryId);
         assert.deepEqual(retried.point_counts,{gps:2,motion:0});
         assert.equal(await page.evaluate(()=>pendingFinishedPayload),null);

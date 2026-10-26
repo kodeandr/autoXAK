@@ -16,6 +16,7 @@ from fastapi import FastAPI, HTTPException, Depends, Query, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.concurrency import run_in_threadpool
 from fastapi.security import HTTPBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func, and_, or_, text
@@ -138,6 +139,8 @@ class PeriodAnalyticsResponse(BaseModel):
     end_date: datetime
     summary: TripsPeriodSummaryMetrics
     trips: List[TripPeriodItem]
+    limit: int = 200
+    offset: int = 0
 
 
 class DashboardResponse(BaseModel):
@@ -291,7 +294,7 @@ async def resolve_car_profile_async(car_id: Optional[str], db: AsyncSession, use
 # Вспомогательные алгоритмы геодезии и кластеризации маневров
 # =====================================================================
 
-def count_maneuver_events(signal: np.ndarray, threshold: float, is_greater: bool = True, min_points: int = 5) -> int:
+def count_maneuver_events(signal: np.ndarray, threshold: float, is_greater: bool = True, min_points: int = 5, dt: float = 0.02) -> int:
     """Группирует высокочастотные отсчеты (50 Гц) в дискретные события маневров с подавлением дребезга."""
     if len(signal) == 0:
         return 0
@@ -309,7 +312,7 @@ def count_maneuver_events(signal: np.ndarray, threshold: float, is_greater: bool
             if current_length >= min_points and not in_event and cooldown == 0:
                 events += 1
                 in_event = True
-                cooldown = 25  # Минимум 0.5 с между двумя независимыми стартами/торможениями
+                cooldown = max(1, math.ceil(0.5 / dt))
         else:
             in_event = False
             current_length = 0
@@ -598,6 +601,23 @@ async def synthesize_vehicle(payload: CustomVehicleInput, db: AsyncSession = Dep
 
 async def _calculate_session_values(payload, db, user, *, max_gap_seconds=2.0):
     """Shared calculation only: no trip writes, balance changes or commits."""
+    resolved_car_id = payload.car_id or getattr(user, "car_id", "haval_jolion_15t_4wd")
+    profile = await resolve_car_profile_async(resolved_car_id, db, user)
+    coords = []
+    for point in payload.telemetry_stream:
+        if point.lat is not None and point.lon is not None:
+            coordinate = {"lat": point.lat, "lon": point.lon}
+            if not coords or coordinate != coords[-1]:
+                coords.append(coordinate)
+    moving = any(point.speed > 0.5 for point in payload.telemetry_stream)
+    road_context = await gis_service.get_route_context(coords) if moving else None
+    # DSP and maneuver loops can cover 500k points. Keep the event loop available
+    # for readiness, authentication and other trips while they run.
+    return await run_in_threadpool(_calculate_session_values_sync, payload, profile, user, road_context,
+                                  max_gap_seconds=max_gap_seconds)
+
+
+def _calculate_session_values_sync(payload, profile, user, road_context, *, max_gap_seconds=2.0):
     stream = payload.telemetry_stream
     points_count = len(stream)
     times = np.array([p.t for p in stream], dtype=np.float64)
@@ -609,6 +629,8 @@ async def _calculate_session_values(payload, db, user, *, max_gap_seconds=2.0):
     # 1. Вычисление реального шага времени dt по меткам времени (защита от плавающей частоты браузера)
     raw_diffs = np.diff(times)
     dt = float(np.mean(raw_diffs))
+    if not math.isfinite(dt) or dt < 0.001:
+        raise HTTPException(422, "Telemetry sampling period must be at least one millisecond")
     if np.max(raw_diffs) > max_gap_seconds:
         raise HTTPException(422, "Telemetry contains gaps longer than two seconds")
 
@@ -627,13 +649,13 @@ async def _calculate_session_values(payload, db, user, *, max_gap_seconds=2.0):
     is_moving_session = bool(np.max(speeds) > 0.5 or np.std(filt_x) > 0.25)
 
     # 3. Расчет дистанции: отсекаем Wi-Fi/IP дрейф координат на стоящем ПК
-    coords = [{"lat": p.lat, "lon": p.lon} for p in stream if p.lat is not None and p.lon is not None]
     speed_distance_km = float(np.trapz(speeds, times) / 1000.0)
     distance_km = speed_distance_km if is_moving_session else 0.0
     if distance_km < 0.03:
         distance_km = 0.0
 
-    road_context = await gis_service.get_route_context(coords) if distance_km > 0.0 else None
+    if distance_km == 0:
+        road_context = None
 
     # 4. Вертикальные удары сохраняют полосу до 12 Гц; продольный сигнал сглажен до 2.5 Гц.
     if is_moving_session and hasattr(TwinEngine, "filter_road_anomalies"):
@@ -642,17 +664,17 @@ async def _calculate_session_values(payload, db, user, *, max_gap_seconds=2.0):
         clean_signed_ax, detected_bumps = filt_x, 0
 
     # 5. Подсчет дискретных резких разгонов и торможений
-    harsh_accel_count = count_maneuver_events(clean_signed_ax, threshold=2.0, is_greater=True, min_points=5)
-    harsh_brake_count = count_maneuver_events(clean_signed_ax, threshold=-2.3, is_greater=False, min_points=5)
+    maneuver_points = max(1, math.ceil(0.1 / dt))
+    harsh_accel_count = count_maneuver_events(clean_signed_ax, threshold=2.0, is_greater=True, min_points=maneuver_points, dt=dt)
+    harsh_brake_count = count_maneuver_events(clean_signed_ax, threshold=-2.3, is_greater=False, min_points=maneuver_points, dt=dt)
 
-    traffic_jam_seconds = float(np.sum(speeds < 1.0) * integration_dt)
+    traffic_jam_seconds = float(np.trapz((speeds < 1.0).astype(float), times))
     idle_ratio = min(1.0, (traffic_jam_seconds / duration_sec)) if duration_sec > 0 else 0.0
 
     resolved_car_id = payload.car_id or getattr(user, "car_id", "haval_jolion_15t_4wd")
     user_fuel_price = float(getattr(user, "fuel_price_rub", 72.40) or 72.40)
     user_service_cost = float(getattr(user, "service_cost_rub", 9500.0) or 9500.0)
 
-    profile = await resolve_car_profile_async(resolved_car_id, db, user)
     try:
         trip_wear_engine = WearEngine(profile=profile)
     except TypeError:
@@ -693,6 +715,7 @@ async def _calculate_session_values(payload, db, user, *, max_gap_seconds=2.0):
             dt=integration_dt,
             speed_mps=twin_speed,
             ax_mps2=twin_ax,
+            traffic_score=getattr(road_context, 'traffic_score', 1.0) if road_context else 1.0,
             current_life_pct=current_life_pct
         ) if hasattr(trip_wear_engine, "evaluate_trip_wear") else wear_stats
 
@@ -1141,7 +1164,7 @@ async def update_trip_board_computer(
     db: AsyncSession = Depends(get_db),
     owner: User = Depends(require_user)
 ):
-    canonical_id = session_id if _is_uuid(session_id) else str(uuid.uuid5(uuid.NAMESPACE_URL, f"autoxak:{owner.id}:{session_id}"))
+    canonical_id = str(uuid.UUID(session_id)) if _is_uuid(session_id) else str(uuid.uuid5(uuid.NAMESPACE_URL, f"autoxak:{owner.id}:{session_id}"))
     stmt = select(Trip).where(Trip.id == canonical_id, Trip.user_id == owner.id)
     res = await db.execute(stmt)
     trip = res.scalar_one_or_none()
@@ -1161,6 +1184,9 @@ async def get_period_analytics(
     user_id: str,
     start_date: Optional[datetime] = Query(None),
     end_date: Optional[datetime] = Query(None),
+    all_time: bool = Query(False),
+    limit: int = Query(200, ge=1, le=200),
+    offset: int = Query(0, ge=0),
     db: AsyncSession = Depends(get_db),
     owner: User = Depends(require_owner)
 ):
@@ -1168,7 +1194,7 @@ async def get_period_analytics(
     if end_date is None:
         end_date = now + timedelta(minutes=5)
     if start_date is None:
-        start_date = end_date - timedelta(days=30)
+        start_date = datetime(1970, 1, 1, tzinfo=timezone.utc) if all_time else end_date - timedelta(days=30)
 
     start_date = start_date.replace(tzinfo=timezone.utc) if start_date.tzinfo is None else start_date.astimezone(timezone.utc)
     end_date = end_date.replace(tzinfo=timezone.utc) if end_date.tzinfo is None else end_date.astimezone(timezone.utc)
@@ -1184,7 +1210,7 @@ async def get_period_analytics(
         func.coalesce(func.sum(Trip.duration_seconds), 0.0).label("total_seconds"),
         func.coalesce(func.sum(Trip.total_savings_rub), 0.0).label("total_savings"),
         func.coalesce(func.sum(Trip.oil_wear_percent), 0.0).label("total_oil_wear"),
-        func.coalesce(func.avg(Trip.idle_ratio), 0.0).label("avg_idle"),
+        func.coalesce(func.sum(Trip.idle_ratio * Trip.duration_seconds), 0.0).label("idle_seconds"),
         func.coalesce(func.sum(Trip.fuel_saved_liters), 0.0).label("total_liters"),
         func.coalesce(func.sum(Trip.range_bonus_km), 0.0).label("total_range")
     ).where(
@@ -1199,7 +1225,7 @@ async def get_period_analytics(
     total_secs = float(agg_row.total_seconds or 0.0)
     total_savings = float(agg_row.total_savings or 0.0)
     total_wear = float(agg_row.total_oil_wear or 0.0)
-    avg_idle = float(agg_row.avg_idle or 0.0)
+    avg_idle = float(agg_row.idle_seconds or 0.0) / total_secs if total_secs > 0 else 0.0
     period_fuel_liters = round(float(agg_row.total_liters or 0.0), 2)
     period_range_km = round(float(agg_row.total_range or 0.0), 1)
 
@@ -1221,8 +1247,9 @@ async def get_period_analytics(
     trips_stmt = (
         select(Trip)
         .where(and_(Trip.user_id == user_id, Trip.created_at >= start_naive, Trip.created_at <= end_naive))
-        .order_by(Trip.created_at.desc())
-        .limit(200)
+        .order_by(Trip.created_at.desc(), Trip.id)
+        .offset(offset)
+        .limit(limit)
     )
     trips_rows = (await db.execute(trips_stmt)).scalars().all()
 
@@ -1264,7 +1291,9 @@ async def get_period_analytics(
         start_date=start_naive,
         end_date=end_naive,
         summary=summary_metrics,
-        trips=trip_items
+        trips=trip_items,
+        limit=limit,
+        offset=offset,
     )
 
 

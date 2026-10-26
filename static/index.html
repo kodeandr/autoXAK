@@ -1093,6 +1093,7 @@
     let pendingFinishedPayload = null, finishingTrip = false;
     let releaseRecordingLock = null;
     let estimateController = null, lastEstimateRequestMs = 0;
+    let recordingOwnerId = null, recordingCarId = null;
 
     async function updateLiveEstimate() {
         if (!tripActive || estimateController || !navigator.onLine || telemetryStream.length < 50) return;
@@ -1110,15 +1111,13 @@
         if ((usable.length-1)%stride) samples.push(usable[usable.length-1]);
         const controller = new AbortController();
         estimateController = controller;
-        const timeout = setTimeout(()=>controller.abort(),8000);
         try {
-            const response = await fetch('/api/v1/telemetry/preview', {
+            const {response, data:result} = await AutoXAKSession.fetchJSON('/api/v1/telemetry/preview', {
                 method:'POST', headers:{'Content-Type':'application/json', ...AutoXAKSession.getAuthHeaders()},
-                body:JSON.stringify({session_id:sessionId,user_id:currentUserId,car_id:currentCarId,
+                body:JSON.stringify({session_id:sessionId,user_id:recordingOwnerId,car_id:recordingCarId,
                     telemetry_stream:samples,sampling_stride:stride}), signal:controller.signal
-            });
+            },8000);
             if (!response.ok) return;
-            const result = await response.json();
             if (!tripActive || activeSessionId!==sessionId || result.session_id!==sessionId
                 || result.status!=='PREVIEW' || !Number.isFinite(result.cost_savings_rub)) return;
             document.getElementById('trip-live-savings').innerText = `+${Math.max(0,result.cost_savings_rub).toFixed(2)} ₽`;
@@ -1126,7 +1125,6 @@
         } catch (_) {
             if (tripActive && activeSessionId===sessionId) document.getElementById('trip-live-savings').title = 'Последняя предварительная оценка. Обновление после восстановления связи.';
         } finally {
-            clearTimeout(timeout);
             if (estimateController===controller) estimateController=null;
         }
     }
@@ -1226,9 +1224,8 @@
             return savedName.trim();
         }
         try {
-            const res = await fetch('/api/v1/vehicles/catalog');
+            const {response:res, data} = await AutoXAKSession.fetchJSON('/api/v1/vehicles/catalog');
             if (res.ok) {
-                const data = await res.json();
                 const items = Array.isArray(data) ? data : (data.catalog || []);
                 for (const item of items) {
                     if (item.id === carId) {
@@ -1241,75 +1238,65 @@
         return CAR_NAMES_FALLBACK[carId] || "Мой автомобиль";
     }
 
-    async function syncCockpitWithBackend() {
+    let cockpitSync = null;
+    function syncCockpitWithBackend() {
+        if (!cockpitSync) cockpitSync=refreshCockpit().finally(()=>{cockpitSync=null;});
+        return cockpitSync;
+    }
+    async function refreshCockpit() {
+        const owner=AutoXAKSession.getUserId();
+        if (!owner) return;
         await AutoXAKSession.syncPendingProfile();
-        currentUserId = localStorage.getItem('autoXAK_user_id') || '';
-        const headers = (typeof AutoXAKSession !== 'undefined' && AutoXAKSession.getAuthHeaders)
-            ? AutoXAKSession.getAuthHeaders()
-            : {};
-
-        // 0. Если есть интернет, сначала синхронизируем оффлайн-очередь IndexedDB
-        if (navigator.onLine && typeof AutoXAKOfflineStore !== 'undefined') {
-            try {
-                await AutoXAKOfflineStore.syncPendingTrips({
-                    onTripSynced: (result, trip) => {
-                        const offline = JSON.parse(localStorage.getItem('autoXAK_offline_trips') || '[]');
-                        localStorage.setItem('autoXAK_offline_trips', JSON.stringify(offline.filter(item => item.session_id !== trip.session_id)));
-                    }
-                });
-            } catch (_) {}
+        if (navigator.onLine) {
+            try {await AutoXAKOfflineStore.syncPendingTrips();} catch (_) {}
         }
-
-        let totalRub = 0;
-        let totalTrips = 0;
-        let ghostStatus = "базовый лихач";
-        let resolvedCarId = currentCarId;
-        let dashboardLoaded = false;
-
+        if (owner!==AutoXAKSession.getUserId()) return;
+        currentUserId=owner;
+        const headers=AutoXAKSession.getAuthHeaders();
+        let cached={};
         try {
-            const dashRes = await fetch(`/api/v1/users/${encodeURIComponent(currentUserId)}/dashboard`, { headers });
-            if (dashRes.ok) {
-                const dash = await dashRes.json();
-                totalRub = Number(dash.total_savings_rub ?? dash.month_savings_rub ?? 0);
-                totalTrips = Number(dash.total_trips ?? 0);
-                if (dash.car_id) resolvedCarId = dash.car_id;
-                if (dash.ghost_twin_status) {
-                    ghostStatus = dash.ghost_twin_status.toLowerCase().includes("базовый") ? "базовый лихач" : dash.ghost_twin_status;
-                }
-                dashboardLoaded = true;
-            }
+            const saved=JSON.parse(localStorage.getItem('autoXAK_dashboard_cache') || '{}');
+            if (saved.user_id===owner) cached=saved;
         } catch (_) {}
-
+        let totalRub=Number(cached.totalRub)||0, totalTrips=Number(cached.totalTrips)||0;
+        let ghostStatus=cached.ghostStatus || 'базовый лихач', resolvedCarId=currentCarId;
+        let confirmed=false;
+        if (navigator.onLine) {
+            const replies=await Promise.allSettled([
+                AutoXAKSession.fetchJSON(`/api/v1/users/${encodeURIComponent(owner)}/dashboard`,{headers}),
+                AutoXAKSession.fetchJSON(`/api/v1/users/${encodeURIComponent(owner)}/profile`,{headers})
+            ]);
+            if (owner!==AutoXAKSession.getUserId()) return;
+            if (replies[0].status==='fulfilled' && replies[0].value.response.ok) {
+                const dash=replies[0].value.data;
+                totalRub=Number(dash.total_savings_rub)||0;
+                totalTrips=Number(dash.total_trips)||0;
+                resolvedCarId=dash.car_id || resolvedCarId;
+                ghostStatus=dash.ghost_twin_status?.toLowerCase().includes('базовый') ? 'базовый лихач' : (dash.ghost_twin_status || ghostStatus);
+                confirmed=true;
+            }
+            if (replies[1].status==='fulfilled' && replies[1].value.response.ok && !localStorage.getItem('autoXAK_pending_profile')) {
+                const prof=replies[1].value.data;
+                resolvedCarId=prof.car_id || resolvedCarId;
+                if (prof.car_name) localStorage.setItem('autoXAK_selected_car_name',prof.car_name);
+                else if (localStorage.getItem('autoXAK_selected_car_id')!==resolvedCarId) localStorage.removeItem('autoXAK_selected_car_name');
+            }
+        }
         try {
-            const periodRes = await fetch(`/api/v1/users/${encodeURIComponent(currentUserId)}/analytics/period`, { headers });
-            if (periodRes.ok) {
-                const periodData = await periodRes.json();
-                const summary = periodData.summary || {};
-                const tripsArr = Array.isArray(periodData.trips) ? periodData.trips : [];
-                if (!dashboardLoaded || (totalTrips === 0 && tripsArr.length > 0)) {
-                    totalTrips = Number(summary.total_trips ?? tripsArr.length);
-                    totalRub = Number(summary.total_savings_rub ?? 0);
-                }
-            }
+            const pending=JSON.parse(localStorage.getItem('autoXAK_pending_profile') || 'null');
+            if (pending?.user_id===owner) resolvedCarId=pending.car_id || resolvedCarId;
         } catch (_) {}
-
-        try {
-            const profRes = await fetch(`/api/v1/users/${encodeURIComponent(currentUserId)}/profile`, { headers });
-            if (profRes.ok) {
-                const prof = await profRes.json();
-                if (prof.car_id) resolvedCarId = prof.car_id;
-                if (prof.car_name) localStorage.setItem('autoXAK_selected_car_name', prof.car_name);
-            }
-        } catch (_) {}
-
-        currentCarId = resolvedCarId;
-        localStorage.setItem('autoXAK_selected_car_id', currentCarId);
-
-        const carDisplayName = await resolveCarDisplayName(currentCarId);
-        document.getElementById('cockpit-car-name').innerText = carDisplayName;
-        document.getElementById('cockpit-savings-val').innerText = formatCockpitSavings(totalRub);
-        document.getElementById('cockpit-trips-count').innerText = String(totalTrips);
-        document.getElementById('cockpit-ghost-status').innerText = ghostStatus;
+        if (!tripActive && !finishingTrip) currentCarId=resolvedCarId;
+        localStorage.setItem('autoXAK_selected_car_id',currentCarId);
+        const carDisplayName=await resolveCarDisplayName(currentCarId);
+        if (owner!==AutoXAKSession.getUserId()) return;
+        if (confirmed) {
+            try {localStorage.setItem('autoXAK_dashboard_cache',JSON.stringify({user_id:owner,totalRub,totalTrips,ghostStatus}));} catch (_) {}
+        }
+        document.getElementById('cockpit-car-name').innerText=carDisplayName;
+        document.getElementById('cockpit-savings-val').innerText=formatCockpitSavings(totalRub);
+        document.getElementById('cockpit-trips-count').innerText=String(totalTrips);
+        document.getElementById('cockpit-ghost-status').innerText=ghostStatus;
     }
 
     function logoutAndGoLogin() {
@@ -1346,6 +1333,16 @@
         }
         // One watch per trip: do not request a separate initial position. GPS
         // and motion permission prompts are independent and may settle later.
+        startingTrip = true;
+        try {
+            const session = await AutoXAKSession.ensureAuthenticated();
+            currentUserId = session.userId;
+        } catch (_) {
+            startingTrip = false;
+            window.alert('Не удалось подтвердить вход. Проверьте соединение или войдите заново.');
+            return;
+        }
+        startingTrip = false;
         const start = beginActiveTrip();
         await permission;
         await start;
@@ -1365,6 +1362,9 @@
         tripActive = true;
         startingTrip = false;
         activeSessionId = globalThis.crypto?.randomUUID ? crypto.randomUUID() : 'session_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+        const recordingSessionId = activeSessionId;
+        recordingOwnerId = currentUserId;
+        recordingCarId = currentCarId;
         if (navigator.locks) {
             const sessionId=activeSessionId;
             const held=new Promise(resolve=>{releaseRecordingLock=resolve;});
@@ -1377,7 +1377,7 @@
         draftSaveChain = Promise.resolve();
         saveActiveDraft = () => {
             if (!tripActive) return draftSaveChain;
-            const draft = {session_id:activeSessionId, user_id:currentUserId, car_id:currentCarId,
+            const draft = {session_id:activeSessionId, user_id:recordingOwnerId, car_id:recordingCarId,
                 telemetry_stream:[...telemetryStream], raw_recording:rawRecording('interrupted')};
             draftSaveChain = draftSaveChain.catch(()=>{}).then(()=>AutoXAKOfflineStore.saveDraftTrip(draft));
             draftSaveChain.catch(error=>console.warn('[Recording]',error));
@@ -1443,7 +1443,7 @@
         }, 1000);
 
         motionHandler = (event) => {
-            if (!tripActive) return;
+            if (!tripActive || activeSessionId !== recordingSessionId) return;
             const hasLinear = event.acceleration && ['x','y','z'].every(axis=>Number.isFinite(event.acceleration[axis]));
             const hasGravity = event.accelerationIncludingGravity && ['x','y','z'].every(axis=>Number.isFinite(event.accelerationIncludingGravity[axis]));
             const nowMs = Date.now();
@@ -1570,7 +1570,7 @@
         if ('geolocation' in navigator) {
             try {geoWatchId = navigator.geolocation.watchPosition(
                 (pos) => {
-                    if (!tripActive || !pos || !pos.coords) return;
+                    if (!tripActive || activeSessionId !== recordingSessionId || !pos || !pos.coords) return;
                     const c = pos.coords;
                     const nowMs = Math.round(Number(pos.timestamp) || Date.now());
                     if (nowMs - tripStartTime >= 86400000) {finishActiveTrip('duration_limit');return;}
@@ -1611,7 +1611,7 @@
                     document.getElementById('pill-gps-status').innerHTML = isAccurateGps ? "GPS<br>подключен" : "GPS<br>неточный";
                 },
                 (error) => {
-                    if (!tripActive) return;
+                    if (!tripActive || activeSessionId !== recordingSessionId) return;
                     captureGeoPermission = error.code===1?'denied':'unavailable';
                     currentSpeedMps = 0; lastGpsFixMs = 0;
                     previousNativeSpeedMps = prevGpsLat = prevGpsLon = prevGpsTimeMs = null;
@@ -1648,7 +1648,7 @@
         }
 
         function onStart(clientX) {
-            if (!tripActive) return;
+            if (finishingTrip || (!tripActive && !pendingFinishedPayload)) return;
             isDragging = true;
             startX = clientX;
             currentX = 0;
@@ -1707,8 +1707,8 @@
         lastFinishedSessionId = sessionId;
         const payload = pendingFinishedPayload || {
             session_id: sessionId,
-            user_id: currentUserId,
-            car_id: currentCarId,
+            user_id: recordingOwnerId,
+            car_id: recordingCarId,
             telemetry_stream: [...telemetryStream],
             raw_recording: rawRecording(endReason)
         };
@@ -1740,22 +1740,19 @@
         try {
             if (!navigator.onLine) throw new Error('Offline');
 
-            const controller = new AbortController();
-            const timeout = setTimeout(()=>controller.abort(),15000);
-            let res;
-            try { res = await fetch('/api/v1/telemetry/session', {
+            const {response:res, data:result} = await AutoXAKSession.fetchJSON('/api/v1/telemetry/session', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     ...(typeof AutoXAKSession !== 'undefined' ? AutoXAKSession.getAuthHeaders() : {})
                 },
-                body: JSON.stringify(payload), signal:controller.signal
-            }); } finally {clearTimeout(timeout);}
+                body: JSON.stringify(payload)
+            },15000);
 
             if (res.ok) {
-                const result = await res.json();
                 quality = result.metrics?.capture_quality || null;
                 await AutoXAKOfflineStore.removePendingTrip(sessionId);
+                AutoXAKOfflineStore.rememberSyncedTrip(result, payload);
                 lastFinishedSessionId = result.session_id;
                 savedRub = Number(result.cost_savings_rub ?? savedRub);
                 startsCount = Number(result.harsh_accel_count ?? startsCount);

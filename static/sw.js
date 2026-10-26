@@ -1,4 +1,4 @@
-﻿const CACHE_NAME = 'autoxak-shell-v2';
+const CACHE_NAME = 'autoxak-shell-v3';
 const STATIC_ASSETS = ['/', '/setup', '/history', '/login', '/static/session.js', '/static/offline_store.js', '/static/manifest.json', '/static/icon-192.png', '/static/icon-512.png'];
 self.addEventListener('install', event => {
     event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS)).then(() => self.skipWaiting()));
@@ -8,13 +8,31 @@ self.addEventListener('activate', event => {
 });
 self.addEventListener('fetch', event => {
     const url = new URL(event.request.url);
-    if (event.request.method !== 'GET' || url.origin !== self.location.origin || url.pathname.startsWith('/api/') || !STATIC_ASSETS.includes(url.pathname)) return;
-    // Fresh HTML/JS keeps client and API versions in step; cached shell survives offline.
-    event.respondWith(fetch(event.request).then(async response => {
-        if (response.ok && !response.redirected) {
+    if (event.request.method !== 'GET' || url.origin !== self.location.origin || !STATIC_ASSETS.includes(url.pathname)) return;
+    event.respondWith((async () => {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 7000);
+        let fallback;
+        try {
             const cache = await caches.open(CACHE_NAME);
-            try {await cache.put(event.request, response.clone());} catch (_) {}
-        }
-        return response;
-    }).catch(async () => (await caches.match(event.request)) || (await caches.match(url.pathname)) || Response.error()));
+            // Queries do not create unbounded duplicate copies of the app shell.
+            fallback = await cache.match(url.pathname);
+            const response = await fetch(event.request, {signal:controller.signal});
+            if (!response.ok || response.redirected) return fallback || response;
+            // Finish reading under the same deadline: headers alone are insufficient.
+            const body = await response.arrayBuffer();
+            const headers = new Headers(response.headers);
+            // fetch already decoded gzip/br; these headers describe wire bytes.
+            headers.delete('content-encoding');
+            headers.delete('content-length');
+            headers.delete('transfer-encoding');
+            const complete = new Response(body, {
+                status:response.status, statusText:response.statusText, headers
+            });
+            try {await cache.put(url.pathname, complete.clone());} catch (_) {}
+            return complete;
+        } catch (_) {
+            return fallback || Response.error();
+        } finally {clearTimeout(timeout);}
+    })());
 });

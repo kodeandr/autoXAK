@@ -1,6 +1,6 @@
 {
   "name": "autoxak-browser-regressions",
   "private": true,
-  "scripts": {"test": "node smoke.cjs && node recording.cjs && node live_metrics.cjs"},
+  "scripts": {"test": "node smoke.cjs && node recording.cjs && node live_metrics.cjs && node logic_audit.cjs && node service_worker.cjs"},
   "devDependencies": {"playwright": "1.62.1"}
 }
