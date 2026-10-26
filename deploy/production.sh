@@ -84,8 +84,8 @@ case "$action" in
         ;;
     seed)
         # Run explicitly on first installation; these include example fuel prices.
-        compose run --rm --no-deps api python seed_fleet.py
-        compose run --rm --no-deps api python seed_fuel_prices.py
+        compose exec -T api python /app/deploy/entrypoint.py python seed_fleet.py
+        compose exec -T api python /app/deploy/entrypoint.py python seed_fuel_prices.py
         ;;
     backup) backup ;;
     update)
@@ -94,7 +94,7 @@ case "$action" in
             exit 1
         fi
         backup
-        git pull --ff-only origin main
+        git pull --ff-only
         export APP_IMAGE_TAG="$(git rev-parse --short=12 HEAD)"
         compose build api
         # Database/cache images are deliberately upgraded in a separate maintenance window.

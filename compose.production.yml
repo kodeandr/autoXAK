@@ -16,7 +16,7 @@ services:
       - "443:443"
     environment:
       APP_DOMAIN: ${APP_DOMAIN:?Set APP_DOMAIN in .env.production}
-      ACME_EMAIL: ${ACME_EMAIL:?Set ACME_EMAIL in .env.production}
+      ACME_EMAIL: ${ACME_EMAIL:-}
       NO_PROXY: api,localhost,127.0.0.1
       no_proxy: api,localhost,127.0.0.1
     volumes:

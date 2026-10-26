@@ -1,9 +1,27 @@
 ﻿/** Authentication and service-worker lifecycle shared by all pages. */
 const AutoXAKSession = window.AutoXAKSession = (() => {
     let authentication = null;
+    let profileSync = null;
     const key = (name) => `autoXAK_${name}`;
     const getToken = () => localStorage.getItem(key('jwt_token')) || '';
     const getUserId = () => localStorage.getItem(key('user_id')) || '';
+
+    // The deadline covers the response body as well as connection setup.
+    async function fetchJSON(url, options = {}, timeoutMs = 8000) {
+        const controller = new AbortController();
+        const abort = () => controller.abort();
+        if (options.signal?.aborted) abort();
+        else options.signal?.addEventListener('abort', abort, {once:true});
+        const timeout = setTimeout(abort, timeoutMs);
+        try {
+            const response = await fetch(url, {...options, signal:controller.signal});
+            const data = response.ok ? await response.json() : null;
+            return {response, data};
+        } finally {
+            clearTimeout(timeout);
+            options.signal?.removeEventListener('abort', abort);
+        }
+    }
 
     function usableToken(token, userId) {
         try {
@@ -16,7 +34,7 @@ const AutoXAKSession = window.AutoXAKSession = (() => {
     function storeSession(data) {
         const previous = getUserId();
         if (previous && previous !== data.user_id) {
-            for (const name of ['trip_details_map', 'offline_trips', 'local_history', 'profile', 'car_id', 'car_name', 'selected_car_id', 'selected_car_name', 'pending_profile']) {
+            for (const name of ['trip_details_map', 'offline_trips', 'local_history', 'profile', 'car_id', 'car_name', 'selected_car_id', 'selected_car_name', 'pending_profile', 'fuel_price', 'fuel_pass', 'dashboard_cache']) {
                 localStorage.removeItem(key(name));
             }
         }
@@ -27,18 +45,35 @@ const AutoXAKSession = window.AutoXAKSession = (() => {
         return {token: data.token, userId: data.user_id, isGuest: data.is_guest !== false, name: data.name || 'Гость'};
     }
 
+    async function serverAcceptsToken(token) {
+        if (!navigator.onLine) return true;
+        try {
+            const {response, data} = await fetchJSON('/api/v1/auth/me', {
+                headers: {'Authorization': `Bearer ${token}`},
+                cache: 'no-store'
+            }, 5000);
+            if (response.ok && getToken() === token && data.user_id === getUserId() && usableToken(data.token, data.user_id)) {
+                localStorage.setItem(key('jwt_token'), data.token);
+            }
+            // Only an explicit rejection invalidates the local session. Network
+            // outages and server failures must preserve offline recording access.
+            return response.status !== 401;
+        } catch (_) { return true; }
+    }
+
     async function authenticate(options) {
         const token = getToken(), userId = getUserId();
-        if (usableToken(token, userId)) {
-            return {token, userId, isGuest: localStorage.getItem(key('is_guest')) !== 'false', name: localStorage.getItem(key('user_name')) || 'Гость'};
+        if (usableToken(token, userId) && await serverAcceptsToken(token)) {
+            return {token:getToken(), userId, isGuest: localStorage.getItem(key('is_guest')) !== 'false', name: localStorage.getItem(key('user_name')) || 'Гость'};
         }
+        localStorage.removeItem(key('jwt_token'));
         if (userId && !options.newGuest) {
             if (navigator.onLine) window.location.replace('/login');
             throw new Error('Для восстановления сессии необходимо войти заново');
         }
-        const response = await fetch('/api/v1/auth/guest', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
+        const {response, data} = await fetchJSON('/api/v1/auth/guest', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
         if (!response.ok) throw new Error(`Не удалось создать сессию: HTTP ${response.status}`);
-        return storeSession(await response.json());
+        return storeSession(data);
     }
 
     function ensureAuthenticated(options = {}) {
@@ -53,23 +88,32 @@ const AutoXAKSession = window.AutoXAKSession = (() => {
         return token ? {'Authorization': `Bearer ${token}`} : {};
     }
 
-    async function syncPendingProfile() {
+    async function syncProfileOnce() {
         const saved = localStorage.getItem(key('pending_profile'));
         if (!saved) return true;
         try {
             const pending = JSON.parse(saved);
             if (pending.user_id !== getUserId() || !navigator.onLine) return false;
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 8000);
-            try {
-                const response = await fetch(`/api/v1/users/${encodeURIComponent(pending.user_id)}/profile`, {
-                    method:'POST', headers:{'Content-Type':'application/json', ...getAuthHeaders()},
-                    body:JSON.stringify(pending), signal:controller.signal});
-                if (!response.ok) return false;
-                if (localStorage.getItem(key('pending_profile')) === saved) localStorage.removeItem(key('pending_profile'));
-                return true;
-            } finally {clearTimeout(timeout);}
+            const {response} = await fetchJSON(`/api/v1/users/${encodeURIComponent(pending.user_id)}/profile`, {
+                method:'POST', headers:{'Content-Type':'application/json', ...getAuthHeaders()},
+                body:JSON.stringify(pending)});
+            if (!response.ok) return false;
+            if (localStorage.getItem(key('pending_profile')) === saved) localStorage.removeItem(key('pending_profile'));
+            return true;
         } catch (_) {return false;}
+    }
+    function syncPendingProfile() {
+        if (!profileSync) {
+            const owner=getUserId();
+            const run=async()=>{
+                while (localStorage.getItem(key('pending_profile'))) {
+                    if (owner!==getUserId() || !(await syncProfileOnce())) return false;
+                }
+                return true;
+            };
+            profileSync=(navigator.locks ? navigator.locks.request('autoxak-profile:'+owner,run) : run()).finally(()=>{profileSync=null;});
+        }
+        return profileSync;
     }
     async function saveProfile(payload) {
         if (payload.user_id !== getUserId()) throw new Error('Session changed during profile save');
@@ -78,16 +122,18 @@ const AutoXAKSession = window.AutoXAKSession = (() => {
     }
 
     function clearSession() {
-        for (const name of ['jwt_token', 'user_id', 'is_guest', 'user_name', 'trip_details_map', 'offline_trips', 'local_history', 'profile', 'car_id', 'car_name', 'selected_car_id', 'selected_car_name', 'pending_profile']) localStorage.removeItem(key(name));
+        for (const name of ['jwt_token', 'user_id', 'is_guest', 'user_name', 'trip_details_map', 'offline_trips', 'local_history', 'profile', 'car_id', 'car_name', 'selected_car_id', 'selected_car_name', 'pending_profile', 'fuel_price', 'fuel_pass', 'dashboard_cache']) localStorage.removeItem(key(name));
     }
 
     async function loginWithYandex() {
-        if (!(await syncPendingProfile())) throw new Error("Сначала синхронизируйте изменения автомобиля");
-        const response = await fetch('/api/v1/auth/yandex/login', {
+        const token = getToken();
+        const accepted = usableToken(token, getUserId()) && await serverAcceptsToken(token);
+        if (!accepted) localStorage.removeItem(key('jwt_token'));
+        if (accepted && !(await syncPendingProfile())) throw new Error("Сначала синхронизируйте изменения автомобиля");
+        const {response, data} = await fetchJSON('/api/v1/auth/yandex/login', {
             method: 'POST', headers: usableToken(getToken(), getUserId()) ? getAuthHeaders() : {}
         });
         if (!response.ok) throw new Error('Вход через Яндекс сейчас недоступен');
-        const data = await response.json();
         window.location.assign(data.url);
     }
 
@@ -105,6 +151,6 @@ const AutoXAKSession = window.AutoXAKSession = (() => {
     if (document.readyState === 'complete') registerServiceWorker();
     else window.addEventListener('load', registerServiceWorker, {once: true});
 
-    return {saveProfile, syncPendingProfile, adoptSession: storeSession, ensureAuthenticated, clearSession, loginWithYandex, getAuthHeaders, getUserId, getToken,
+    return {fetchJSON, saveProfile, syncPendingProfile, adoptSession: storeSession, ensureAuthenticated, clearSession, loginWithYandex, getAuthHeaders, getUserId, getToken,
             isGuest: () => localStorage.getItem(key('is_guest')) !== 'false'};
 })();

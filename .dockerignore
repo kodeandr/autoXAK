@@ -8,6 +8,9 @@ pgdata/
 .env
 .env.*
 backups/
+backups-migration-*/
+.migration-secrets.json
+.staging/
 *.db
 .pytest-tmp*/
 logs/

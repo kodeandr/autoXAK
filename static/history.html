@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>autoXAK — История поездок</title>
     <script src="/static/session.js"></script>
+    <script src="/static/offline_store.js"></script>
     <style>
         :root {
             --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
@@ -485,54 +486,70 @@
         }
     }
 
-    async function fetchHistory() {
+    let historyRefresh = null;
+    function fetchHistory() {
+        if (!historyRefresh) historyRefresh=loadHistory().finally(()=>{historyRefresh=null;});
+        return historyRefresh;
+    }
+    async function loadHistory() {
         const session = await AutoXAKSession.ensureAuthenticated();
         userId = session.userId;
+        const owner = userId;
+        try {
+            await AutoXAKOfflineStore.recoverInterruptedTrips();
+            await AutoXAKOfflineStore.syncPendingTrips();
+        } catch (_) {}
+        if (AutoXAKSession.getUserId() !== owner) return;
         const localDetails = getLocalDetailsMap();
         const offlineList = getLocalOfflineTrips();
-
-        let serverTrips = [];
-        let serverTotalRub = 0;
-
+        // IndexedDB is authoritative even if localStorage caching was unavailable.
         try {
-            const res = await fetch(`/api/v1/users/${encodeURIComponent(userId)}/analytics/period`, {headers: AutoXAKSession.getAuthHeaders()});
-            if (res.ok) {
-                const data = await res.json();
-                serverTrips = Array.isArray(data.trips) ? data.trips : [];
-                serverTotalRub = Number(data.summary?.total_savings_rub) || 0;
+            for (const trip of await AutoXAKOfflineStore.getPendingTrips()) {
+                if (offlineList.some(item=>item.session_id===trip.session_id)) continue;
+                const raw = trip.raw_recording;
+                offlineList.push({...localDetails[trip.session_id], user_id:owner, session_id:trip.session_id,
+                    created_at:new Date(raw?.started_at_ms ?? trip.created_at).toISOString(),
+                    duration_seconds:raw ? (raw.ended_at_ms-raw.started_at_ms)/1000 : 0,
+                    total_savings_rub:0, capture_quality:{style_metrics_available:false}});
             }
-        } catch (err) {
-            console.warn('Оффлайн режим истории:', err);
-        }
+        } catch (_) {}
 
-        // Объединяем оффлайн-поездки и серверные поездки без дублей
-        const seenIds = new Set();
-        const merged = [];
+        let serverTrips = [], serverTotalRub = 0, serverTotalTrips = 0, complete = false;
+        const end = new Date(Date.now()+300000).toISOString();
+        try {
+            for (let offset=0; ; offset+=200) {
+                const params = new URLSearchParams({all_time:'true', limit:'200', offset:String(offset), end_date:end});
+                const {response, data} = await AutoXAKSession.fetchJSON(`/api/v1/users/${encodeURIComponent(owner)}/analytics/period?${params}`,
+                    {headers:AutoXAKSession.getAuthHeaders()});
+                if (!response.ok) break;
+                const batch = Array.isArray(data.trips) ? data.trips : [];
+                serverTrips.push(...batch);
+                serverTotalRub = Number(data.summary?.total_savings_rub) || 0;
+                serverTotalTrips = Number(data.summary?.total_trips) || 0;
+                if (batch.length<200 || serverTrips.length>=serverTotalTrips) {complete=true; break;}
+            }
+        } catch (_) {}
+        if (AutoXAKSession.getUserId() !== owner) return;
 
-        for (const trip of serverTrips) {
-            const sid = trip.session_id || trip.id;
-            if (sid) seenIds.add(sid);
-            merged.push({...localDetails[sid], ...trip});
+        let archive = [];
+        try {archive=JSON.parse(localStorage.getItem('autoXAK_local_history') || '[]').filter(trip=>trip.user_id===owner);} catch (_) {}
+        const seenIds = new Set(), merged = [];
+        // Responses from the server supersede every provisional local value.
+        for (const trip of [...serverTrips,...offlineList,...archive]) {
+            const sid=trip.session_id || trip.id;
+            if (!sid || seenIds.has(sid)) continue;
+            seenIds.add(sid);
+            merged.push({...localDetails[sid],...trip,user_id:owner});
         }
-        for (const trip of offlineList) {
-            if (!seenIds.has(trip.session_id)) { merged.push(trip); seenIds.add(trip.session_id); }
-        }
-        merged.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-        // Если сервер пуст и оффлайн-очередь пуста, проверяем локальный архив
-        if (merged.length === 0) {
-            try {
-                const localArchive = JSON.parse(localStorage.getItem('autoXAK_local_history') || '[]');
-                for (const item of localArchive) if (item.user_id === userId) merged.push(item);
-            } catch (e) {}
-        }
-
+        merged.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
         loadedTrips = merged;
-
-        const totalRub = merged.reduce((acc, t) => acc + (Number(t.total_savings_rub) || 0), 0) || serverTotalRub;
+        if (complete) {
+            try {localStorage.setItem('autoXAK_local_history',JSON.stringify(merged));} catch (_) {}
+        }
+        const pendingOnly=offlineList.filter(trip=>!serverTrips.some(saved=>saved.session_id===trip.session_id));
+        const totalRub=complete ? serverTotalRub : merged.reduce((sum,trip)=>sum+(Number(trip.total_savings_rub)||0),0);
         document.getElementById('hist-total-savings').innerText = `+${totalRub.toFixed(2)} ₽`;
-        document.getElementById('hist-trips-count').innerText = pluralizeTrips(merged.length);
-
+        document.getElementById('hist-trips-count').innerText = pluralizeTrips(complete ? Math.max(merged.length,serverTotalTrips+pendingOnly.length) : merged.length);
         renderTripsList(merged);
     }
 
@@ -567,7 +584,8 @@
         const idleMin = t.idle_minutes !== undefined
             ? t.idle_minutes
             : Math.round(((Number(t.idle_ratio) || 0) * durSec) / 60);
-        const distKm = Number(t.distance_km || 0).toFixed(1).replace(/\.0$/, '');
+        const distance = Math.max(0,Number(t.distance_km)||0);
+        const distLabel = distance>0 && distance<1 ? `${Math.round(distance*1000)} м` : `${distance.toFixed(1).replace(/\.0$/,'')} км`;
 
         document.getElementById('det-date').innerText = formatRuDateTime(t.created_at);
         document.getElementById('det-savings').innerText = `+${rub} ₽`;
@@ -575,8 +593,11 @@
         document.getElementById('det-brakes').innerText = String(t.hard_brake_count ?? 0);
         document.getElementById('det-idle').innerText = `${idleMin} мин`;
         document.getElementById('det-bumps').innerText = String(t.bumps_count ?? t.z_veto_count ?? 0);
-        document.getElementById('det-distance').innerText = `${distKm} км`;
+        document.getElementById('det-distance').innerText = distLabel;
         document.getElementById('det-duration').innerText = formatDurationHoursMins(durSec);
+        if (t.capture_quality && !t.capture_quality.style_metrics_available) {
+            for (const id of ['det-starts','det-brakes','det-idle','det-bumps']) document.getElementById(id).innerText = '—';
+        }
 
         document.getElementById('details-modal').classList.add('active');
     }
@@ -591,6 +612,7 @@
         }
     }
 
+    window.addEventListener('online', () => {fetchHistory().catch(error=>console.warn('History refresh:',error));});
     window.addEventListener('DOMContentLoaded', fetchHistory);
 </script>
 </body>
