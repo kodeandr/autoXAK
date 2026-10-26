@@ -1119,11 +1119,11 @@
             },8000);
             if (!response.ok) return;
             if (!tripActive || activeSessionId!==sessionId || result.session_id!==sessionId
-                || result.status!=='PREVIEW' || !Number.isFinite(result.cost_savings_rub)) return;
-            document.getElementById('trip-live-savings').innerText = `+${Math.max(0,result.cost_savings_rub).toFixed(2)} ₽`;
-            document.getElementById('trip-live-savings').title = 'Предварительная оценка по модели. Итог уточняется после завершения поездки.';
+                || result.status!=='PREVIEW') return;
+            document.getElementById('trip-live-savings').innerText = Number.isFinite(result.cost_savings_rub) ? `${result.cost_savings_rub>=0?'+':''}${result.cost_savings_rub.toFixed(2)} ₽` : '—';
+            document.getElementById('trip-live-savings').title = Number.isFinite(result.cost_savings_rub)?'Расчёт по переданным контрольным данным':'Для оценки экономии нужна сопоставимая контрольная поездка.';
         } catch (_) {
-            if (tripActive && activeSessionId===sessionId) document.getElementById('trip-live-savings').title = 'Последняя предварительная оценка. Обновление после восстановления связи.';
+            if (tripActive && activeSessionId===sessionId) document.getElementById('trip-live-savings').title = 'Обновление расчёта после восстановления связи.';
         } finally {
             if (estimateController===controller) estimateController=null;
         }
@@ -1136,7 +1136,7 @@
             ended_at_ms: Math.min(end,tripStartTime+86400000),
             gps: [...gpsSamples], motion: [...motionSamples], end_reason: end>tripStartTime+86400000?'duration_limit':endReason,
             permissions: {motion: captureMotionPermission, geolocation: captureGeoPermission},
-            device: {app_version:'1.9.0', user_agent:navigator.userAgent.slice(0,1000)}
+            device: {app_version:'2.0.0', user_agent:navigator.userAgent.slice(0,1000)}
         };
     }
 
@@ -1163,7 +1163,6 @@
     let liveBumpsCount = 0;
     let liveHarshStarts = 0;
     let liveHarshBrakes = 0;
-    let liveSmoothScore = 100;
     let lastBumpTime = 0;
     let lastEventTime = 0;
 
@@ -1398,15 +1397,14 @@
         liveBumpsCount = 0;
         liveHarshStarts = 0;
         liveHarshBrakes = 0;
-        liveSmoothScore = 100;
         gravInitialized = false;
         lastMotionMs = 0; shockFiltered = 0; shockArmed = true; shockQuietSince = 0;
         lastEstimateRequestMs = 0;
 
         setTripGlowState('green');
         document.getElementById('trip-timer-display').innerText = "00:00";
-        document.getElementById('trip-live-savings').innerText = "+0.00 ₽";
-        document.getElementById('trip-live-savings').title = 'Предварительная оценка. Ожидаем GPS и датчики; без пробега экономия равна нулю.';
+        document.getElementById('trip-live-savings').innerText = '—';
+        document.getElementById('trip-live-savings').title = 'Для оценки экономии нужны контрольный расход и сопоставимая поездка.';
         document.getElementById('trip-live-distance').innerText = "0 км";
         document.getElementById('trip-live-bumps').innerText = "0";
         document.getElementById('trip-live-smooth').innerText = "—";
@@ -1528,7 +1526,7 @@
                 lat: hasRecentGps ? Number(currentLat.toFixed(6)) : null,
                 lon: hasRecentGps ? Number(currentLon.toFixed(6)) : null
             });
-            document.getElementById('trip-live-smooth').innerText = `${liveSmoothScore}/100`;
+            document.getElementById('trip-live-smooth').innerText = '—';
 
             // Live sensor impulses are visible during a stationary device check.
             // They do not create distance, driving violations or financial credit.
@@ -1556,8 +1554,7 @@
             if (hasRecentGps && currentSpeedMps > 0.8 && horizMag > 2.3 && (nowMs - lastEventTime > 1400)) {
                 lastEventTime = nowMs;
                 if (signedLong >= 0) liveHarshStarts++; else liveHarshBrakes++;
-                liveSmoothScore = Math.max(40, 100 - (liveHarshStarts + liveHarshBrakes) * 4);
-                document.getElementById('trip-live-smooth').innerText = `${liveSmoothScore}/100`;
+                document.getElementById('trip-live-smooth').innerText = '—';
                 setTripGlowState('red');
             } else if (horizMag > 1.4) {
                 setTripGlowState('yellow');
@@ -1580,7 +1577,11 @@
                     const accuracy = Number.isFinite(c.accuracy) && c.accuracy>=0 && c.accuracy<=100000 ? c.accuracy : null;
                     const recordedSpeed = Number.isFinite(c.speed) && c.speed>=0 && c.speed<=150 ? c.speed : null;
                     gpsSamples.push({timestamp_ms:nowMs, latitude:c.latitude, longitude:c.longitude,
-                        accuracy_m:accuracy, speed_mps:recordedSpeed, speed_source:recordedSpeed===null?'missing':'gps'});
+                        accuracy_m:accuracy, speed_mps:recordedSpeed, speed_source:recordedSpeed===null?'missing':'gps',
+                        altitude_m:Number.isFinite(c.altitude) && Math.abs(c.altitude)<=100000 ? c.altitude : null,
+                        altitude_accuracy_m:Number.isFinite(c.altitudeAccuracy) && c.altitudeAccuracy>=0 && c.altitudeAccuracy<=100000 ? c.altitudeAccuracy : null,
+                        heading_deg:Number.isFinite(c.heading) && c.heading>=0 && c.heading<=360 ? c.heading : null,
+                        speed_accuracy_mps:Number.isFinite(c.speedAccuracy) && c.speedAccuracy>=0 && c.speedAccuracy<=150 ? c.speedAccuracy : null});
                     captureGeoPermission = 'granted';
                     const isAccurateGps = accuracy !== null && accuracy <= 50;
                     const nativeSpeed = Number.isFinite(c.speed) && c.speed >= 0 && c.speed <= 75 ? c.speed : null;
@@ -1727,7 +1728,7 @@
         document.getElementById('active-trip-screen').classList.remove('active');
 
         // Credit only results confirmed by the calculation endpoint.
-        let savedRub = 0;
+        let savedRub = null;
         let startsCount = liveHarshStarts;
         let brakesCount = liveHarshBrakes;
         let idleMins = 0;
@@ -1754,9 +1755,9 @@
                 await AutoXAKOfflineStore.removePendingTrip(sessionId);
                 AutoXAKOfflineStore.rememberSyncedTrip(result, payload);
                 lastFinishedSessionId = result.session_id;
-                savedRub = Number(result.cost_savings_rub ?? savedRub);
-                startsCount = Number(result.harsh_accel_count ?? startsCount);
-                brakesCount = Number(result.harsh_brake_count ?? brakesCount);
+                savedRub = Number.isFinite(result.cost_savings_rub) ? result.cost_savings_rub : null;
+                startsCount = Number.isFinite(result.harsh_accel_count) ? result.harsh_accel_count : null;
+                brakesCount = Number.isFinite(result.harsh_brake_count) ? result.harsh_brake_count : null;
                 bumpsCount = Number(result.road_anomalies_count ?? bumpsCount);
                 distKm = Number(result.distance_km ?? distKm);
                 durSec = Number(result.duration_seconds ?? durSec);
@@ -1773,6 +1774,7 @@
                     duration_seconds: durSec,
                     total_savings_rub: savedRub,
                     capture_quality: quality,
+                    math_status: result.metrics?.math_status || null,
                     created_at: new Date(tripStartTime).toISOString()
                 }, false);
             } else {
@@ -1795,10 +1797,11 @@
             }, true);
         }
 
-        document.getElementById('sum-savings-rub').innerText = `+${savedRub.toFixed(2)} ₽`;
-        document.getElementById('sum-starts').innerText = String(startsCount);
-        document.getElementById('sum-brakes').innerText = String(brakesCount);
+        document.getElementById('sum-savings-rub').innerText = Number.isFinite(savedRub) ? `${savedRub>=0?'+':''}${savedRub.toFixed(2)} ₽` : '—';
+        document.getElementById('sum-starts').innerText = startsCount===null?'—':String(startsCount);
+        document.getElementById('sum-brakes').innerText = brakesCount===null?'—':String(brakesCount);
         document.getElementById('sum-idle').innerText = `${idleMins} мин`;
+        document.getElementById('sum-idle').parentElement.querySelector('.stat-cell-label').innerText='Малая скорость';
         document.getElementById('sum-bumps').innerText = String(bumpsCount);
         document.getElementById('sum-distance').innerText = formatDistance(distKm);
         document.getElementById('sum-duration').innerText = formatDurationHoursMins(durSec);
@@ -1820,6 +1823,9 @@
             document.getElementById('sum-bumps').title = 'Дорожные события по данным поездки';
         }
 
+        document.querySelector('#summary-modal .trophy-text').innerText = Number.isFinite(savedRub)?'Выгода сохранена':'Поездка сохранена';
+        document.querySelector('#summary-modal .summary-sub-caption').innerText = Number.isFinite(savedRub)?'Сэкономлено на топливе\nотносительно контрольной поездки':'Данные поездки сохранены';
+        document.querySelector('#summary-modal .btn-lime-primary').innerText = Number.isFinite(savedRub)?'Зачислить в копилку':'Готово';
         document.getElementById('summary-modal').classList.add('active');
         finishingTrip = false;
     }

@@ -1,0 +1,16 @@
+{
+  "times_s": [0, 10],
+  "speeds_mps": [10, 10],
+  "idle_threshold_mps": 1,
+  "elevations_m": [0, 0],
+  "tailwind_mps": [0, 0],
+  "road_parameters": {
+    "mass_kg": 1000,
+    "rotating_equivalent_mass_kg": 0,
+    "crr": 0.01,
+    "cda_m2": 0.6,
+    "air_density_kg_m3": 1,
+    "drivetrain_efficiency": 0.8,
+    "source": "synthetic analytical example; not vehicle calibration"
+  }
+}

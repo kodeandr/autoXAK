@@ -1,4 +1,4 @@
-﻿"""Synthetic API sanity check; not evidence of real-world model accuracy."""
+"""Synthetic API sanity check; not evidence of real-world model accuracy."""
 import json
 import ssl
 import time
@@ -88,7 +88,7 @@ print("=" * 60)
 print(f"Длительность заезда            : {report.get('duration_minutes')} мин")
 print(f"Количество точек телеметрии    : {report.get('total_points')} точек")
 print(f"Эквивалентные моточасы autoXAK : {report.get('autoxak_predicted_hours')} ч")
-print(f"Эталонные моточасы OBD-II      : {report.get('obd_ground_truth_hours')} ч")
+print(f"Время работы двигателя OBD-II      : {report.get('obd_ground_truth_hours')} ч")
 print(f"Погрешность аппроксимации MAPE : {report.get('mape_percent')} %")
 print(f"t-критерий Стьюдента           : {report.get('t_statistic')}")
 print(f"p-value                        : {report.get('p_value')}")

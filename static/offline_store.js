@@ -135,7 +135,7 @@ const AutoXAKOfflineStore = window.AutoXAKOfflineStore = (() => {
                 duration_seconds:result.duration_seconds, distance_km:result.distance_km,
                 total_savings_rub:result.cost_savings_rub, hard_accel_count:result.harsh_accel_count,
                 hard_brake_count:result.harsh_brake_count, bumps_count:result.road_anomalies_count,
-                idle_minutes:Math.round((result.traffic_jam_seconds || 0)/60), capture_quality:result.metrics?.capture_quality};
+                idle_minutes:Math.round((result.traffic_jam_seconds || 0)/60), capture_quality:result.metrics?.capture_quality,math_status:result.metrics?.math_status};
             if (trip.session_id !== result.session_id) delete map[trip.session_id];
             map[result.session_id] = details;
             localStorage.setItem('autoXAK_trip_details_map', JSON.stringify(map));

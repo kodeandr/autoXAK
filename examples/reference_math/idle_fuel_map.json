@@ -1,0 +1,17 @@
+{
+  "times_s": [0, 3600],
+  "speeds_mps": [0, 0],
+  "idle_threshold_mps": 1,
+  "fuel_rate_lph": [0.8, 0.8],
+  "fuel_rate_source": "synthetic constant-flow example; not real measurements",
+  "fuel_rate_interpolation": "previous",
+  "engine_rpm": [800, 800],
+  "torque_nm": [0, 0],
+  "engine_on": [true],
+  "fuel_map": {
+    "rpm": [800, 2000],
+    "torque_nm": [0, 100],
+    "fuel_rate_lph": [[0.8, 2], [1.2, 4]],
+    "source": "synthetic example map; not a production fallback or calibrated vehicle"
+  }
+}

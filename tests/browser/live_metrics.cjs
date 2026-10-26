@@ -63,10 +63,10 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
         assert(geometry.counts.every(value=>value.horizontal<0.001 && Math.abs(value.vertical-5)<0.001));
         assert.equal(geometry.afterRotation,geometry.beforeRotation);
         assert.equal(geometry.fallback,1);
-        assert.equal(await page.locator('#trip-live-savings').innerText(),'+0.00 ₽');
+        assert.equal(await page.locator('#trip-live-savings').innerText(),'—');
         await page.evaluate(()=>finishActiveTrip());
         assert.equal(await page.locator('#sum-bumps').innerText(),'5');
-        assert.equal(await page.locator('#sum-savings-rub').innerText(),'+0.00 ₽');
+        assert.equal(await page.locator('#sum-savings-rub').innerText(),'—');
         assert.equal(await page.locator('#sum-offline-banner').evaluate(el=>el.classList.contains('visible')),false);
         await page.evaluate(()=>document.getElementById('summary-modal').classList.remove('active'));
 
@@ -82,11 +82,12 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
         const previewResponse=page.waitForResponse('**/api/v1/telemetry/preview');
         await page.evaluate(()=>updateLiveEstimate());
         const preview=await (await previewResponse).json();
-        assert(preview.cost_savings_rub>0);
-        assert.equal(await page.locator('#trip-live-savings').innerText(),`+${preview.cost_savings_rub.toFixed(2)} ₽`);
+        assert.equal(preview.cost_savings_rub,null);
+        assert.equal(preview.math_status.monetary_credit_status,'not_verified');
+        assert.equal(await page.locator('#trip-live-savings').innerText(),'—');
         assert.deepEqual(await (await page.request.get(`${base}/api/v1/users/${owner}/dashboard`,{headers})).json(),before);
         await page.evaluate(()=>finishActiveTrip());
-        assert.equal(await page.locator('#sum-savings-rub').innerText(),`+${preview.cost_savings_rub.toFixed(2)} ₽`);
+        assert.equal(await page.locator('#sum-savings-rub').innerText(),'—');
         const after=await (await page.request.get(`${base}/api/v1/users/${owner}/dashboard`,{headers})).json();
         assert.equal(after.total_trips,before.total_trips+1);
 
@@ -111,7 +112,7 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
         await start();
         releaseOldPreview();
         await page.evaluate(()=>window.__oldPreview);
-        assert.equal(await page.locator('#trip-live-savings').innerText(),'+0.00 ₽');
+        assert.equal(await page.locator('#trip-live-savings').innerText(),'—');
         await page.unroute('**/api/v1/telemetry/preview');
         await page.evaluate(()=>finishActiveTrip());
 

@@ -1,0 +1,8 @@
+{
+  "training_vehicle_ids": ["synthetic_training_vehicle"],
+  "samples": [
+    {"trip_id":"synthetic_a","vehicle_id":"heldout_a","reference_source":"synthetic","predicted_fuel_l":0,"observed_fuel_l":0},
+    {"trip_id":"synthetic_b","vehicle_id":"heldout_b","reference_source":"synthetic","predicted_fuel_l":1,"observed_fuel_l":2},
+    {"trip_id":"synthetic_c","vehicle_id":"heldout_c","reference_source":"synthetic","predicted_fuel_l":3,"observed_fuel_l":2}
+  ]
+}

@@ -1,9 +1,9 @@
-﻿"""
+"""
 app/services/twin_engine.py
 Модуль виртуального агрессивного двойника (TwinEngine) и расчета топливной автономии (Fuel Autonomy).
 """
 
-from typing import Dict, Any, Tuple, Optional, Union
+from typing import Any, Tuple, Optional
 import numpy as np
 
 try:
@@ -16,8 +16,8 @@ class TwinEngine:
     def __init__(
         self,
         profile: Optional[Any] = None,
-        fuel_price_rub: float = 68.5,
-        service_cost_rub: float = 13500.0,
+        fuel_price_rub: Optional[float] = None,
+        service_cost_rub: Optional[float] = None,
         **kwargs
     ):
         self.profile = profile
@@ -72,268 +72,58 @@ class TwinEngine:
         return clean_ax, anomalies_count
 
     @staticmethod
-    def detect_throttle_hunting(
-        speeds_mps: np.ndarray,
-        clean_ax: np.ndarray,
-        dt: float = 0.02
-    ) -> Tuple[bool, float, float]:
+    def detect_throttle_hunting(speeds_mps, clean_ax, dt=0.02):
+        """Phone motion cannot establish throttle position or fuel penalty."""
+        from app.services.reference_math import trajectory_metrics
+        if not np.isfinite(dt) or dt<=0:
+            raise ValueError('Positive finite dt is required')
+        speeds=np.asarray(speeds_mps,float)
+        if len(speeds)<2:
+            return None,None,None
+        metrics=trajectory_metrics(np.arange(len(speeds))*dt,speeds)
+        return None,None,metrics['pke_m_s2']
+
+    def simulate_aggressive_twin_kinematics(self, speed_mps, dt=0.02, *, reference_speed_mps=None):
+        """Compare an explicit reference, never invent a 15% faster journey."""
+        from app.services.reference_math import series, integral_linear
+        actual = series(speed_mps, 'actual_speed', nonnegative=True)
+        if reference_speed_mps is None:
+            raise ValueError('An observed or independently justified reference trajectory is required')
+        reference = series(reference_speed_mps, 'reference_speed', length=len(actual), nonnegative=True)
+        if not np.isfinite(dt) or dt <= 0 or len(actual)<2:
+            raise ValueError('Positive sample period and at least two samples are required')
+        times = np.arange(len(actual))*dt
+        if not np.isclose(integral_linear(times, actual), integral_linear(times, reference), rtol=1e-9, atol=1e-6):
+            raise ValueError('Reference and actual trajectory must cover the same distance')
+        return reference, np.gradient(reference, times)
+
+    def calculate_cmem_traction_power(self, speed_mps, ax_mps2):
+        raise ValueError('Use road_energy with explicit slope, wind, rotating mass and road-load parameters')
+
+    def evaluate_financial_delta(self, *args, comparison=None, fuel_price_rub=None, **kwargs):
+        """Only explicit matched fuel observations support a signed comparison.
+
+        Legacy speed, distance and oil arguments cannot manufacture liters or rubles.
+        A numerical comparison of caller declarations is not a verified causal saving.
         """
-        Детектор рыскания педалью газа (Throttle Hunting / PKE).
-        Использует двухпороговый гистерезисный триггер Шмитта (±0.10 м/с²),
-        устойчивый к дискретизации 50 Гц.
-        """
-        speeds_arr = np.asarray(speeds_mps, dtype=float)
-        ax_arr = np.asarray(clean_ax, dtype=float)
-        n = len(speeds_arr)
-        if n < 50:
-            return False, 0.0, 0.0
-
-        mean_speed = float(np.mean(speeds_arr))
-        if mean_speed < 12.5:
-            return False, 0.0, 0.0
-
-        flips = 0
-        state = 0
-
-        for val in ax_arr:
-            if val > 0.10:
-                if state == -1:
-                    flips += 1
-                state = 1
-            elif val < -0.10:
-                if state == 1:
-                    flips += 1
-                state = -1
-
-        duration_sec = n * max(dt, 0.001)
-        flips_per_min = (flips / max(duration_sec, 1.0)) * 60.0
-
-        pos_accels = ax_arr[ax_arr > 0.05]
-        pke = float(np.sum(pos_accels * dt * mean_speed)) if len(pos_accels) > 0 else 0.0
-
-        hunting_detected = bool(flips_per_min >= 8.0 and pke > 10.0)
-        hunting_penalty_liters = 0.0
-
-        if hunting_detected:
-            hunting_penalty_liters = round((duration_sec / 3600.0) * (mean_speed * 3.6 / 100.0) * 1.2, 3)
-
-        return hunting_detected, hunting_penalty_liters, round(pke, 2)
-
-    def simulate_aggressive_twin_kinematics(
-        self,
-        speed_mps: Union[np.ndarray, list],
-        dt: float = 0.02
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        speed_arr = np.asarray(speed_mps, dtype=float)
-        n = len(speed_arr)
-        if n == 0:
-            return np.array([]), np.array([])
-
-        accel = np.gradient(speed_arr, dt) if n > 1 else np.zeros(n)
-        aggressive_accel = np.clip(accel * 1.35 + 0.25 * np.sign(accel), -4.5, 3.5)
-        aggressive_speed = np.clip(speed_arr * 1.15, 0.0, 55.0)
-        return aggressive_speed, aggressive_accel
-
-    def calculate_cmem_traction_power(
-        self,
-        speed_mps: np.ndarray,
-        ax_mps2: np.ndarray
-    ) -> np.ndarray:
-        m = float(getattr(self.profile, "curb_weight_kg", 1500.0) or 1500.0)
-        g = 9.80665
-        f_roll = float(getattr(self.profile, "rolling_resistance_coeff", 0.012) or 0.012)
-        cd_a = float(getattr(self.profile, "drag_coefficient_area", 0.76) or 0.76)
-        rho_air = 1.225
-        eta = float(getattr(self.profile, "drivetrain_efficiency", 0.90) or 0.90)
-
-        f_rolling = m * g * f_roll
-        f_aerodynamic = 0.5 * rho_air * cd_a * (speed_mps ** 2)
-        f_inertial = m * ax_mps2
-
-        f_traction_total = f_inertial + f_rolling + f_aerodynamic
-        power_watts = np.where(f_traction_total > 0, (f_traction_total * speed_mps) / eta, 0.0)
-        return power_watts
-
-    def evaluate_financial_delta(
-        self,
-        *args,
-        speeds_mps: Any = None,
-        speed_mps: Any = None,
-        speeds: Any = None,
-        user_wear_percent: Optional[float] = None,
-        user_oil_wear_pct: Optional[float] = None,
-        user_wear_pct: Optional[float] = None,
-        wear_percent: Optional[float] = None,
-        user_equiv_hours: Optional[float] = None,
-        twin_equiv_hours: Optional[float] = None,
-        user_ax: Any = None,
-        accel_mps2: Any = None,
-        horiz_acc: Any = None,
-        raw_az: Any = None,
-        dt: float = 0.02,
-        fuel_price_rub: Optional[float] = None,
-        service_cost_rub: Optional[float] = None,
-        distance_km: Optional[float] = None,
-        **kwargs
-    ) -> Dict[str, Any]:
-        fp = float(fuel_price_rub) if (fuel_price_rub is not None and fuel_price_rub > 0) else self.fuel_price
-        sc = float(service_cost_rub) if (service_cost_rub is not None and service_cost_rub > 0) else self.service_cost
-
-        in_speeds = None
-        in_user_hours = user_equiv_hours
-        in_twin_hours = twin_equiv_hours
-        in_user_ax = user_ax if user_ax is not None else (accel_mps2 if accel_mps2 is not None else horiz_acc)
-        in_dist_km = distance_km
-        in_wear_pct = (
-            user_wear_percent if user_wear_percent is not None
-            else (user_oil_wear_pct if user_oil_wear_pct is not None
-            else (user_wear_pct if user_wear_pct is not None else wear_percent))
-        )
-
-        if len(args) > 0:
-            if isinstance(args[0], (int, float)):
-                in_dist_km = float(args[0])
-                if len(args) > 1 and args[1] is not None:
-                    in_user_hours = float(args[1])
-                if len(args) > 2 and args[2] is not None:
-                    in_user_ax = args[2]
-                if len(args) > 3 and args[3] is not None:
-                    in_twin_hours = float(args[3])
-            else:
-                in_speeds = args[0]
-                if len(args) > 1 and args[1] is not None:
-                    in_wear_pct = float(args[1])
-                if len(args) > 2 and args[2] is not None:
-                    dt = float(args[2])
-                if len(args) > 3 and args[3] is not None:
-                    fp = float(args[3])
-                if len(args) > 4 and args[4] is not None:
-                    sc = float(args[4])
-
-        if in_speeds is None:
-            in_speeds = speeds_mps if speeds_mps is not None else (speed_mps if speed_mps is not None else speeds)
-
-        speed_array = None
-        if in_speeds is not None:
-            speed_array = np.asarray(in_speeds, dtype=float)
-            if in_dist_km is None:
-                in_dist_km = float(np.sum(speed_array) * dt / 1000.0) if len(speed_array) > 0 else 0.0
-
-        if in_dist_km is None:
-            in_dist_km = float(kwargs.get("distance_km", 0.0))
-
-        if in_user_ax is None and speed_array is not None and len(speed_array) > 1:
-            in_user_ax = np.gradient(speed_array, dt)
-        elif in_user_ax is not None:
-            in_user_ax = np.asarray(in_user_ax, dtype=float)
-
-        clean_ax = in_user_ax
-        anomalies_count = 0
-        if clean_ax is not None and len(clean_ax) > 0:
-            az_data = raw_az if raw_az is not None else kwargs.get("az")
-            clean_ax, anomalies_count = self.filter_road_anomalies(clean_ax, raw_az=az_data, dt=dt)
-
-        hunting_detected = False
-        hunting_penalty_liters = 0.0
-        pke_metric = 0.0
-        if speed_array is not None and clean_ax is not None and len(speed_array) == len(clean_ax):
-            hunting_detected, hunting_penalty_liters, pke_metric = self.detect_throttle_hunting(
-                speed_array, clean_ax, dt=dt
-            )
-
-        current_wear = float(in_wear_pct if in_wear_pct is not None else 0.0)
-        if in_dist_km < 0.05:
-            return {
-                "fuel_saved_rub": 0.0,
-                "fuel_savings_rub": 0.0,
-                "oil_saved_rub": 0.0,
-                "oil_savings_rub": 0.0,
-                "total_savings_rub": 0.0,
-                "cost_savings_rub": 0.0,
-                "twin_wear_percent": current_wear,
-                "saved_fuel_liters": 0.0,
-                "fuel_saved_liters": 0.0,
-                "range_bonus_km": 0.0,
-                "autonomy_days_extended": 0.0,
-                "smooth_score": 100,
-                "road_anomalies_count": anomalies_count,
-                "throttle_hunting_detected": False,
-                "hunting_penalty_liters": 0.0,
-                "pke_metric": 0.0
-            }
-
-        base_city_rate = float(getattr(self.profile, "base_city_fuel_rate_l100km", 8.5) or 8.5)
-        raw_saved_liters = (in_dist_km * (1.8 / 100.0)) - hunting_penalty_liters
-        saved_liters = max(0.0, round(float(raw_saved_liters), 3))
-        fuel_saved_rub = round(float(saved_liters * fp), 2)
-
-        range_bonus_km = round((100.0 * saved_liters) / max(base_city_rate, 4.0), 1)
-        autonomy_days = round(saved_liters / 4.2, 2)
-
-        nominal_hours = float(getattr(getattr(self.profile, "oil_profile", None), "nominal_service_hours", 250.0) or 250.0)
-
-        if in_twin_hours is not None and in_user_hours is not None:
-            delta_equiv_hours = max(0.0, in_twin_hours - in_user_hours)
-            oil_fraction_saved = delta_equiv_hours / nominal_hours
-            oil_saved_rub = round(float(oil_fraction_saved * sc), 2)
-            twin_wear_percent = round(float((in_twin_hours / nominal_hours) * 100.0), 5)
-        else:
-            twin_wear_percent = round(float(current_wear * 1.45 + (0.002 if current_wear > 0 else 0.0)), 5)
-            wear_delta = max(0.0, twin_wear_percent - current_wear)
-            oil_saved_rub = round(float((wear_delta / 100.0) * sc), 2)
-
-        total_savings_rub = round(fuel_saved_rub + oil_saved_rub, 2)
-
-        if clean_ax is not None and len(clean_ax) > 0:
-            harsh_events = sum(int(np.sum(np.diff(np.r_[0, mask.astype(np.int8)]) == 1)) for mask in (clean_ax > 2.0, clean_ax < -2.5))
-            penalty = (harsh_events * 5) + (15 if hunting_detected else 0)
-            smooth_score = max(40, min(100, int(100 - penalty)))
-        else:
-            smooth_score = 100
-
-        return {
-            "fuel_saved_rub": fuel_saved_rub,
-            "fuel_savings_rub": fuel_saved_rub,
-            "oil_saved_rub": oil_saved_rub,
-            "oil_savings_rub": oil_saved_rub,
-            "total_savings_rub": total_savings_rub,
-            "cost_savings_rub": total_savings_rub,
-            "twin_wear_percent": twin_wear_percent,
-            "saved_fuel_liters": saved_liters,
-            "fuel_saved_liters": saved_liters,
-            "range_bonus_km": range_bonus_km,
-            "autonomy_days_extended": autonomy_days,
-            "smooth_score": smooth_score,
-            "road_anomalies_count": anomalies_count,
-            "throttle_hunting_detected": hunting_detected,
-            "hunting_penalty_liters": hunting_penalty_liters,
-            "pke_metric": pke_metric
-        }
+        from app.services.reference_math import VERSION, compare_fuel
+        result = {'status':'unavailable','reason':'matched_reference_fuel_required','math_version':VERSION,
+                  'fuel_saved_rub':None,'fuel_savings_rub':None,'oil_saved_rub':None,'oil_savings_rub':None,
+                  'total_savings_rub':None,'cost_savings_rub':None,'saved_fuel_liters':None,'fuel_saved_liters':None,
+                  'range_bonus_km':None,'autonomy_days_extended':None,'twin_wear_percent':None,
+                  'smooth_score':None,'hunting_penalty_liters':None,'throttle_hunting_detected':None}
+        if comparison is not None:
+            compared = compare_fuel(comparison['actual'],comparison['reference'],price_rub_per_l=fuel_price_rub)
+            result.update(compared, fuel_saved_rub=compared['delta_cost_rub'],fuel_savings_rub=compared['delta_cost_rub'],
+                          total_savings_rub=compared['delta_cost_rub'],cost_savings_rub=compared['delta_cost_rub'],
+                          saved_fuel_liters=compared['delta_fuel_l'],fuel_saved_liters=compared['delta_fuel_l'],reason=None)
+        return result
 
     simulate_twin_and_delta = evaluate_financial_delta
 
 
 AggressiveTwinEngine = TwinEngine
 
-def calculate_trip_smoothness_score(
-    distance_km: float,
-    harsh_accel_count: int,
-    harsh_brake_count: int,
-    mean_excess_jerk: float = 0.0
-) -> int:
-    """
-    Эталонный расчет итогового индекса плавности поездки:
-    - Нормирован на дистанцию (события на 10 км пути).
-    - Учитывает интегральную энергию рывков кузова (Jerk).
-    """
-    if distance_km < 0.2:
-        return 100
-
-    total_events = harsh_accel_count + harsh_brake_count
-    events_per_10km = (total_events / distance_km) * 10.0
-
-    event_penalty = 100.0 * (1.0 - np.exp(-0.065 * events_per_10km))
-    jerk_penalty = min(20.0, float(mean_excess_jerk) * 4.0)
-
-    final_score = int(np.clip(100.0 - (event_penalty + jerk_penalty), 10.0, 100.0))
-    return final_score
+def calculate_trip_smoothness_score(*args, **kwargs):
+    """No validated mapping from event rates to a universal 0..100 score exists."""
+    return None

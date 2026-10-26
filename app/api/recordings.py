@@ -14,7 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.api.dependencies import require_user
 from app.core.database import get_db
 from app.models.db_models import User
-from app.models.recordings import RecordingChunk, RecordingVehicle, TripRecording, utcnow
+from app.models.recordings import RecordingChunk, RecordingVehicle, TripRecording, TripMathEvidenceRecord, utcnow
 from app.schemas.recordings import MAX_CHUNKS, ControlMeasurement, TripChunk, TripComplete, TripCreate, VehicleProfile
 
 
@@ -208,6 +208,9 @@ async def export_trip(trip_id: str, user: User = Depends(require_user), db: Asyn
         RecordingChunk.gps_count, RecordingChunk.motion_count,
     ).where(RecordingChunk.trip_id == trip.id).order_by(RecordingChunk.sequence))).all()
     data = trip_detail(trip)
+    evidence_hash=await db.scalar(select(TripMathEvidenceRecord.inputs_sha256).where(TripMathEvidenceRecord.trip_id==trip_id))
+    if evidence_hash is not None:
+        data['reference_math_evidence']={'inputs_sha256':evidence_hash,'url':f'/api/v3/math/trips/{trip_id}/evidence'}
     data["units"] = {"speed": "m/s", "acceleration": "m/s2", "gyro": "deg/s", "gyro_axes": "x=beta,y=gamma,z=alpha", "timestamps": "epoch_ms", "coordinates": "degrees", "accuracy": "m", "event_timestamp": "browser_event_ms", "interval": "ms"}
     data["chunk_count"] = len(chunks)
     point_counts = {"gps": sum(c.gps_count for c in chunks), "motion": sum(c.motion_count for c in chunks)}

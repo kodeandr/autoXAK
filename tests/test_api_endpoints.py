@@ -1,4 +1,3 @@
-﻿import pytest
 import uuid
 from httpx import AsyncClient
 from datetime import datetime, timezone, timedelta
@@ -61,7 +60,8 @@ async def test_user_dashboard_aggregates(async_client: AsyncClient, synthetic_te
 
     assert "month_savings_rub" in data
     assert "oil_remaining_percent" in data
-    assert 0.0 <= data["oil_remaining_percent"] <= 100.0
+    assert data['oil_remaining_percent'] is None
+    assert data['cpa_recommended'] is False
 
 
 async def test_user_trips_history(async_client: AsyncClient, synthetic_telemetry_batch: dict):

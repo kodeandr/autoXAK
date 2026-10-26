@@ -53,10 +53,10 @@ def test_maneuver_duration_and_cooldown_use_seconds(rate):
     for start in [int(0.2*rate), int(0.8*rate), int(2*rate)]:
         signal[start:start+width] = 3
     dt = 1/rate
-    assert count_maneuver_events(signal, 2, min_points=math.ceil(0.1/dt), dt=dt) == 3
+    assert count_maneuver_events(signal, 2, min_points=math.ceil(0.1/dt), dt=dt, min_duration_s=.1) == 3
 
 
-async def test_user_and_twin_use_same_traffic_context(committed_client, synthetic_telemetry_batch, monkeypatch):
+async def test_traffic_score_cannot_manufacture_oil_or_money(committed_client, synthetic_telemetry_batch, monkeypatch):
     from app.services.wear_engine import WearEngine
     calls = []
     original = WearEngine.evaluate_trip_wear
@@ -69,7 +69,8 @@ async def test_user_and_twin_use_same_traffic_context(committed_client, syntheti
     body = dict(synthetic_telemetry_batch, user_id=committed_client.audit_user_id)
     response = await committed_client.post('/api/v1/telemetry/preview', json=body)
     assert response.status_code == 200, response.text
-    assert calls == [3, 3]
+    assert calls == [1]
+    assert response.json()['cost_savings_rub'] is None
 
 
 async def test_dsp_runs_outside_request_event_loop(committed_client, synthetic_telemetry_batch, monkeypatch):
@@ -105,7 +106,7 @@ async def test_irregular_samples_do_not_inflate_idle_time(committed_client, synt
                                    for i,t in enumerate(times)]
     response = await committed_client.post('/api/v1/telemetry/session', json=payload)
     assert response.status_code == 200, response.text
-    assert response.json()['traffic_jam_seconds'] == pytest.approx(0.9, abs=0.01)
+    assert response.json()['traffic_jam_seconds'] == pytest.approx(0.81, abs=0.01)
 
 
 async def test_board_computer_accepts_same_uuid_representation(committed_client, synthetic_telemetry_batch):
@@ -129,7 +130,7 @@ async def test_raw_capture_with_unsupported_frequency_is_still_saved(committed_c
     assert response.status_code == 200, response.text
     assert response.json()['status'] == 'RECORDED'
     assert 'unsupported_motion_rate' in response.json()['metrics']['capture_quality']['quality_flags']
-    assert response.json()['cost_savings_rub'] == 0
+    assert response.json()['cost_savings_rub'] is None
     exported = await committed_client.get('/api/v2/trips/'+response.json()['session_id']+'/export')
     assert exported.status_code == 200
     assert exported.json()['point_counts']['motion'] == 50
