@@ -23,6 +23,7 @@ from sqlalchemy import select, func, and_, or_, text
 from sqlalchemy.exc import IntegrityError
 
 from app.core.logger import logger
+from app.api.ml import router as ml_router
 from app.api.auth import router as auth_router
 from app.api.recordings import router as recordings_router
 from app.api.reference_math import router as reference_math_router
@@ -313,6 +314,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+app.include_router(ml_router)
 app.include_router(auth_router)
 app.include_router(recordings_router)
 app.include_router(reference_math_router)

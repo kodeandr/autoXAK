@@ -1,0 +1,18 @@
+# Apply ONLY to the existing autoxak-test project, alongside compose.test.yml.
+services:
+  api:
+    image: autoxak-test-api:ml-${APP_IMAGE_TAG:-local}
+    pull_policy: never
+    build:
+      context: ${ML_SOURCE_DIR:?Set ML_SOURCE_DIR to the checkout of this version}
+      dockerfile: deploy/Dockerfile
+    environment:
+      APP_ENV: test
+      ML_UPLOAD_ENABLED: "true"
+      ML_STORAGE_DIR: /var/lib/autoxak/ml
+    volumes:
+      - ml_store:/var/lib/autoxak/ml
+
+volumes:
+  ml_store:
+    name: autoxak-test_ml

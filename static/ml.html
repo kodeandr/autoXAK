@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Модели расхода — autoXAK</title>
+  <style>
+    :root{color-scheme:dark;font:16px/1.5 system-ui,sans-serif;background:#11161c;color:#ecf1f6}
+    *{box-sizing:border-box}body{margin:0}main{max-width:900px;margin:auto;padding:32px 20px 64px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:16px}a{color:#9bc9ff}
+    h1{font-size:clamp(24px,5vw,36px);margin:24px 0 8px}h2{font-size:20px;margin-top:0}
+    p{color:#b6c3d0}.panel,article{background:#1a222c;border:1px solid #344353;border-radius:16px;padding:24px;margin-top:24px}
+    label{display:block;margin:18px 0 6px}input,textarea{font:inherit;width:100%;border:1px solid #5a6a7b;border-radius:8px;background:#11161c;color:inherit;padding:12px}
+    input[type=file]{padding:10px}textarea{resize:vertical}button{font:inherit;border:1px solid #60758a;border-radius:8px;padding:10px 16px;background:#263747;color:#f3f8fc;cursor:pointer}
+    button.primary{background:#a8e268;color:#12200b;border-color:#a8e268;font-weight:650}button.danger{color:#ffb4ab}
+    button:disabled{opacity:.5;cursor:default}button:focus-visible,a:focus-visible{outline:3px solid #a8e268;outline-offset:4px}
+    .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}.muted{font-size:14px;color:#b6c3d0}.badge{display:inline-block;background:#a8e268;color:#12200b;border-radius:20px;padding:3px 12px;font-size:13px;margin-bottom:8px}
+    article h3{margin:0 0 4px;overflow-wrap:anywhere}article p{white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0}
+    #status{white-space:pre-wrap;min-height:24px;margin-top:16px}#status.error{color:#ffb4ab}#file-status{white-space:pre-line}
+    [hidden]{display:none!important}@media(max-width:540px){.panel,article{padding:18px}main{padding:20px 14px}header{align-items:flex-start}}
+  </style>
+</head>
+<body>
+<main>
+  <header><strong>autoXAK · Тестовая среда</strong><a href="/">К приложению</a></header>
+  <h1>Модели расхода</h1>
+  <p>Загрузите комплект, проверьте совместимость и выберите модель для новых расчётов. Доступ по ссылке, без входа.</p>
+  <section class="panel" aria-labelledby="upload-title">
+    <h2 id="upload-title">Новая версия</h2>
+    <form id="upload-form">
+      <label for="name">Название</label><input id="name" required maxlength="100" placeholder="Например, бензин · версия 2">
+      <label for="description">Что изменилось</label><textarea id="description" maxlength="2000" rows="2"></textarea>
+      <label for="files">Четыре файла модели</label>
+      <input id="files" type="file" multiple required accept=".cbm,.json" aria-describedby="file-status">
+      <p class="muted" id="file-status">catboost_direct.cbm, catboost_residual.cbm, model_card.json, provenance.json. До 20 МиБ на комплект.</p>
+      <button class="primary" type="submit">Загрузить и проверить</button>
+    </form>
+  </section>
+  <div id="status" role="status" aria-live="polite"></div>
+  <section aria-labelledby="versions-title">
+    <header><h2 id="versions-title">Версии моделей</h2><button id="refresh" type="button">Обновить</button></header>
+    <div id="models" aria-busy="true"></div>
+  </section>
+</main>
+<script src="/static/ml.js" defer></script>
+</body>
+</html>

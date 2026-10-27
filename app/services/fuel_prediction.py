@@ -1,7 +1,5 @@
 """Research fuel inference; never infer savings or fill unobserved trip time."""
 from functools import lru_cache
-import hashlib
-import json
 import math
 from pathlib import Path
 
@@ -36,38 +34,11 @@ def _number(value):
     return result if math.isfinite(result) else None
 
 
-@lru_cache(maxsize=1)
-def _load_artifacts():
-    # Import lazily: trip collection stays available if the ML deployment is broken.
-    from catboost import CatBoostRegressor
-
-    provenance = json.loads((ARTIFACT_DIR / "provenance.json").read_text(encoding="utf-8"))
-    for filename, expected in provenance["artifact_sha256"].items():
-        if Path(filename).name != filename:
-            raise ValueError("Invalid artifact manifest")
-        payload = (ARTIFACT_DIR / filename).read_bytes()
-        # Git may check text out with CRLF on Windows; binary weights stay byte-exact.
-        if filename.endswith(".json"):
-            payload = payload.replace(b"\r\n", b"\n")
-        actual = hashlib.sha256(payload).hexdigest()
-        if actual != expected:
-            raise ValueError("Fuel model artifact integrity check failed")
-    card = json.loads((ARTIFACT_DIR / "model_card.json").read_text(encoding="utf-8"))
-    if card["features"] != FEATURES or card["hybrid_features"] != FEATURES + ["physics"]:
-        raise ValueError("Fuel model feature order mismatch")
-    if card["road_constants"] != ROAD:
-        raise ValueError("Fuel model physical constants mismatch")
-    models = {}
-    for name, filename, features in (
-        ("catboost", "catboost_direct.cbm", FEATURES),
-        ("hybrid", "catboost_residual.cbm", card["hybrid_features"]),
-    ):
-        model = CatBoostRegressor()
-        model.load_model(str(ARTIFACT_DIR / filename))
-        if model.feature_names_ != features:
-            raise ValueError("Fuel model artifact feature mismatch")
-        models[name] = model
-    return card, models
+@lru_cache(maxsize=2)
+def _load_artifacts(directory=None):
+    # Cache immutable bundles by path, never a mutable "current" directory.
+    from app.ml.bundle import load_bundle
+    return load_bundle(directory or ARTIFACT_DIR)
 
 
 def predict_fuel(gps_samples, vehicle_profile, started_at_ms, ended_at_ms):
@@ -208,7 +179,16 @@ def predict_fuel(gps_samples, vehicle_profile, started_at_ms, ended_at_ms):
     if result["rejected_windows"]:
         flags.append("invalid_motion_windows_rejected")
     try:
-        card, models = _load_artifacts()
+        from app.services.model_registry import active_artifacts, enabled
+        if enabled():
+            card, models, info = active_artifacts(_load_artifacts)
+        else:
+            card, models, info = _load_artifacts()
+            info = {**info, "model_bundle_id": "builtin"}
+        result.update({key: info[key] for key in (
+            "model_version", "selected_model", "model_bundle_id",
+            "artifact_bundle_sha256", "feature_schema_version",
+        )})
         frame["physics"] = physical_prediction(frame, card["physics_coefficients_l_per_mj_l_per_h"])
         direct = models["catboost"].predict(frame[FEATURES], thread_count=1)
         hybrid = models["hybrid"].predict(frame[card["hybrid_features"]], thread_count=1) + frame.physics.to_numpy()
@@ -230,8 +210,8 @@ def predict_fuel(gps_samples, vehicle_profile, started_at_ms, ended_at_ms):
                if (frame[key] < low - 1e-9).any() or (frame[key] > high + 1e-9).any()]
     if outside:
         flags.append("outside_training_range")
-    result.update(status="research_estimate", estimated_fuel_l=totals[SELECTED_MODEL],
+    result.update(status="research_estimate", estimated_fuel_l=totals[result["selected_model"]],
                   fuel_l_on_retained_intervals=totals, features_outside_training_range=outside)
     if math.isclose(retained, duration, abs_tol=1e-6, rel_tol=0):
-        result["complete_trip_fuel_l"] = totals[SELECTED_MODEL]
+        result["complete_trip_fuel_l"] = totals[result["selected_model"]]
     return result
