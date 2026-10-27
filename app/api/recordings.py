@@ -2,11 +2,9 @@
 
 import hashlib
 import json
-import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from fastapi.responses import StreamingResponse
-from fastapi.concurrency import run_in_threadpool
 from sqlalchemy import func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -19,16 +17,7 @@ from app.schemas.recordings import MAX_CHUNKS, ControlMeasurement, TripChunk, Tr
 
 
 router = APIRouter(prefix="/api/v2", tags=["Trip recordings"])
-logger = logging.getLogger(__name__)
 MAX_SESSION_MS = 24 * 60 * 60 * 1000
-
-
-def _gps_payload_query(trip_id: str):
-    # JSON indexing is translated to SQLite JSON_EXTRACT / PostgreSQL ->.
-    # Projecting the stream in the database avoids decoding high-rate motion.
-    return (select(RecordingChunk.payload["gps"])
-            .where(RecordingChunk.trip_id == trip_id, RecordingChunk.gps_count > 0)
-            .order_by(RecordingChunk.sequence))
 
 
 def payload_hash(payload: dict) -> str:
@@ -147,36 +136,14 @@ async def complete_trip(body: TripComplete, trip_id: str, user: User = Depends(r
         return trip_detail(trip)
     if not 0 <= body.ended_at_ms - trip.started_at_ms <= MAX_SESSION_MS:
         raise HTTPException(422, "Trip duration must be nonnegative and at most 24 hours")
-    chunks = (await db.execute(select(RecordingChunk.sequence, RecordingChunk.max_timestamp_ms, RecordingChunk.gps_count).where(RecordingChunk.trip_id == trip.id).order_by(RecordingChunk.sequence))).all()
+    chunks = (await db.execute(select(RecordingChunk.sequence, RecordingChunk.max_timestamp_ms).where(RecordingChunk.trip_id == trip.id).order_by(RecordingChunk.sequence))).all()
     if [c.sequence for c in chunks] != list(range(body.chunk_count)):
         raise HTTPException(409, "Upload every chunk from 0 through chunk_count - 1 before completion")
     if any(c.max_timestamp_ms > body.ended_at_ms for c in chunks):
         raise HTTPException(422, "A point is later than the requested trip end")
-    try:
-        from app.services.fuel_prediction import MAX_GPS_SAMPLES, predict_fuel
-        gps_count = sum(c.gps_count for c in chunks)
-        gps = None
-        if gps_count <= MAX_GPS_SAMPLES:
-            gps = []
-            rows = await db.stream_scalars(_gps_payload_query(trip.id))
-            try:
-                async for samples in rows:
-                    gps.extend(samples)
-            finally:
-                await rows.close()
-        # None deliberately invokes the service's invalid-input result for an
-        # oversized recording, without allocating its GPS or motion arrays.
-        estimate = await run_in_threadpool(predict_fuel, gps, trip.vehicle, trip.started_at_ms, body.ended_at_ms)
-        if not isinstance(estimate, dict):
-            raise ValueError("Fuel estimate must be an object")
-        if gps_count > MAX_GPS_SAMPLES:
-            estimate.setdefault("quality_flags", []).append("gps_sample_limit_exceeded")
-            estimate["gps_sample_counts"] = {"received": gps_count}
-        # Reject accidental non-serializable model output before touching the trip.
-        json.dumps(estimate, allow_nan=False)
-    except Exception:
-        logger.exception("Fuel estimate failed for recording %s; raw data retained", trip.id)
-        estimate = {"status": "model_unavailable", "estimated_fuel_l": None, "complete_trip_fuel_l": None, "quality_flags": ["prediction_failed"]}
+    # Preserve the response contract while the next model is researched.
+    estimate = {"status": "model_not_trained", "estimated_fuel_l": None,
+                "complete_trip_fuel_l": None, "quality_flags": []}
     trip.ended_at_ms, trip.end_reason = body.ended_at_ms, body.end_reason
     trip.status, trip.complete_hash = "completed", digest
     trip.control = body.control.model_dump(mode="json") if body.control else None

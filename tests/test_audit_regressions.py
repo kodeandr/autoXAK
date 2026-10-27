@@ -239,8 +239,8 @@ async def test_recording_chunks_completion_ownership_and_streaming_export(commit
     complete['chunk_count'] = 1
     result = await client.post(f'/api/v2/trips/{trip_id}/complete', json=complete)
     assert result.status_code == 200
-    assert result.json()['fuel_estimate']['status'] == 'research_estimate'
-    assert result.json()['fuel_estimate']['estimated_fuel_l'] > 0
+    assert result.json()['fuel_estimate']['status'] == 'model_not_trained'
+    assert result.json()['fuel_estimate']['estimated_fuel_l'] is None
     assert (await client.post(f'/api/v2/trips/{trip_id}/complete', json=complete)).json() == result.json()
     exported = await client.get(f'/api/v2/trips/{trip_id}/export')
     assert exported.status_code == 200
