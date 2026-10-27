@@ -9,8 +9,8 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* \
     && groupadd --gid 10001 autoxak \
     && useradd --uid 10001 --gid autoxak --no-create-home autoxak \
-    && mkdir -p /var/log/autoxak \
-    && chown autoxak:autoxak /var/log/autoxak
+    && mkdir -p /var/log/autoxak /var/lib/autoxak/ml \
+    && chown autoxak:autoxak /var/log/autoxak /var/lib/autoxak/ml
 COPY --from=builder /install /usr/local
 WORKDIR /app
 COPY --chown=autoxak:autoxak app ./app

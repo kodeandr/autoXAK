@@ -1,0 +1,11 @@
+FROM docker:28-cli@sha256:625d9431a9f54c5a2bc90f24f0e1c3d55b1349fd857dd85035f98c2c9acbdd4d AS docker_cli
+FROM python:3.12-slim@sha256:cb33f7f771ecec2ef1225cf39b159591a040391bd73e4c01f00fdfc4c47611d2
+COPY --from=docker_cli /usr/local/bin/docker /usr/local/bin/docker
+WORKDIR /app
+COPY app/__init__.py /app/app/__init__.py
+COPY app/services/__init__.py app/services/model_registry.py app/services/ml_runs.py app/services/ml_controller.py /app/app/services/
+RUN chmod 755 /app /app/app /app/app/services \
+    && chmod 644 /app/app/__init__.py /app/app/services/*.py
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+USER 10001:10001
+ENTRYPOINT ["python", "-m", "app.services.ml_controller"]
