@@ -52,12 +52,12 @@ const assert = require('node:assert/strict');
       {name: 'experiment.json', mimeType: 'application/json', buffer: Buffer.from('{"experiment":"not-trained"}')},
     ]);
     await page.getByRole('button', {name: 'Загрузить', exact: true}).click();
-    await page.waitForFunction(() => document.getElementById('status').textContent.includes('Комплект сохранён'));
-    let candidate = page.locator('article').filter({hasText: 'Проверка через браузер'});
+    await page.waitForFunction(() => document.getElementById('status').textContent.includes('Модель сохранена'));
+    let candidate = page.locator('#models article').filter({hasText: 'Проверка через браузер'});
     assert.equal(await candidate.count(), 1);
     assert.equal(await page.getByRole('button', {name: 'Применить', exact: true}).count(), 0);
     await page.reload();
-    candidate = page.locator('article').filter({hasText: 'Проверка через браузер'});
+    candidate = page.locator('#models article').filter({hasText: 'Проверка через браузер'});
     await candidate.waitFor();
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     page.once('dialog', dialog => dialog.accept());

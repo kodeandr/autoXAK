@@ -9,7 +9,7 @@ test_dir=/opt/autoxak-test
     exit 1
 }
 compose() {
-    ML_SOURCE_DIR="$source_dir" APP_IMAGE_TAG="$(git -C "$source_dir" rev-parse --short=12 HEAD)" \
+    ML_DOCKER_GID="$(stat -c %g /var/run/docker.sock)" ML_SOURCE_DIR="$source_dir" APP_IMAGE_TAG="$(git -C "$source_dir" rev-parse --short=12 HEAD)" \
     env -u SECRET_KEY -u POSTGRES_PASSWORD -u POSTGRES_VOLUME -u POSTGRES_VOLUME_EXTERNAL \
         -u APP_DOMAIN -u ACME_EMAIL -u COMPOSE_PROFILES -u DGIS_API_KEY \
         -u YANDEX_CLIENT_ID -u YANDEX_CLIENT_SECRET -u YANDEX_ID_SALT \
@@ -36,14 +36,17 @@ backup() {
 compose config --quiet
 case "${1:-help}" in
     start)
-        compose build api
+        docker_api="$(docker version --format '{{.Server.APIVersion}}')"
+        python3 -c 'import sys; assert tuple(map(int,sys.argv[1].split("."))) >= (1,45), "Docker Engine с API 1.45+ нужен для изоляции файлов моделей"' "$docker_api"
+        compose --profile ml-build build api ml_runtime ml_controller
         backup
         compose up -d --no-deps --no-build --wait --wait-timeout 180 api
+        compose up -d --no-deps --no-build --wait --wait-timeout 90 ml_controller
         compose ps
         ;;
     backup) backup ;;
     status) compose ps -a ;;
-    logs) compose logs --tail=80 api ;;
+    logs) compose logs --tail=80 api ml_controller ;;
     check) compose exec -T api python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/ready',timeout=5).read().decode())" ;;
     *) printf 'Usage: bash deploy/test_ml.sh {start|backup|status|logs|check}\n' ;;
 esac

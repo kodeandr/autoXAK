@@ -11,13 +11,14 @@
     header{display:flex;justify-content:space-between;align-items:center;gap:16px}a{color:#9bc9ff}
     h1{font-size:clamp(24px,5vw,36px);margin:24px 0 8px}h2{font-size:20px;margin-top:0}
     p{color:#b6c3d0}.panel,article{background:#1a222c;border:1px solid #344353;border-radius:16px;padding:24px;margin-top:24px}
-    label{display:block;margin:18px 0 6px}input,textarea{font:inherit;width:100%;border:1px solid #5a6a7b;border-radius:8px;background:#11161c;color:inherit;padding:12px}
+    label{display:block;margin:18px 0 6px}input,textarea,select{font:inherit;width:100%;border:1px solid #5a6a7b;border-radius:8px;background:#11161c;color:inherit;padding:12px}
     input[type=file]{padding:10px}textarea{resize:vertical}button{font:inherit;border:1px solid #60758a;border-radius:8px;padding:10px 16px;background:#263747;color:#f3f8fc;cursor:pointer}
     button.primary{background:#a8e268;color:#12200b;border-color:#a8e268;font-weight:650}button.danger{color:#ffb4ab}
     button:disabled{opacity:.5;cursor:default}button:focus-visible,a:focus-visible{outline:3px solid #a8e268;outline-offset:4px}
     .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:20px}.muted{font-size:14px;color:#b6c3d0}.badge{display:inline-block;background:#a8e268;color:#12200b;border-radius:20px;padding:3px 12px;font-size:13px;margin-bottom:8px}
     article h3{margin:0 0 4px;overflow-wrap:anywhere}article p{white-space:pre-wrap;overflow-wrap:anywhere;margin:8px 0}
     #status{white-space:pre-wrap;min-height:24px;margin-top:16px}#status.error{color:#ffb4ab}#file-status{white-space:pre-line}
+    .table-scroll{overflow:auto}table{border-collapse:collapse;width:100%;font-size:14px}th,td{text-align:left;padding:8px;border-bottom:1px solid #344353}pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px}select{max-width:100%}
     [hidden]{display:none!important}@media(max-width:540px){.panel,article{padding:18px}main{padding:20px 14px}header{align-items:flex-start}}
   </style>
 </head>
@@ -25,7 +26,7 @@
 <main>
   <header><strong>autoXAK · Тестовая среда</strong><a href="/">К приложению</a></header>
   <h1>Модели расхода</h1>
-  <p>Хранилище файлов для нового эксперимента. Прогноз расхода пока недоступен. Доступ по ссылке, без входа.</p>
+  <p>Загрузите модель, выберите данные и запустите проверку. Результаты эксперимента сохраняются отдельно от поездок. Доступ без входа.</p>
   <section class="panel" aria-labelledby="upload-title">
     <h2 id="upload-title">Новая версия</h2>
     <form id="upload-form">
@@ -33,16 +34,36 @@
       <label for="description">Что изменилось</label><textarea id="description" maxlength="2000" rows="2"></textarea>
       <label for="files">Файлы модели и описание эксперимента</label>
       <input id="files" type="file" multiple required aria-describedby="file-status">
-      <p class="muted" id="file-status">От 1 до 16 файлов, до 20 МиБ на комплект. Файлы сохраняются без запуска модели.</p>
+      <p class="muted" id="file-status">Один ZIP с predict.py и весами либо до 16 отдельных файлов. До 20 МиБ.</p>
       <button class="primary" type="submit">Загрузить</button>
     </form>
   </section>
   <div id="status" role="status" aria-live="polite"></div>
+  <section class="panel" aria-labelledby="run-title">
+    <h2 id="run-title">Проверить модель</h2>
+    <p class="muted">В пакете нужна функция predict_trip(recording) в predict.py. Формат весов задаёт ваш адаптер.</p>
+    <p class="muted"><a href="/api/v3/ml/example-package" download>Скачать синтетический пример пакета</a> · <button type="button" id="example-data">Взять пример данных</button></p>
+    <form id="run-form">
+      <label for="run-model">Модель</label><select id="run-model" required></select>
+      <label for="test-file">Тестовые данные JSON — одна поездка или список до 10 поездок</label>
+      <input type="file" id="test-file" accept=".json,application/json">
+      <label for="my-trip">Или поездка из истории этого браузера</label>
+      <select id="my-trip"><option value="">Выберите поездку или загрузите JSON</option></select>
+      <p id="data-source" class="muted">До 5 МиБ. Для оценки ошибки добавьте контрольные показания за тот же интервал.</p>
+      <p id="runner-status" class="muted">Проверяем вычислитель…</p>
+      <button class="primary" id="run-button" type="submit">Запустить тест</button>
+    </form>
+  </section>
+  <section class="panel" aria-labelledby="runs-title">
+    <h2 id="runs-title">Результаты проверок</h2>
+    <div id="runs" aria-live="polite"></div>
+  </section>
   <section aria-labelledby="versions-title">
-    <header><h2 id="versions-title">Загруженные комплекты</h2><button id="refresh" type="button">Обновить</button></header>
+    <header><h2 id="versions-title">Модели</h2><button id="refresh" type="button">Обновить</button></header>
     <div id="models" aria-busy="true"></div>
   </section>
 </main>
+<script src="/static/session.js" defer></script>
 <script src="/static/ml.js" defer></script>
 </body>
 </html>

@@ -1,4 +1,4 @@
-"""Anonymous test artifact storage; uploaded files are never loaded as models."""
+"""Model packages for the anonymous workbench; no execution in the API."""
 
 from contextlib import contextmanager
 from datetime import datetime, timezone
@@ -6,6 +6,9 @@ import base64
 import binascii
 import fcntl
 import hashlib
+import io
+import stat
+import zipfile
 import json
 import os
 from pathlib import Path
@@ -84,7 +87,7 @@ class Registry:
             Path(temporary).unlink(missing_ok=True)
 
     def directory(self, model_id):
-        if not re.fullmatch(r"[a-f0-9]{32}", model_id):
+        if not isinstance(model_id, str) or not re.fullmatch(r"[a-f0-9]{32}", model_id):
             raise RegistryError("Комплект не найден", 404)
         return self.root / model_id
 
@@ -101,7 +104,8 @@ class Registry:
                                   "sha256": hashlib.sha256(payload).hexdigest()})
         return {"id": row["id"], "name": row["name"], "description": row.get("description", ""),
                 "created_at": row["created_at"], "size_bytes": row["size_bytes"],
-                "files": files, "status": "stored"}
+                "files": files, "status": "stored",
+                "runnable": any(item["name"] == "predict.py" for item in files)}
 
     def listing(self):
         with self.lock():
@@ -126,6 +130,21 @@ class Registry:
         files = body.get("files")
         if not isinstance(files, dict) or not 1 <= len(files) <= MAX_FILES:
             raise RegistryError("Выберите от 1 до 16 файлов")
+        if len(files) == 1 and next(iter(files)).lower().endswith(".zip"):
+            try:
+                packed = base64.b64decode(next(iter(files.values())), validate=True)
+                with zipfile.ZipFile(io.BytesIO(packed)) as archive:
+                    members = archive.infolist()
+                    if (not 1 <= len(members) <= MAX_FILES
+                            or sum(item.file_size for item in members) > MAX_BUNDLE_BYTES
+                            or any(item.is_dir() or item.flag_bits & 1
+                                   or stat.S_ISLNK(item.external_attr >> 16)
+                                   or not FILENAME.fullmatch(item.filename) for item in members)
+                            or len({item.filename for item in members}) != len(members)):
+                        raise RegistryError("ZIP: до 16 файлов в корне, без каталогов/ссылок, до 20 МиБ")
+                    files = {item.filename: base64.b64encode(archive.read(item)).decode() for item in members}
+            except (ValueError, binascii.Error, zipfile.BadZipFile, RuntimeError, NotImplementedError) as error:
+                raise RegistryError("Повреждённый или неподдерживаемый ZIP-пакет") from error
         if any(not FILENAME.fullmatch(filename) for filename in files):
             raise RegistryError("Имена файлов: латинские буквы, цифры, точка, дефис и подчёркивание; до 120 символов")
         with self.lock():
@@ -164,7 +183,7 @@ class Registry:
                 except Exception:
                     shutil.rmtree(self.directory(model_id))
                     raise
-            return row
+            return self.public_row(row)
         finally:
             if temporary.exists():
                 shutil.rmtree(temporary)

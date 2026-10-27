@@ -13,6 +13,49 @@ services:
     volumes:
       - ml_store:/var/lib/autoxak/ml
 
+  ml_runtime:
+    profiles: ["ml-build"]
+    image: autoxak-ml-runtime:${APP_IMAGE_TAG:-local}
+    build:
+      context: ${ML_SOURCE_DIR:?Set ML_SOURCE_DIR}
+      dockerfile: deploy/Dockerfile.ml-runtime
+
+  ml_controller:
+    image: autoxak-ml-controller:${APP_IMAGE_TAG:-local}
+    build:
+      context: ${ML_SOURCE_DIR:?Set ML_SOURCE_DIR}
+      dockerfile: deploy/Dockerfile.ml-controller
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import json,time; d=json.load(open('/var/lib/autoxak/ml/runner.json')); assert d['ready'] and time.time()-d['updated_at']<10"]
+      interval: 5s
+      timeout: 3s
+      start_period: 10s
+      retries: 12
+    network_mode: none
+    group_add:
+      - ${ML_DOCKER_GID:?Set the Docker socket group}
+    environment:
+      ML_STORAGE_DIR: /var/lib/autoxak/ml
+      ML_STORAGE_VOLUME: autoxak-test_ml
+      ML_RUN_IMAGE: autoxak-ml-runtime:${APP_IMAGE_TAG:-local}
+    volumes:
+      - ml_store:/var/lib/autoxak/ml
+      - /var/run/docker.sock:/var/run/docker.sock
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=16m
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 128m
+    cpus: 0.25
+    pids_limit: 64
+    logging:
+      driver: local
+      options:
+        max-size: "5m"
+        max-file: "2"
+
 volumes:
   ml_store:
     name: autoxak-test_ml
