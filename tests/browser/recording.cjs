@@ -57,7 +57,11 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
             const id=await page.evaluate(()=>lastFinishedSessionId);
             const response=await page.request.get(`${base}/api/v2/trips/${id}/export`,{headers:identity.headers});
             assert.equal(response.status(),200,await response.text());
-            return response.json();
+            const data=await response.json();
+            assert.equal(data.fuel_estimate.status,'model_not_trained');
+            assert.equal(data.fuel_estimate.estimated_fuel_l,null);
+            assert.equal(data.fuel_estimate.complete_trip_fuel_l,null);
+            return data;
         }
         async function closeSummary() {
             await page.evaluate(()=>document.getElementById('summary-modal').classList.remove('active'));
