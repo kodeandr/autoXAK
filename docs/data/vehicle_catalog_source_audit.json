@@ -1,0 +1,63 @@
+{
+  "checked_on": "2026-10-27",
+  "target_market": "Russia including used vehicles and parallel imports",
+  "scope": "Repository and public source audit; not a query of production PostgreSQL",
+  "repository_seed": {
+    "file": "seed_fleet.py",
+    "makes": 5,
+    "models": 5,
+    "variants": 9,
+    "has_generations": false,
+    "has_years": false,
+    "has_engine_codes": false,
+    "has_field_provenance": false,
+    "nominal_service_hours_250_variants": 9
+  },
+  "production_catalog_access": {
+    "status": "unavailable_from_cloud",
+    "reason": "HTTPS CONNECT denied by cloud proxy (403), not evidence of application failure"
+  },
+  "planning": {
+    "file": "docs/data/vehicle_catalog_priorities.csv",
+    "rows": 207,
+    "makes": 47,
+    "priorities": {
+      "P0": 6,
+      "P1": 80,
+      "P2": 65,
+      "P3": 56
+    },
+    "classification": "Expert working shortlist, not measured fleet ranking or importable variant data"
+  },
+  "inspected_candidates": [
+    {
+      "repo": "https://github.com/blanzh/carsBase",
+      "commit": "62b0427245dfb944caf03509d84391c5af20b1ae",
+      "file": "cars.json",
+      "sha256": "91da1886a11295abda0b18b22d03bca2bf9c5381bae76163b6db4cd89ce11980",
+      "bytes": 1428028,
+      "make_rows": 426,
+      "model_rows": 4952,
+      "duplicate_model_ids": 0,
+      "latest_model_row_updated_at": "2026-10-08 20:25:26",
+      "has_variants": false,
+      "license_observation": "README describes free dataset; no LICENSE file in inspected root. Commercial redistribution/storage terms not established by this audit.",
+      "approved_for_production_import": false
+    },
+    {
+      "repo": "https://github.com/abhionlyone/us-car-models-data",
+      "commit": "79018e2dbcc03899bf3434d959b445644fb49b76",
+      "license": "CC BY 4.0; attribution required",
+      "readme_observation": "US market; free snapshot no longer updated, paid offering advertised.",
+      "sample_2026_rows": 3,
+      "sample_fields": [
+        "year",
+        "make",
+        "model",
+        "body_styles"
+      ],
+      "limitations": "Basic taxonomy, not a verified Russian-market modification catalogue",
+      "approved_for_production_import": false
+    }
+  ]
+}
