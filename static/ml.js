@@ -1,6 +1,6 @@
 'use strict';
 (() => {
-  const expected = ['catboost_direct.cbm', 'catboost_residual.cbm', 'model_card.json', 'provenance.json'];
+  const hint = 'От 1 до 16 файлов, до 20 МиБ на комплект. Файлы сохраняются без запуска модели.';
   const form = document.getElementById('upload-form');
   const status = document.getElementById('status');
   const container = document.getElementById('models');
@@ -36,37 +36,23 @@
     try {
       const data = await api();
       container.replaceChildren();
+      if (!data.models.length) container.append(element('p', 'Комплектов пока нет. Загрузите файлы первого эксперимента.'));
       for (const row of data.models) {
-        const active = row.id === data.active_model_id;
         const card = document.createElement('article');
-        if (active) card.append(element('span', 'Применяется', 'badge'));
         card.append(element('h3', row.name), element('p', row.description));
-        card.append(element('p', `Версия: ${row.model_version} · ${(row.size_bytes / 1024).toFixed(0)} КиБ`, 'muted'));
+        card.append(element('p', `${row.files.length} файлов · ${(row.size_bytes / 1024).toFixed(0)} КиБ · Сохранён`, 'muted'));
+        card.append(element('p', row.files.map(file => file.name).join(', '), 'muted'));
         if (row.created_at) card.append(element('p', `Загружена: ${new Date(row.created_at).toLocaleString('ru-RU')}`, 'muted'));
         const actions = element('div', '', 'actions');
-        const activate = element('button', row.builtin ? 'Вернуться к встроенной' : 'Применить');
-        activate.type = 'button';
-        activate.disabled = active;
-        activate.dataset.unavailable = String(active);
-        activate.addEventListener('click', () => action(async () => {
-          await api(`/${row.id}/activate`, {method: 'POST'});
-          message(`Применяется модель «${row.name}». Старые результаты сохранены.`);
-        }));
-        actions.append(activate);
-        if (!row.builtin) {
-          const remove = element('button', 'Удалить', 'danger');
-          remove.type = 'button';
-          remove.disabled = active;
-          remove.dataset.unavailable = String(active);
-          if (active) remove.title = 'Сначала примените другую модель';
-          remove.addEventListener('click', () => {
-            if (confirm(`Удалить модель «${row.name}»?`)) action(async () => {
-              await api(`/${row.id}`, {method: 'DELETE'});
-              message('Модель удалена.');
-            });
+        const remove = element('button', 'Удалить', 'danger');
+        remove.type = 'button';
+        remove.addEventListener('click', () => {
+          if (confirm(`Удалить комплект «${row.name}»?`)) action(async () => {
+            await api(`/${row.id}`, {method: 'DELETE'});
+            message('Комплект удалён.');
           });
-          actions.append(remove);
-        }
+        });
+        actions.append(remove);
         card.append(actions);
         container.append(card);
       }
@@ -83,17 +69,17 @@
   }
   document.getElementById('files').addEventListener('change', event => {
     const names = Array.from(event.target.files, file => file.name);
-    document.getElementById('file-status').textContent = expected.map(name => `${names.includes(name) ? '✓' : '○'} ${name}`).join('\n');
+    document.getElementById('file-status').textContent = names.length ? names.join('\n') : hint;
   });
   form.addEventListener('submit', event => {
     event.preventDefault();
     action(async () => {
       const files = Array.from(document.getElementById('files').files);
-      if (files.length !== 4 || new Set(files.map(file => file.name)).size !== 4 || files.some(file => !expected.includes(file.name))) {
-        throw new Error('Выберите ровно четыре файла с указанными именами.');
+      if (!files.length || files.length > 16 || new Set(files.map(file => file.name)).size !== files.length) {
+        throw new Error('Выберите от 1 до 16 файлов с разными именами.');
       }
       if (files.reduce((sum, file) => sum + file.size, 0) > 20 * 1024 * 1024) throw new Error('Комплект превышает 20 МиБ.');
-      message('Файлы загружаются и проверяются. Это может занять до 30 секунд…');
+      message('Файлы загружаются…');
       const encoded = {};
       for (const file of files) {
         const bytes = new Uint8Array(await file.arrayBuffer());
@@ -105,8 +91,8 @@
         name: document.getElementById('name').value.trim(), description: document.getElementById('description').value, files: encoded,
       })});
       form.reset();
-      document.getElementById('file-status').textContent = expected.join(', ') + '. До 20 МиБ на комплект.';
-      message('Комплект проверен и сохранён. Нажмите «Применить», чтобы использовать его в тестовой среде.');
+      document.getElementById('file-status').textContent = hint;
+      message('Комплект сохранён. Прогноз расхода остаётся недоступен до нового эксперимента.');
     });
   });
   document.getElementById('refresh').addEventListener('click', () => action(async () => {}));

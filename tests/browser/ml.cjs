@@ -17,7 +17,8 @@ const assert = require('node:assert/strict');
   const base = `http://127.0.0.1:${port}`;
   const code = [
     'from fastapi import FastAPI', 'from fastapi.staticfiles import StaticFiles',
-    'from app.api.ml import router', 'import uvicorn',
+    'from app.api.ml import router', 'import uvicorn', 'import importlib.util',
+    'assert importlib.util.find_spec("catboost") is None',
     'app=FastAPI()', 'app.include_router(router)',
     'app.mount("/static", StaticFiles(directory="static"), name="static")',
     `uvicorn.run(app,host="127.0.0.1",port=${port},log_level="warning")`,
@@ -44,28 +45,26 @@ const assert = require('node:assert/strict');
     const errors = [];
     page.on('pageerror', error => errors.push(error.message));
     await page.goto(base + '/ml');
-    await page.waitForSelector('article');
+    await page.waitForFunction(() => document.getElementById('models').textContent.includes('Комплектов пока нет'));
     await page.locator('#name').fill('Проверка через браузер');
-    await page.locator('#files').setInputFiles(['catboost_direct.cbm', 'catboost_residual.cbm',
-      'model_card.json', 'provenance.json'].map(name => path.join(root, 'app/ml/artifacts', name)));
-    await page.getByRole('button', {name: 'Загрузить и проверить'}).click();
-    await page.waitForFunction(() => document.getElementById('status').textContent.includes('Комплект проверен'));
+    await page.locator('#files').setInputFiles([
+      {name: 'future-model.bin', mimeType: 'application/octet-stream', buffer: Buffer.from([1, 2, 3, 4])},
+      {name: 'experiment.json', mimeType: 'application/json', buffer: Buffer.from('{"experiment":"not-trained"}')},
+    ]);
+    await page.getByRole('button', {name: 'Загрузить', exact: true}).click();
+    await page.waitForFunction(() => document.getElementById('status').textContent.includes('Комплект сохранён'));
     let candidate = page.locator('article').filter({hasText: 'Проверка через браузер'});
     assert.equal(await candidate.count(), 1);
-    await candidate.getByRole('button', {name: 'Применить', exact: true}).click();
-    await candidate.locator('.badge').waitFor();
-    assert(await candidate.getByRole('button', {name: 'Удалить'}).isDisabled());
+    assert.equal(await page.getByRole('button', {name: 'Применить', exact: true}).count(), 0);
     await page.reload();
     candidate = page.locator('article').filter({hasText: 'Проверка через браузер'});
-    await candidate.locator('.badge').waitFor();
+    await candidate.waitFor();
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-    await page.getByRole('button', {name: 'Вернуться к встроенной'}).click();
-    await page.locator('article').filter({hasText: 'Встроенная модель'}).locator('.badge').waitFor();
     page.once('dialog', dialog => dialog.accept());
     await candidate.getByRole('button', {name: 'Удалить'}).click();
     await page.waitForFunction(() => !document.querySelector('#models').textContent.includes('Проверка через браузер'));
     assert.deepEqual(errors, []);
-    console.log('Browser: anonymous upload, apply, persistence, rollback, delete and mobile layout passed.');
+    console.log('Browser: anonymous artifact upload, persistence, delete and mobile layout passed without CatBoost or activation.');
   } finally {
     if (browser) await browser.close();
     server.kill('SIGTERM');

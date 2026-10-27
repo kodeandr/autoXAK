@@ -1,29 +1,43 @@
-"""Persistent, atomic model registry for the explicitly enabled test environment."""
+"""Anonymous test artifact storage; uploaded files are never loaded as models."""
 
 from contextlib import contextmanager
 from datetime import datetime, timezone
 import base64
 import binascii
 import fcntl
+import hashlib
 import json
 import os
 from pathlib import Path
 import re
 import shutil
-import subprocess
-import sys
 import tempfile
 import uuid
 
-from app.ml.bundle import FILES, MAX_BUNDLE_BYTES, metadata
-
+MAX_BUNDLE_BYTES = 20 * 1024 * 1024
 MAX_MODELS = 10
 MAX_STORAGE_BYTES = 100 * 1024 * 1024
-BUILTIN = Path(__file__).resolve().parents[1] / "ml" / "artifacts"
+MAX_FILES = 16
+FILENAME = re.compile(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,119}")
 
 
 def enabled():
     return os.getenv("APP_ENV") == "test" and os.getenv("ML_UPLOAD_ENABLED", "false").lower() == "true"
+
+
+def strict_json(payload):
+    def pairs(items):
+        result = {}
+        for key, value in items:
+            if key in result:
+                raise ValueError("Повторяющееся поле JSON")
+            result[key] = value
+        return result
+
+    def invalid(_):
+        raise ValueError("JSON содержит неконечное число")
+
+    return json.loads(payload, object_pairs_hook=pairs, parse_constant=invalid)
 
 
 class RegistryError(ValueError):
@@ -52,8 +66,11 @@ class Registry:
     def read(self):
         path = self.root / "registry.json"
         if not path.exists():
-            return {"active": "builtin", "models": {}}
-        return json.loads(path.read_text())
+            return {"models": {}}
+        state = json.loads(path.read_text())
+        # An older registry may contain an active pointer. It is deliberately
+        # ignored: no uploaded artifact can enable retired fuel inference.
+        return {"models": state["models"]}
 
     def write(self, state):
         fd, temporary = tempfile.mkstemp(dir=self.root, prefix=".registry-")
@@ -67,24 +84,35 @@ class Registry:
             Path(temporary).unlink(missing_ok=True)
 
     def directory(self, model_id):
-        if model_id == "builtin":
-            return BUILTIN
         if not re.fullmatch(r"[a-f0-9]{32}", model_id):
-            raise RegistryError("Модель не найдена", 404)
+            raise RegistryError("Комплект не найден", 404)
         return self.root / model_id
+
+    def public_row(self, row):
+        files = row.get("files")
+        if files is None:
+            # Preserve older uploads as research files, without importing their
+            # libraries, interpreting weights or retaining activation controls.
+            files = []
+            for path in sorted(self.directory(row["id"]).iterdir()):
+                if path.is_file() and FILENAME.fullmatch(path.name):
+                    payload = path.read_bytes()
+                    files.append({"name": path.name, "size_bytes": len(payload),
+                                  "sha256": hashlib.sha256(payload).hexdigest()})
+        return {"id": row["id"], "name": row["name"], "description": row.get("description", ""),
+                "created_at": row["created_at"], "size_bytes": row["size_bytes"],
+                "files": files, "status": "stored"}
 
     def listing(self):
         with self.lock():
             state = self.read()
-            _, info = metadata(BUILTIN)
-            builtin = {"id": "builtin", "name": "Встроенная модель", "description": "Исходный комплект приложения",
-                       "created_at": None, "builtin": True, **info}
-            rows = [builtin] + sorted(state["models"].values(), key=lambda row: row["created_at"], reverse=True)
-            return {"active_model_id": state["active"], "models": rows,
-                    "max_bundle_bytes": MAX_BUNDLE_BYTES, "max_models": MAX_MODELS}
+            rows = sorted(state["models"].values(), key=lambda row: row["created_at"], reverse=True)
+            return {"models": [self.public_row(row) for row in rows],
+                    "inference_status": "model_not_trained", "max_bundle_bytes": MAX_BUNDLE_BYTES,
+                    "max_models": MAX_MODELS, "max_files": MAX_FILES}
 
     def import_bundle(self, body):
-        with self.lock("validation", blocking=False):
+        with self.lock("store", blocking=False):
             return self._import_bundle(body)
 
     def _import_bundle(self, body):
@@ -96,17 +124,19 @@ class Registry:
         if not isinstance(description, str) or len(description) > 2000:
             raise RegistryError("Описание: не более 2000 символов")
         files = body.get("files")
-        if not isinstance(files, dict) or set(files) != FILES:
-            raise RegistryError("Выберите два CBM, model_card.json и provenance.json")
+        if not isinstance(files, dict) or not 1 <= len(files) <= MAX_FILES:
+            raise RegistryError("Выберите от 1 до 16 файлов")
+        if any(not FILENAME.fullmatch(filename) for filename in files):
+            raise RegistryError("Имена файлов: латинские буквы, цифры, точка, дефис и подчёркивание; до 120 символов")
         with self.lock():
             state = self.read()
             if len(state["models"]) >= MAX_MODELS:
-                raise RegistryError("Достигнут лимит 10 версий. Удалите ненужные.", 409)
+                raise RegistryError("Достигнут лимит 10 комплектов. Удалите ненужные.", 409)
             stored = sum(row["size_bytes"] for row in state["models"].values())
         model_id = uuid.uuid4().hex
         temporary = Path(tempfile.mkdtemp(prefix=".upload-", dir=self.root))
         try:
-            total = 0
+            total, manifest = 0, []
             for filename, encoded in files.items():
                 if not isinstance(encoded, str):
                     raise RegistryError("Некорректное содержимое файла")
@@ -114,27 +144,17 @@ class Registry:
                     payload = base64.b64decode(encoded, validate=True)
                 except (binascii.Error, ValueError) as error:
                     raise RegistryError("Повреждённая загрузка файла") from error
+                if not payload:
+                    raise RegistryError("Пустые файлы не принимаются")
                 total += len(payload)
                 if total > MAX_BUNDLE_BYTES or stored + total > MAX_STORAGE_BYTES:
                     raise RegistryError("Превышен лимит размера загрузки или хранилища", 413)
                 (temporary / filename).write_bytes(payload)
-            try:
-                _, info = metadata(temporary)
-            except (ValueError, KeyError, TypeError, OSError, RecursionError) as error:
-                raise RegistryError(str(error)) from error
-            worker = Path(__file__).resolve().parents[1] / "ml" / "validate_bundle.py"
-            environment = {"PATH": os.defpath, "OPENBLAS_NUM_THREADS": "1", "OMP_NUM_THREADS": "1",
-                           "MKL_NUM_THREADS": "1", "PYTHONDONTWRITEBYTECODE": "1"}
-            try:
-                check = subprocess.run([sys.executable, "-I", "-B", str(worker), str(temporary)],
-                                       env=environment, cwd=temporary, capture_output=True, timeout=30)
-            except subprocess.TimeoutExpired as error:
-                raise RegistryError("Проверка модели превысила 30 секунд") from error
-            if check.returncode != 0:
-                raise RegistryError("CBM не прошёл проверку загрузки, признаков, памяти или пробного расчёта")
+                manifest.append({"name": filename, "size_bytes": len(payload),
+                                 "sha256": hashlib.sha256(payload).hexdigest()})
             row = {"id": model_id, "name": name.strip(), "description": description,
-                   "created_at": datetime.now(timezone.utc).isoformat(), "builtin": False,
-                   "validation": {"probe_rows": 3, "finite_predictions": True}, **info}
+                   "created_at": datetime.now(timezone.utc).isoformat(), "size_bytes": total,
+                   "files": sorted(manifest, key=lambda item: item["name"]), "status": "stored"}
             with self.lock():
                 state = self.read()
                 os.replace(temporary, self.directory(model_id))
@@ -149,44 +169,12 @@ class Registry:
             if temporary.exists():
                 shutil.rmtree(temporary)
 
-    def activate(self, model_id):
-        from app.services.fuel_prediction import _load_artifacts
-
-        with self.lock():
-            state = self.read()
-            if model_id != "builtin" and model_id not in state["models"]:
-                raise RegistryError("Модель не найдена", 404)
-            try:
-                _load_artifacts(str(self.directory(model_id)))
-            except Exception as error:
-                raise RegistryError("Модель не удалось загрузить. Прежняя версия сохранена.") from error
-            state["active"] = model_id
-            self.write(state)
-        return {"active_model_id": model_id}
-
     def delete(self, model_id):
         self.directory(model_id)
         with self.lock():
             state = self.read()
-            if model_id == "builtin":
-                raise RegistryError("Встроенная модель нужна для возврата и не удаляется", 409)
             if model_id not in state["models"]:
-                raise RegistryError("Модель не найдена", 404)
-            if state["active"] == model_id:
-                raise RegistryError("Сначала примените другую модель или вернитесь к встроенной", 409)
-            # Persist deletion first: new requests cannot select files about to be removed.
+                raise RegistryError("Комплект не найден", 404)
             del state["models"][model_id]
             self.write(state)
             shutil.rmtree(self.directory(model_id))
-
-
-def active_artifacts(loader):
-    # Hold the same lock as delete until native models are fully loaded into memory.
-    registry = Registry()
-    with registry.lock():
-        state = registry.read()
-        model_id = state["active"]
-        if model_id != "builtin" and model_id not in state["models"]:
-            raise ValueError("Active model is missing")
-        card, models, info = loader(str(registry.directory(model_id)))
-        return card, models, {**info, "model_bundle_id": model_id}

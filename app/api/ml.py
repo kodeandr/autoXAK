@@ -7,8 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 
-from app.ml.bundle import strict_json
-from app.services.model_registry import Registry, RegistryError, enabled
+from app.services.model_registry import Registry, RegistryError, enabled, strict_json
 
 MAX_REQUEST_BYTES = 28 * 1024 * 1024
 router = APIRouter()
@@ -65,14 +64,6 @@ async def upload(request: Request):
                 raise HTTPException(422, "Некорректный JSON загрузки") from error
             del data
             return await run_in_threadpool(registry.import_bundle, body)
-    except RegistryError as error:
-        raise HTTPException(error.status, str(error)) from error
-
-
-@router.post("/api/v3/ml/models/{model_id}/activate", dependencies=[Depends(mutation)])
-def activate(model_id: str):
-    try:
-        return Registry().activate(model_id)
     except RegistryError as error:
         raise HTTPException(error.status, str(error)) from error
 

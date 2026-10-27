@@ -25,21 +25,21 @@
 <main>
   <header><strong>autoXAK · Тестовая среда</strong><a href="/">К приложению</a></header>
   <h1>Модели расхода</h1>
-  <p>Загрузите комплект, проверьте совместимость и выберите модель для новых расчётов. Доступ по ссылке, без входа.</p>
+  <p>Хранилище файлов для нового эксперимента. Прогноз расхода пока недоступен. Доступ по ссылке, без входа.</p>
   <section class="panel" aria-labelledby="upload-title">
     <h2 id="upload-title">Новая версия</h2>
     <form id="upload-form">
       <label for="name">Название</label><input id="name" required maxlength="100" placeholder="Например, бензин · версия 2">
       <label for="description">Что изменилось</label><textarea id="description" maxlength="2000" rows="2"></textarea>
-      <label for="files">Четыре файла модели</label>
-      <input id="files" type="file" multiple required accept=".cbm,.json" aria-describedby="file-status">
-      <p class="muted" id="file-status">catboost_direct.cbm, catboost_residual.cbm, model_card.json, provenance.json. До 20 МиБ на комплект.</p>
-      <button class="primary" type="submit">Загрузить и проверить</button>
+      <label for="files">Файлы модели и описание эксперимента</label>
+      <input id="files" type="file" multiple required aria-describedby="file-status">
+      <p class="muted" id="file-status">От 1 до 16 файлов, до 20 МиБ на комплект. Файлы сохраняются без запуска модели.</p>
+      <button class="primary" type="submit">Загрузить</button>
     </form>
   </section>
   <div id="status" role="status" aria-live="polite"></div>
   <section aria-labelledby="versions-title">
-    <header><h2 id="versions-title">Версии моделей</h2><button id="refresh" type="button">Обновить</button></header>
+    <header><h2 id="versions-title">Загруженные комплекты</h2><button id="refresh" type="button">Обновить</button></header>
     <div id="models" aria-busy="true"></div>
   </section>
 </main>

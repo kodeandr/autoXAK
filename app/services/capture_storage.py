@@ -65,7 +65,8 @@ async def store_raw_capture(db, payload, trip_id, digest, vehicle, quality):
                               ended_at_ms=raw.ended_at_ms, status="completed", end_reason=raw.end_reason,
                               vehicle=vehicle, device=raw.device.model_dump(mode="json"),
                               create_hash=digest, complete_hash=digest,
-                              fuel_estimate={"status": "not_calculated", "estimated_fuel_l": None,
+                              fuel_estimate={"status": "model_not_trained", "estimated_fuel_l": None,
+                                             "complete_trip_fuel_l": None,
                                              "quality_flags": quality["quality_flags"], "capture_quality": quality})
     db.add(recording)
     await db.flush()

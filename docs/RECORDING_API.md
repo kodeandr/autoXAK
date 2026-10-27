@@ -27,14 +27,14 @@ database user. New tables are additive: `recording_vehicles`, `trip_recordings`,
    including stops, is an explicit assumption, not a detected fact.
 6. `GET /api/v2/trips` lists this owner's recordings with `limit` (1..200,
    default 50) and `offset`. GET `/trips/{trip_id}` returns saved metadata and
-   estimate. GET `/trips/{trip_id}/export` downloads full raw `gps` and `motion`
-   arrays, immutable vehicle/device snapshot, control, model result, point counts,
+   fuel-estimate status. GET `/trips/{trip_id}/export` downloads full raw `gps` and `motion`
+   arrays, immutable vehicle/device snapshot, control, saved fuel-estimate status, point counts,
    and a chunk manifest (sequence, SHA-256, GPS/motion counts).
 
 Trip creation, chunk upload and completion are idempotent for an identical
 validated request. Reusing an ID/sequence with different contents is 409.
 Completion requires exactly sequences `0..chunk_count-1` and rejects missing or
-extra chunks with 409. Repeated completion returns the stored model result and
+extra chunks with 409. Repeated completion returns the stored result and
 never adds totals twice. Completed trips cannot accept new chunks; identical old
 chunk retries are accepted. Writes serialize on the trip row (a database write
 lock also works in SQLite). Profiles are frozen at trip creation. Updating the
@@ -47,8 +47,8 @@ required. Optional fields: `make`, `model`, `year`, `transmission`, `mass_kg`,
 `displacement_l`, `turbo` (boolean or null). `fuel_type` is `gasoline`, `diesel`
 or `unknown`. Unknown values stay null/unknown; no default physical mass or
 engine is invented. Recording is allowed with incomplete or unsupported
-profiles, but the prediction service can return no estimate. The model's
-admissible vehicle range is narrower than the recording schema's storage range.
+profiles. Fuel inference is unavailable until a new model has been trained
+and evaluated; recording does not require such a model.
 
 Device metadata has optional `app_version`, `user_agent`, `placement` strings.
 
@@ -81,12 +81,23 @@ zero or bridge network/measurement gaps with invented points.
 
 ## Model and manual checks
 
-Completion calls the packaged synchronous fuel service in a worker thread and
-persists `fuel_estimate`. Inference failure preserves raw data and completes the
-trip with `model_unavailable`, null litres and an explicit quality flag. No fuel
-savings or oil metrics are synthesized. `savings_status` is always `unavailable`
-until a separately validated virtual driving scenario exists. Partial-coverage
-litres must not be labeled as the complete-trip consumption.
+Completion persists raw data, timestamps, status and optional control measurements.
+Fuel estimation is temporarily unavailable pending a new experiment. For new
+completed trips, `fuel_estimate` is:
+
+```json
+{"status":"model_not_trained","estimated_fuel_l":null,"complete_trip_fuel_l":null,"quality_flags":[]}
+```
+
+The browser currently submits whole trips through `POST /api/v1/telemetry/session`
+with `raw_recording`, after saving drafts in IndexedDB every five seconds and
+queuing finished trips. The separate chunked v2 API remains available but is not
+the browser's current upload path. Both paths retain raw GPS/IMU, profile, quality
+and export. The v1 stored fuel status also includes capture-quality metadata.
+No inferred zero litres, fuel savings or oil metrics are synthesized.
+`savings_status` remains `unavailable`. Existing historical results and retry
+identities are preserved; this change does not recalculate stored trips or require
+an alteration of the nullable JSON `trip_recordings.fuel_estimate` column.
 
 Optional `control` is `{distance_km, average_l_per_100km, source, same_interval}`.
 Source is `trip_computer`, `obd` or `fillup`. Values must refer to the same start/
@@ -94,7 +105,7 @@ end interval to serve as an appropriate validation target; `same_interval:false`
 is retained but must be excluded from that validation. These measurements are
 kept separate from prediction inputs. After completion, use
 `PUT /trips/{trip_id}/control` to add or correct the measurement. This does not
-rerun the prediction or change the original completion idempotency key.
+calculate fuel or change the original completion idempotency key.
 
 The API stores GPS coordinates and raw sensor data. Deployment uses the existing
 authenticated owner access; serving the application and this API over HTTPS is

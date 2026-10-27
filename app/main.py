@@ -565,26 +565,6 @@ async def _calculate_session_values(payload, db, user, *, max_gap_seconds=2.0):
         None,
         max_gap_seconds=max_gap_seconds,
     )
-    if payload.raw_recording is not None:
-        from app.models.recordings import RecordingVehicle
-        from app.services.fuel_prediction import predict_fuel
-
-        vehicle = await db.get(RecordingVehicle, user.id)
-        research_profile = (
-            vehicle.profile
-            if vehicle is not None
-            and vehicle.profile.get("vehicle_id") == payload.car_id
-            else {}
-        )
-        raw = payload.raw_recording
-        # Research inference is separate from reference fuel observations and credits.
-        values["math_status"]["research_fuel_estimate"] = await run_in_threadpool(
-            predict_fuel,
-            [point.model_dump(mode="json") for point in raw.gps],
-            research_profile,
-            raw.started_at_ms,
-            raw.ended_at_ms,
-        )
     return values
 
 

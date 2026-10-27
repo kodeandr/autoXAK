@@ -1,20 +1,19 @@
-"""Model management is DB-independent; tests also run with --confcutdir=tests/ml."""
+"""Anonymous file storage stays independent of any trained-model implementation."""
 
 import base64
 from concurrent.futures import ThreadPoolExecutor
+import hashlib
 import json
-import subprocess
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 import pytest
 
 from app.api.ml import router
-from app.ml.bundle import FILES
-from app.services import fuel_prediction
-from app.services.model_registry import BUILTIN, Registry, RegistryError
+from app.services.model_registry import Registry
 
 HEADERS = {"X-Model-Manager": "1"}
+PAYLOADS = {"future-model.bin": bytes(range(256)), "experiment.json": b'{"experiment":"new"}'}
 
 
 @pytest.fixture
@@ -22,202 +21,134 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("APP_ENV", "test")
     monkeypatch.setenv("ML_UPLOAD_ENABLED", "true")
     monkeypatch.setenv("ML_STORAGE_DIR", str(tmp_path / "models"))
-    clear_cache = fuel_prediction._load_artifacts.cache_clear
-    clear_cache()
     app = FastAPI()
     app.include_router(router)
     with TestClient(app) as client:
         yield client
-    clear_cache()
 
 
-def bundle(version="candidate-v2", selected="hybrid"):
-    files = {name: (BUILTIN / name).read_bytes() for name in FILES}
-    provenance = json.loads(files["provenance.json"])
-    provenance.update(model_version=version, selected_model=selected)
-    files["provenance.json"] = json.dumps(provenance).encode()
-    return {"name": "Новая модель", "description": "Проверка", "files": {
-        name: base64.b64encode(content).decode() for name, content in files.items()
+def bundle():
+    return {"name": "Новый эксперимент", "description": "Алгоритм ещё не выбран", "files": {
+        name: base64.b64encode(content).decode() for name, content in PAYLOADS.items()
     }}
 
 
-def upload(client, **kwargs):
-    response = client.post("/api/v3/ml/models", headers=HEADERS, json=bundle(**kwargs))
+def upload(client):
+    response = client.post('/api/v3/ml/models', headers=HEADERS, json=bundle())
     assert response.status_code == 201, response.text
     return response.json()
 
 
-def trip():
-    start = 1_000_000
-    gps = [{"timestamp_ms": start + i * 1000, "speed_mps": 10., "accuracy_m": 5., "speed_source": "gps"}
-           for i in range(61)]
-    profile = {"fuel_type": "gasoline", "mass_kg": 1500., "displacement_l": 2., "turbo": True}
-    return gps, profile, start, start + 60_000
+def test_anonymous_upload_persistence_hashes_and_delete_without_inference(client):
+    assert client.get('/ml').status_code == 200
+    before = client.get('/api/v3/ml/models')
+    assert before.headers['cache-control'] == 'no-store'
+    assert before.json()['models'] == []
+    assert before.json()['inference_status'] == 'model_not_trained'
+    row = upload(client)
+    assert row['status'] == 'stored'
+    for file in row['files']:
+        assert (Registry().directory(row['id']) / file['name']).read_bytes() == PAYLOADS[file['name']]
+        assert file['sha256'] == hashlib.sha256(PAYLOADS[file['name']]).hexdigest()
+    listing = Registry().listing()  # A new instance reads persistent state.
+    assert listing['models'] == [row]
+    assert listing['inference_status'] == 'model_not_trained'
+    assert 'active_model_id' not in listing
+    assert client.post(f'/api/v3/ml/models/{row["id"]}/activate', headers=HEADERS).status_code == 404
+    assert client.delete(f'/api/v3/ml/models/{row["id"]}', headers=HEADERS).status_code == 204
+    assert not Registry().directory(row['id']).exists()
+    assert Registry().listing()['models'] == []
 
 
-def test_anonymous_lifecycle_persistence_and_actual_inference(client):
-    # No Authorization header, account, password or database fixture.
-    assert client.get("/ml").status_code == 200
-    initial = client.get("/api/v3/ml/models")
-    assert initial.headers["cache-control"] == "no-store"
-    assert initial.json()["active_model_id"] == "builtin"
-    baseline = fuel_prediction.predict_fuel(*trip())
-    assert baseline["status"] == "research_estimate"
-    candidate = upload(client, selected="physics")
-    assert Registry().listing()["active_model_id"] == "builtin"
-    assert Registry().listing()["models"][1]["model_version"] == "candidate-v2"
-    mid = candidate["id"]
-    assert client.post(f"/api/v3/ml/models/{mid}/activate", headers=HEADERS).status_code == 200
-    # New registry object + empty inference cache simulates API process recreation.
-    fuel_prediction._load_artifacts.cache_clear()
-    assert Registry().listing()["active_model_id"] == mid
-    prediction = fuel_prediction.predict_fuel(*trip())
-    assert prediction["status"] == "research_estimate"
-    assert prediction["model_version"] == "candidate-v2"
-    assert prediction["model_bundle_id"] == mid
-    assert prediction["artifact_bundle_sha256"] == candidate["artifact_bundle_sha256"]
-    assert prediction["estimated_fuel_l"] == prediction["fuel_l_on_retained_intervals"]["physics"]
-    assert baseline["model_version"] != prediction["model_version"]
-    assert client.delete(f"/api/v3/ml/models/{mid}", headers=HEADERS).status_code == 409
-    assert client.post("/api/v3/ml/models/builtin/activate", headers=HEADERS).status_code == 200
-    assert client.delete(f"/api/v3/ml/models/{mid}", headers=HEADERS).status_code == 204
-    assert not Registry().directory(mid).exists()
-    assert Registry().listing()["active_model_id"] == "builtin"
-    restored = fuel_prediction.predict_fuel(*trip())
-    assert restored["estimated_fuel_l"] == pytest.approx(baseline["estimated_fuel_l"])
-    assert client.delete("/api/v3/ml/models/builtin", headers=HEADERS).status_code == 409
+@pytest.mark.parametrize('environment,flag', [('production', 'true'), ('test', 'false'), ('', 'true')])
+def test_feature_is_disabled_outside_explicit_test_environment(client, monkeypatch, environment, flag):
+    monkeypatch.setenv('APP_ENV', environment)
+    monkeypatch.setenv('ML_UPLOAD_ENABLED', flag)
+    assert client.get('/ml').status_code == 404
+    assert client.get('/api/v3/ml/models').status_code == 404
+    assert client.post('/api/v3/ml/models', headers=HEADERS, json=bundle()).status_code == 404
+    assert client.delete('/api/v3/ml/models/' + 'a'*32, headers=HEADERS).status_code == 404
 
 
-@pytest.mark.parametrize("environment,flag", [("production", "true"), ("test", "false"), ("", "true")])
-def test_disabled_in_production_and_by_default(client, monkeypatch, environment, flag):
-    monkeypatch.setenv("APP_ENV", environment)
-    monkeypatch.setenv("ML_UPLOAD_ENABLED", flag)
-    assert client.get("/ml").status_code == 404
-    assert client.get("/api/v3/ml/models").status_code == 404
-    assert client.post("/api/v3/ml/models", headers=HEADERS, json={}).status_code == 404
-    assert client.delete("/api/v3/ml/models/builtin", headers=HEADERS).status_code == 404
-    assert client.post("/api/v3/ml/models/builtin/activate", headers=HEADERS).status_code == 404
-    assert fuel_prediction.predict_fuel(*trip())["model_bundle_id"] == "builtin"
-
-
-def test_cross_origin_is_not_an_account_requirement(client):
-    assert client.post("/api/v3/ml/models", json={}).status_code == 400
-    for headers in ({**HEADERS, "Origin": "https://elsewhere.example"},
-                    {**HEADERS, "Sec-Fetch-Site": "cross-site"}):
-        assert client.post("/api/v3/ml/models", headers=headers, json=bundle()).status_code == 403
-    assert client.post("/api/v3/ml/models", headers={**HEADERS, "Origin": "http://testserver"}, json=bundle()).status_code == 201
-
-
-@pytest.mark.parametrize("change", ["missing", "traversal", "hash", "base64", "features", "ranges", "coefficients"])
-def test_rejected_upload_never_changes_active_model(client, change):
+@pytest.mark.parametrize('change', ['empty', 'many', 'traversal', 'absolute', 'base64', 'empty-file', 'name', 'description'])
+def test_invalid_uploads_leave_no_partial_files(client, change):
     body = bundle()
-    if change == "missing":
-        del body["files"]["model_card.json"]
-    elif change == "traversal":
-        body["files"]["../provenance.json"] = body["files"].pop("provenance.json")
-    elif change == "base64":
-        body["files"]["model_card.json"] = "%%%"
-    elif change == "hash":
-        body["files"]["catboost_direct.cbm"] = base64.b64encode(b"bad weights").decode()
-    else:
-        card = json.loads(base64.b64decode(body["files"]["model_card.json"]))
-        if change == "features":
-            card["features"].reverse()
-        elif change == "ranges":
-            card["input_ranges_train"]["duration_s"] = [30, 5]
-        else:
-            card["physics_coefficients_l_per_mj_l_per_h"] = [-1, 1]
-        encoded = json.dumps(card).encode()
-        body["files"]["model_card.json"] = base64.b64encode(encoded).decode()
-        provenance = json.loads(base64.b64decode(body["files"]["provenance.json"]))
-        import hashlib
-        provenance["artifact_sha256"]["model_card.json"] = hashlib.sha256(encoded).hexdigest()
-        body["files"]["provenance.json"] = base64.b64encode(json.dumps(provenance).encode()).decode()
-    response = client.post("/api/v3/ml/models", headers=HEADERS, json=body)
-    assert response.status_code == 422, response.text
-    assert Registry().listing()["active_model_id"] == "builtin"
-    assert len(Registry().listing()["models"]) == 1
-    assert not list(Registry().root.glob(".upload-*"))
+    if change == 'empty': body['files'] = {}
+    elif change == 'many': body['files'] = {f'{i}.bin': 'AQ==' for i in range(17)}
+    elif change == 'traversal': body['files'] = {'../weights.bin': 'AQ=='}
+    elif change == 'absolute': body['files'] = {'/tmp/weights.bin': 'AQ=='}
+    elif change == 'base64': body['files']['future-model.bin'] = '%%%'
+    elif change == 'empty-file': body['files']['future-model.bin'] = ''
+    elif change == 'name': body['name'] = ''
+    else: body['description'] = 'x'*2001
+    assert client.post('/api/v3/ml/models', headers=HEADERS, json=body).status_code == 422
+    assert Registry().listing()['models'] == []
+    assert not list(Registry().root.glob('.upload-*'))
 
 
-def test_native_parser_failure_and_timeout_cleanup(client, monkeypatch):
-    for result in (subprocess.CompletedProcess([], -9), subprocess.TimeoutExpired([], 30)):
-        def failed(*args, **kwargs):
-            # Credentials and database environment never go to the native validator.
-            assert "POSTGRES_PASSWORD" not in kwargs["env"]
-            assert "SECRET_KEY" not in kwargs["env"]
-            if isinstance(result, Exception):
-                raise result
-            return result
-        monkeypatch.setattr(subprocess, "run", failed)
-        response = client.post("/api/v3/ml/models", headers=HEADERS, json=bundle())
-        assert response.status_code == 422
-        assert len(Registry().listing()["models"]) == 1
-        assert not list(Registry().root.glob(".upload-*"))
+def test_cross_origin_mutations_are_blocked_without_requiring_an_account(client):
+    assert client.post('/api/v3/ml/models', json=bundle()).status_code == 400
+    assert client.post('/api/v3/ml/models', headers={**HEADERS, 'Origin': 'https://elsewhere.example'}, json=bundle()).status_code == 403
+    assert client.post('/api/v3/ml/models', headers={**HEADERS, 'Sec-Fetch-Site': 'cross-site'}, json=bundle()).status_code == 403
+    assert client.post('/api/v3/ml/models', headers={**HEADERS, 'Origin': 'http://testserver'}, json=bundle()).status_code == 201
 
 
-def test_activation_failure_preserves_previous_selection(client, monkeypatch):
-    candidate = upload(client)
-    def broken(*args):
-        raise ValueError("Native failure")
-    monkeypatch.setattr(fuel_prediction, "_load_artifacts", broken)
-    response = client.post(f'/api/v3/ml/models/{candidate["id"]}/activate', headers=HEADERS)
-    assert response.status_code == 422
-    assert Registry().listing()["active_model_id"] == "builtin"
-
-
-def test_global_upload_lock_and_request_size(client, monkeypatch):
+def test_request_bundle_storage_and_count_limits(client, monkeypatch):
     import app.api.ml as api
-    with Registry().lock("upload"):
-        response = client.post("/api/v3/ml/models", headers=HEADERS, json=bundle())
-        assert response.status_code == 409
-    monkeypatch.setattr(api, "MAX_REQUEST_BYTES", 10)
-    assert client.post("/api/v3/ml/models", headers=HEADERS, json=bundle()).status_code == 413
-
-
-def test_storage_quota_and_version_limit(client, monkeypatch):
     import app.services.model_registry as registry
-    monkeypatch.setattr(registry, "MAX_STORAGE_BYTES", 10)
-    assert client.post("/api/v3/ml/models", headers=HEADERS, json=bundle()).status_code == 413
-    monkeypatch.setattr(registry, "MAX_MODELS", 0)
-    assert client.post("/api/v3/ml/models", headers=HEADERS, json=bundle()).status_code == 409
+    with monkeypatch.context() as patch:
+        patch.setattr(api, 'MAX_REQUEST_BYTES', 10)
+        assert client.post('/api/v3/ml/models', headers=HEADERS, json=bundle()).status_code == 413
+    for constant, limit, status in [('MAX_BUNDLE_BYTES', 10, 413), ('MAX_STORAGE_BYTES', 10, 413), ('MAX_MODELS', 0, 409)]:
+        with monkeypatch.context() as patch:
+            patch.setattr(registry, constant, limit)
+            assert client.post('/api/v3/ml/models', headers=HEADERS, json=bundle()).status_code == status
+    assert Registry().listing()['models'] == []
 
 
-def test_concurrent_activation_and_delete_keep_registry_consistent(client):
-    candidate = upload(client)
-    mid = candidate["id"]
-    def activate():
-        try:
-            Registry().activate(mid)
-        except RegistryError as error:
-            assert error.status == 404
-    def delete():
-        try:
-            Registry().delete(mid)
-        except RegistryError as error:
-            assert error.status == 409
+def test_upload_lock_and_strict_transport_json(client):
+    with Registry().lock('upload'):
+        assert client.post('/api/v3/ml/models', headers=HEADERS, json=bundle()).status_code == 409
+    for content in [b'{"name":"a","name":"b"}', b'{"name":NaN}', b'{broken']:
+        assert client.post('/api/v3/ml/models', headers={**HEADERS, 'Content-Type': 'application/json'}, content=content).status_code == 422
+
+
+def test_failed_registry_write_cleans_new_upload(client, monkeypatch):
+    def fail(*args):
+        raise OSError('Injected storage failure')
+    monkeypatch.setattr(Registry, 'write', fail)
+    with pytest.raises(OSError): upload(client)
+    assert Registry().listing()['models'] == []
+    assert not [p for p in Registry().root.iterdir() if p.is_dir()]
+
+
+def test_older_registry_is_retained_as_files_and_active_pointer_is_ignored(client):
+    registry = Registry()
+    mid = 'b'*32
+    directory = registry.directory(mid)
+    directory.mkdir()
+    (directory/'old-weights.cbm').write_bytes(b'historical bytes, never loaded')
+    registry.write({'active': mid, 'models': {mid: {
+        'id': mid, 'name': 'Исторические файлы', 'created_at': '2026-10-27T00:00:00Z',
+        'size_bytes': (directory/'old-weights.cbm').stat().st_size,
+        'model_version': 'retired', 'selected_model': 'hybrid',
+    }}})
+    listing = registry.listing()
+    assert listing['inference_status'] == 'model_not_trained'
+    assert 'active_model_id' not in listing
+    assert listing['models'][0]['files'][0]['name'] == 'old-weights.cbm'
+    assert listing['models'][0]['status'] == 'stored'
+    assert client.delete(f'/api/v3/ml/models/{mid}', headers=HEADERS).status_code == 204
+    assert not directory.exists()
+
+
+def test_concurrent_deletions_do_not_corrupt_registry(client):
+    ids = [upload(client)['id'] for _ in range(2)]
     with ThreadPoolExecutor(2) as executor:
-        list(executor.map(lambda fn: fn(), [activate, delete]))
-    state = Registry().listing()
-    ids = {row["id"] for row in state["models"]}
-    assert state["active_model_id"] in ids
-    assert (mid in ids) == Registry().directory(mid).exists()
+        list(executor.map(lambda mid: Registry().delete(mid), ids))
+    assert Registry().listing()['models'] == []
 
 
-def test_inference_failure_returns_unavailable_not_zero(client, monkeypatch):
-    import app.services.model_registry as registry
-    def broken(*args):
-        raise ValueError("Model unavailable")
-    monkeypatch.setattr(registry, "active_artifacts", broken)
-    result = fuel_prediction.predict_fuel(*trip())
-    assert result["status"] == "model_unavailable"
-    assert result["estimated_fuel_l"] is None
-
-
-def test_crlf_normalization_and_strict_json(client):
-    body = bundle()
-    card = base64.b64decode(body["files"]["model_card.json"]).replace(b"\r\n", b"\n").replace(b"\n", b"\r\n")
-    body["files"]["model_card.json"] = base64.b64encode(card).decode()
-    assert client.post("/api/v3/ml/models", headers=HEADERS, json=body).status_code == 201
-    duplicate = b'{"name":"a","name":"b","files":{}}'
-    assert client.post("/api/v3/ml/models", headers={**HEADERS, "Content-Type": "application/json"}, content=duplicate).status_code == 422
+def test_unknown_and_unsafe_ids_are_not_deleted(client):
+    assert client.delete('/api/v3/ml/models/' + 'a'*32, headers=HEADERS).status_code == 404
+    assert client.delete('/api/v3/ml/models/not-a-safe-id', headers=HEADERS).status_code == 404
