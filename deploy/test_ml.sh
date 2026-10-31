@@ -47,6 +47,15 @@ case "${1:-help}" in
     backup) backup ;;
     status) compose ps -a ;;
     logs) compose logs --tail=80 api ml_controller ;;
-    check) compose exec -T api python -c "import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:8000/ready',timeout=5).read().decode())" ;;
-    *) printf 'Usage: bash deploy/test_ml.sh {start|backup|status|logs|check}\n' ;;
+    check)
+        compose exec -T api python - --base-url http://127.0.0.1:8000 < "$source_dir/scripts/ml_smoke.py"
+        ;;
+    smoke)
+        compose exec -T api python - --base-url http://127.0.0.1:8000 --run-synthetic < "$source_dir/scripts/ml_smoke.py"
+        ;;
+    versions)
+        python3 "$source_dir/scripts/inspect_ml_environment.py" --checkout "$source_dir" \
+            --api-container "$(compose ps -q api)" --controller-container "$(compose ps -q ml_controller)"
+        ;;
+    *) printf 'Usage: bash deploy/test_ml.sh {start|backup|status|logs|check|smoke|versions}\n' ;;
 esac

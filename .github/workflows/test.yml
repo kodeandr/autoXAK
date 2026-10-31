@@ -55,3 +55,50 @@ jobs:
                   time.sleep(0.5)
           PY
           CHROMIUM_PATH="$(command -v google-chrome)" npm test --prefix tests/browser
+
+  ml-workbench:
+    name: ML containers and browser
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    env:
+      AUTOXAK_ML_DOCKER_INTEGRATION: '1'
+      PYTHON_BIN: python
+      ML_TEST_ARTIFACTS: playwright-artifacts/ml
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: tests/browser/package-lock.json
+      - run: python -m pip install -r requirements.txt
+      - run: npm ci --prefix tests/browser
+      - name: Install browser
+        working-directory: tests/browser
+        run: npx playwright install --with-deps chromium
+      - name: Build isolated model runtime and controller
+        run: |
+          mkdir -p "$ML_TEST_ARTIFACTS"
+          docker version --format '{{.Server.APIVersion}}' | python -c 'import sys; assert tuple(map(int,sys.stdin.read().strip().split("."))) >= (1,45), "Docker API 1.45+ required"'
+          docker build -f deploy/Dockerfile.ml-runtime -t autoxak-ml-runtime:qa .
+          docker build -f deploy/Dockerfile.ml-controller -t autoxak-ml-controller:qa .
+          docker image inspect --format '{{.RepoTags}} {{.Id}}' autoxak-ml-runtime:qa autoxak-ml-controller:qa > "$ML_TEST_ARTIFACTS/images.txt"
+      - name: Readiness and smoke command contracts
+        run: python -m unittest discover -s tests/diagnostics -v
+      - name: Registry, limits and real container tests
+        run: python -m pytest --confcutdir=tests/ml tests/ml -ra --junitxml=playwright-artifacts/ml/pytest.xml
+      - name: Model management browser checks
+        run: node tests/browser/ml.cjs
+      - name: Real queue, container, browser and restart checks
+        run: node tests/browser/ml_workbench.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ml-workbench-${{ github.sha }}
+          path: playwright-artifacts/ml/
+          if-no-files-found: warn
+          retention-days: 14
