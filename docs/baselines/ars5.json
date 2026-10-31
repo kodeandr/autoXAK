@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "issue": "ARS-5",
+  "baseline": {
+    "main": "9969ec0a2e65b37278bc46d9dddfbb804f6583f9",
+    "test_branch": "feat/public-test-model-manager",
+    "test_revision": "4ec7b62143e7ef8081b11d5fd1c5488b247c35ff",
+    "research_branch": "research/ved-v1-integration",
+    "research_revision": "3e6f23f8be6c582de6d4d597786cc32ec43febe7",
+    "work_branch": "codex/ars-5-foundation"
+  },
+  "test_observation": {
+    "source": "read-only GET /api/v3/ml/runs via in-app browser",
+    "heartbeat_at_utc": "2026-10-29T20:24:22.240Z",
+    "reported_ready": true,
+    "run_count": 0,
+    "runtime_image_reference": "autoxak-ml-runtime:4ec7b62143e7",
+    "runtime_image_id": "sha256:5a9063981a8339d1deafafa15680857314c1a0c24dcef1a4c7ce4fa0e07eab90",
+    "api_image_id": null,
+    "api_revision": null,
+    "controller_image_id": null,
+    "inference_tested": false,
+    "python_http_probe": "unavailable from local Python; not evidence that the service is down"
+  },
+  "preservation": {
+    "bundle_sha256": "84c3026c381e5563efecbd47674cc32eecbb530384810577cce3fefefde2c992",
+    "bundle_complete_history": true,
+    "snapshot_sha256": "5eded10a46e5045d4d06c16b6a176dd0ad8e6bff783148242f6d69e5fd11e182",
+    "snapshot_file_count": 32,
+    "model_sha256": "00efca2e93febea65ef71caaef12e15ae7209113587322448c116c4af109f1f6",
+    "training_table_sha256": "668cc0476a4d3498a84c74fc9a034f958bb68b3644401d804030f8bdc4bcfebd",
+    "research_runtime": {
+      "python": "3.12.14",
+      "numpy": "1.26.4",
+      "pandas": "2.2.1",
+      "scikit_learn": "1.7.2"
+    },
+    "synthetic_smoke": {
+      "status": "research_estimate",
+      "estimated_fuel_l": 0.06838501903952189,
+      "field_validated": false,
+      "meaning": "loading and inference only, not road accuracy"
+    }
+  },
+  "deployment_performed": false
+}
