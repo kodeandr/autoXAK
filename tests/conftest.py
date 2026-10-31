@@ -1,4 +1,4 @@
-﻿import os
+import os
 os.environ.setdefault("SECRET_KEY", "autoxak-test-only-signing-key-do-not-deploy")
 os.environ.setdefault("DGIS_USE_MOCK", "true")
 os.environ.setdefault("LOG_DIR", "/tmp/autoxak-test-logs")
@@ -58,7 +58,7 @@ def synthetic_telemetry_batch() -> Dict[str, Any]:
     }
 
 
-@pytest_asyncio.fixture(scope="session", loop_scope="session", autouse=True)
+@pytest_asyncio.fixture(scope="session", autouse=True)
 async def prepared_database():
     await initialize_schema()
     await engine.dispose()

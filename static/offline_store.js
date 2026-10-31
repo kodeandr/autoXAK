@@ -1,3 +1,17 @@
+
+// Авто-сжатие пакета перед записью в IndexedDB (защита от переполнения квоты смартфона)
+function _compactTripForLocalStore(payload) {
+    if (!payload || typeof payload !== 'object') return payload;
+    const copy = Object.assign({}, payload);
+    if (copy.raw_recording && Array.isArray(copy.telemetry_stream) && copy.telemetry_stream.length >= 50) {
+        delete copy.raw_recording;
+    }
+    if (Array.isArray(copy.telemetry_stream) && copy.telemetry_stream.length > 3000) {
+        copy.telemetry_stream = copy.telemetry_stream.filter((_, idx) => idx % 2 === 0);
+    }
+    return copy;
+}
+
 ﻿/** Pending trips are acknowledged only after the IndexedDB transaction commits. */
 const AutoXAKOfflineStore = window.AutoXAKOfflineStore = (() => {
     const DB_NAME = 'autoXAK_storage', STORE = 'pending_trips', CONTROLS = 'pending_controls';

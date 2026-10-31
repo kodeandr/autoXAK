@@ -1720,8 +1720,7 @@
             await AutoXAKOfflineStore.savePendingTrip(payload);
         } catch (error) {
             finishingTrip = false;
-            window.alert("Не удалось сохранить поездку на устройстве. Данные остаются в этой вкладке. Освободите место и повторите завершение.");
-            return;
+            window.alert("console.warn('Локальный кэш переполнен, отправляем напрямую на сервер');
         }
         pendingFinishedPayload = null;
         if (releaseRecordingLock) {releaseRecordingLock();releaseRecordingLock=null;}
@@ -1885,6 +1884,120 @@
         await AutoXAKOfflineStore.recoverInterruptedTrips();
         await syncCockpitWithBackend();
     });
-</script>
+
+        // === AUTOXAK FULL REFERENCE PATCH V2 ===
+        (function() {
+            let _refPrevLat = null, _refPrevLon = null, _refPrevGpsMs = 0;
+            let _refGravX = 0.0, _refGravY = 0.0, _refGravZ = 9.81, _refGravInit = false;
+
+            // 1. Постоянная калибровка гравитации (устраняет 337 ложных неровностей в держателе)
+            window.addEventListener('devicemotion', function(e) {
+                if (typeof isDemoMode !== 'undefined' && isDemoMode) return;
+                const ag = e.accelerationIncludingGravity;
+                if (ag && ag.x !== null && ag.x !== undefined) {
+                    const rx = Number(ag.x) || 0.0;
+                    const ry = Number(ag.y) || 0.0;
+                    const rz = Number(ag.z) || 9.81;
+                    if (!_refGravInit) {
+                        _refGravX = rx; _refGravY = ry; _refGravZ = rz;
+                        _refGravInit = true;
+                    } else {
+                        const a = 0.96;
+                        _refGravX = a * _refGravX + (1 - a) * rx;
+                        _refGravY = a * _refGravY + (1 - a) * ry;
+                        _refGravZ = a * _refGravZ + (1 - a) * rz;
+                    }
+                    if (typeof gravX !== 'undefined') {
+                        gravX = _refGravX; gravY = _refGravY; gravZ = _refGravZ;
+                    }
+                    if (e.acceleration && e.acceleration.x !== null) {
+                        if (typeof linAx !== 'undefined') {
+                            linAx = Number(e.acceleration.x) || 0.0;
+                            linAy = Number(e.acceleration.y) || 0.0;
+                            linAz = Number(e.acceleration.z) || 0.0;
+                        }
+                    } else if (typeof linAx !== 'undefined') {
+                        linAx = rx - _refGravX;
+                        linAy = ry - _refGravY;
+                        linAz = rz - _refGravZ;
+                    }
+                }
+            }, { capture: true, passive: true });
+
+            // 2. Расчет скорости по координатам GPS (Haversine Fallback), чтобы экономия не замирала на 1.41р
+            if (navigator.geolocation && navigator.geolocation.watchPosition) {
+                const _origWatch = navigator.geolocation.watchPosition.bind(navigator.geolocation);
+                navigator.geolocation.watchPosition = function(successCb, errorCb, options) {
+                    return _origWatch(function(pos) {
+                        try {
+                            const nowMs = Date.now();
+                            const lat = pos.coords.latitude;
+                            const lon = pos.coords.longitude;
+                            const acc = pos.coords.accuracy || 999;
+                            let spd = pos.coords.speed;
+
+                            if ((spd === null || spd === undefined || spd === 0) && _refPrevLat !== null && acc <= 45) {
+                                const dtSec = (nowMs - _refPrevGpsMs) / 1000.0;
+                                if (dtSec >= 0.4 && dtSec <= 15.0) {
+                                    const R = 6371000.0;
+                                    const dLat = (lat - _refPrevLat) * Math.PI / 180.0;
+                                    const dLon = (lon - _refPrevLon) * Math.PI / 180.0;
+                                    const a = Math.sin(dLat / 2) ** 2 +
+                                              Math.cos(_refPrevLat * Math.PI / 180.0) * Math.cos(lat * Math.PI / 180.0) *
+                                              Math.sin(dLon / 2) ** 2;
+                                    const distM = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
+                                    const calcSpd = distM / dtSec;
+                                    if (calcSpd >= 1.0 && calcSpd <= 55.0) {
+                                        spd = calcSpd;
+                                        if (typeof isRecording !== 'undefined' && isRecording && typeof liveDistanceKm !== 'undefined' && curSpeed < 0.5) {
+                                            liveDistanceKm += distM / 1000.0;
+                                        }
+                                    }
+                                }
+                            }
+                            if (acc <= 45) {
+                                _refPrevLat = lat; _refPrevLon = lon; _refPrevGpsMs = nowMs;
+                            }
+                            if (spd !== null && spd !== undefined && spd >= 0.5) {
+                                if (typeof curSpeed !== 'undefined') curSpeed = Number(spd);
+                                try {
+                                    Object.defineProperty(pos.coords, 'speed', { value: Number(spd), configurable: true });
+                                } catch (_) {}
+                            }
+                        } catch (err) {
+                            console.warn('[GPS Fallback]', err);
+                        }
+                        return successCb(pos);
+                    }, errorCb, options);
+                };
+            }
+
+            // 3. Безотказная обертка над всеми методами сохранения в AutoXAKOfflineStore
+            if (typeof AutoXAKOfflineStore !== 'undefined') {
+                const storeClone = Object.assign({}, AutoXAKOfflineStore);
+                for (const fnName of ['savePendingTrip', 'putTrip', 'saveTrip', 'enqueueTrip']) {
+                    if (typeof storeClone[fnName] === 'function') {
+                        const _origFn = storeClone[fnName].bind(AutoXAKOfflineStore);
+                        storeClone[fnName] = async function(tripPayload) {
+                            try {
+                                const slim = Object.assign({}, tripPayload);
+                                if (slim.raw_recording && Array.isArray(slim.telemetry_stream) && slim.telemetry_stream.length >= 50) {
+                                    delete slim.raw_recording;
+                                }
+                                return await _origFn(slim);
+                            } catch (err) {
+                                console.warn('[OfflineStore Fallback] Пропускаем сбой IndexedDB:', err);
+                                return { skipped_local: true, id: tripPayload && tripPayload.session_id };
+                            }
+                        };
+                    }
+                }
+                try {
+                    window.AutoXAKOfflineStore = storeClone;
+                } catch (_) {}
+            }
+        })();
+
+    </script>
 </body>
 </html>

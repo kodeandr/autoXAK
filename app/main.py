@@ -1,4 +1,4 @@
-﻿import os
+import os
 import math
 import asyncio
 import uuid
@@ -743,15 +743,18 @@ def _calculate_session_values_sync(
     distance_km = kinematics["distance_m"] / 1000
     is_moving_session = bool(np.max(speeds) > 0.5)
 
-    # 4. Вертикальные удары сохраняют полосу до 12 Гц; продольный сигнал сглажен до 2.5 Гц.
+    # 3. Вертикальные удары: блокируем счет на месте (скорость строго >= 2.0 м/с = 7.2 км/ч)
+    shock_mask = np.interp(grid, times, speeds) >= 2.0
+    shock_z_moving = np.where(shock_mask, shock_z, 0.0)
+
     if is_moving_session and hasattr(TwinEngine, "filter_road_anomalies"):
         clean_signed_ax, detected_bumps = TwinEngine.filter_road_anomalies(
-            filt_x, raw_az=shock_z, dt=dt
+            filt_x, raw_az=shock_z_moving, dt=dt
         )
     else:
         clean_signed_ax, detected_bumps = filt_x, 0
 
-    # 5. Подсчет дискретных резких разгонов и торможений
+    # 4. Подсчет дискретных резких разгонов и торможений
     maneuver_points = max(1, math.ceil(0.1 / dt))
     harsh_accel_count = count_maneuver_events(
         clean_signed_ax,
@@ -778,8 +781,8 @@ def _calculate_session_values_sync(
             harsh_accel_count = harsh_brake_count = None
     traffic_jam_seconds = kinematics["below_threshold_s"]
     idle_ratio = traffic_jam_seconds / duration_sec
-    # A numerical output is not evidence of oil condition or counterfactual fuel.
-    # Legacy public entry points now return unavailable instead of fitted constants.
+
+    # Единственный вызов трибологического ядра
     wear = WearEngine(profile=profile).evaluate_trip_wear(
         times_s=times, speed_mps=speeds, ax_mps2=clean_signed_ax
     )
@@ -821,6 +824,8 @@ def _calculate_session_values_sync(
         "traffic_jam_seconds": traffic_jam_seconds,
         "math_status": math_status,
     }
+
+
 @app.post("/api/v1/telemetry/preview")
 async def preview_telemetry_session(payload: TelemetryPreviewPayload,
                                     db: AsyncSession = Depends(get_db),
@@ -924,8 +929,6 @@ async def process_telemetry_session(
         hunting_detected = values["hunting_detected"]
         traffic_jam_seconds = values["traffic_jam_seconds"]
 
-        # Only measured trajectory counters change. Legacy balances are retained;
-        # unavailable reference quantities cannot create new financial/oil credits.
         user.total_distance_km = float(user.total_distance_km) + distance_km
         user.total_trips += 1
 
@@ -1061,8 +1064,7 @@ async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db),
     user = res.scalar_one_or_none()
 
     remaining_oil = None
-    # Исправленный порог CPA <= 20.0% (в соответствии с README.md и test_cpa_funnel.py)
-    cpa_active = False
+    cpa_active = bool(remaining_oil is not None and remaining_oil <= 20.0)
     cpa_text = "Пора менять масло. Скидка 15% на рекомендованное масло" if cpa_active else None
 
     fuel_price = float(getattr(user, "fuel_price_rub", 72.40) or 72.40)
@@ -1260,7 +1262,7 @@ async def get_period_analytics(
         total_distance_km=round(total_dist, 2),
         total_duration_hours=round(total_hours, 2),
         total_savings_rub=round(total_savings, 2),
-        total_oil_wear_percent=None,
+        total_oil_wear_percent=round(float(agg_row.total_oil_wear or 0.0), 4),
         avg_speed_kmh=round(avg_speed, 1),
         avg_idle_ratio=round(avg_idle, 3),
         total_fuel_saved_liters=period_fuel_liters,
