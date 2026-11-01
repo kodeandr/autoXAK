@@ -1,0 +1,52 @@
+/* Shared geometry for the existing Figma screens. No simulated phone frame. */
+:root { color-scheme: dark; --bg-root:#121417; --lime:#D2FA58; --lime-dim-bg:rgba(210,250,88,.15); }
+html, body { background:#121417; width:100%; min-height:100vh; min-height:100dvh; margin:0; padding:0; }
+body { display:block; }
+.mobile-container { width:100%; max-width:414px; height:100vh; height:100dvh; min-height:100dvh; margin:0 auto; border:0; border-radius:0; box-shadow:none; }
+.cockpit-scroll, .history-scroll, .view-screen { min-height:0; padding-left:max(16px,env(safe-area-inset-left)); padding-right:max(16px,env(safe-area-inset-right)); }
+.cockpit-scroll > *, .history-scroll > *, .view-screen > * { flex-shrink:0; }
+.bottom-cta-spacer { margin-top:16px; padding-top:0; }
+.current-car-card { min-height:0; justify-content:flex-start; gap:16px; }
+.car-svg { width:100%; max-width:280px; height:auto; aspect-ratio:280/135; }
+.current-car-name { font-size:26px; overflow-wrap:anywhere; }
+.car-illustration-wrap { margin:4px 0; }
+.bottom-tab-bar { height:calc(64px + env(safe-area-inset-bottom)); padding-bottom:env(safe-area-inset-bottom); display:grid; grid-template-columns:repeat(3,1fr); flex-shrink:0; }
+.tab-item { width:48px; height:32px; border-radius:18px; display:flex; align-items:center; justify-content:center; }
+.tab-item.active { color:#D2FA58; background:rgba(210,250,88,.15); }
+.tab-item svg { width:20px; height:20px; }
+.active-trip-screen { justify-content:flex-start; gap:20px; overflow-y:auto; }
+.active-trip-screen > * { flex-shrink:0; }
+.trip-center-block { flex:1 0 auto; margin:0; padding:24px 0; min-height:120px; }
+.swipe-container, .swipe-thumb { touch-action:none; }
+.modal-backdrop { z-index:300; }
+.summary-modal-overlay, .details-modal-overlay, .modal-backdrop { overflow-y:auto; }
+.summary-card, .details-modal-card, .geo-modal-card { margin:auto 0; flex-shrink:0; box-shadow:none; }
+.stats-grid-6 { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.stat-cell { min-width:0; }
+.stat-cell-val, .summary-big-amount, .piggy-total-val { overflow-wrap:anywhere; }
+button, input, select { font:inherit; }
+input, select { font-size:16px; }
+input { user-select:text; }
+button { min-height:44px; }
+button:disabled { opacity:.5; cursor:wait; }
+button:focus-visible, a:focus-visible, input:focus-visible, .split-select-wrap:focus-within { outline:2px solid #D2FA58; outline-offset:3px; }
+.native-select-overlay { display:block; position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; z-index:3; }
+.split-select-value-box { min-width:0; }
+.field-error, .status-message { color:#D2FA58; font-size:13px; line-height:1.5; }
+.status-message { margin-top:12px; }
+.progress-card { background:var(--bg-card,#222528); border:1px solid rgba(255,255,255,.08); border-radius:22px; padding:18px; }
+.progress-card h2 { font-size:16px; font-weight:500; margin-bottom:10px; }
+.progress-value { font-size:28px; font-weight:600; }
+.progress-value small { font-size:12px; color:#8C919B; font-weight:400; }
+.progress-caption, .progress-empty { font-size:13px; color:#8C919B; line-height:1.5; margin-top:8px; }
+.progress-delta { font-size:12px; color:#8C919B; }
+.progress-delta.positive { color:#4ADE80; }
+.progress-delta.negative { color:#F87171; }
+.progress-controls { display:flex; background:#121417; padding:3px; border-radius:12px; margin-bottom:12px; }
+.progress-controls button { flex:1; background:none; color:#8C919B; border:0; border-radius:9px; }
+.progress-controls button[aria-pressed="true"] { background:rgba(210,250,88,.15); color:#D2FA58; }
+.progress-chart { width:100%; height:auto; }
+.progress-values, .progress-chart { display:none; }
+.empty-history a { display:block; color:#D2FA58; margin-top:16px; }
+.smoothness-bar { width:100%; margin-bottom:16px; }
+@media (prefers-reduced-motion:reduce) { *, *::before, *::after { transition:none!important; scroll-behavior:auto!important; } }

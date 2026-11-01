@@ -1,15 +1,16 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>autoXAK — История поездок</title>
     <script src="/static/session.js"></script>
     <script src="/static/offline_store.js"></script>
+    <script src="/static/progress.js"></script>
     <style>
         :root {
             --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
-            --bg-root: #121316;
+            --bg-root: #121417;
             --bg-card: #1C1E22;
             --bg-modal: #22252A;
             --border-subtle: rgba(255, 255, 255, 0.08);
@@ -54,7 +55,7 @@
             overflow: hidden;
         }
 
-        
+
 
         .history-scroll {
             flex: 1;
@@ -322,7 +323,7 @@
             width: 100%;
             height: 100%;
             height: 100dvh;
-            background-color: var(--bg-root, var(--bg-screen, #121316));
+            background-color: var(--bg-root, var(--bg-screen, #121417));
             margin: 0;
             padding: 0;
             overflow: hidden;
@@ -331,7 +332,7 @@
 
         .mobile-container {
             width: 100%;
-            max-width: 480px;
+            max-width: 414px;
             height: 100%;
             height: 100dvh;
             max-height: none !important;
@@ -341,6 +342,7 @@
             box-shadow: none !important;
         }
     </style>
+    <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
 
@@ -363,16 +365,22 @@
             <div class="piggy-trips-count" id="hist-trips-count">0 поездок</div>
         </div>
 
+        <section class="progress-card" id="history-progress"><h2>Динамика прогресса</h2><div class="progress-controls"><button data-days="7" aria-pressed="true" onclick="AutoXAKProgress.refresh('history-progress',7)">7 дней</button><button data-days="30" aria-pressed="false" onclick="AutoXAKProgress.refresh('history-progress',30)">30 дней</button></div>
+            <div class="progress-values" style="display:none"><span class="progress-value"><span class="progress-number">—</span> <small>/ 100</small></span> <span class="progress-delta"></span></div>
+            <p class="progress-empty">Недостаточно данных. Совершите поездку, чтобы увидеть прогресс.</p>
+            <p class="progress-caption">Среднее за последние 7 дней</p><svg class="progress-chart" viewBox="0 0 310 150" role="img" aria-label="Динамика индекса плавности" style="display:none"></svg></section>
+
         <div class="list-section-label">Расчетная экономия по поездкам</div>
 
+        <p id="pending-status" class="status-message" role="status"></p>
         <div class="trips-list" id="hist-trips-list">
-            <div class="empty-history">Загрузка поездок...</div>
+            <div class="empty-history">Недостаточно данных</div>
         </div>
     </div>
 
     <!-- Модальное окно "Подробнее" (Макет 9) -->
     <div class="details-modal-overlay" id="details-modal" onclick="handleBackdropClick(event)">
-        <div class="details-modal-card">
+        <div class="details-modal-card" role="dialog" aria-modal="true" aria-label="Подробнее о поездке">
             <div class="details-header">
                 <span class="details-title">Подробнее</span>
                 <button class="btn-close-details" onclick="closeDetailsModal()" aria-label="Закрыть">
@@ -415,11 +423,12 @@
                     <span class="stat-cell-label">Время поездки</span>
                 </div>
             </div>
+            <div class="smoothness-bar"><span>Индекс плавности</span><span id="det-smooth">— / 100</span></div>
         </div>
     </div>
 
     <!-- Нижняя панель навигации -->
-    <nav class="bottom-tab-bar">
+    <nav class="bottom-tab-bar" id="bottom-tab-bar">
         <a href="/history" class="tab-item active" aria-label="История поездок">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
@@ -535,7 +544,7 @@
         try {archive=JSON.parse(localStorage.getItem('autoXAK_local_history') || '[]').filter(trip=>trip.user_id===owner);} catch (_) {}
         const seenIds = new Set(), merged = [];
         // Responses from the server supersede every provisional local value.
-        for (const trip of [...serverTrips,...offlineList,...archive]) {
+        for (const trip of [...serverTrips,...archive]) {
             const sid=trip.session_id || trip.id;
             if (!sid || seenIds.has(sid)) continue;
             seenIds.add(sid);
@@ -549,19 +558,21 @@
         const pendingOnly=offlineList.filter(trip=>!serverTrips.some(saved=>saved.session_id===trip.session_id));
         const totalRub=complete ? serverTotalRub : merged.reduce((sum,trip)=>sum+(Number(trip.total_savings_rub)||0),0);
         document.getElementById('hist-total-savings').innerText = `+${totalRub.toFixed(2)} ₽`;
-        document.getElementById('hist-trips-count').innerText = pluralizeTrips(complete ? Math.max(merged.length,serverTotalTrips+pendingOnly.length) : merged.length);
+        document.getElementById('hist-trips-count').innerText = pluralizeTrips(complete ? Math.max(merged.length,serverTotalTrips) : merged.length);
+        document.getElementById("pending-status").textContent=pendingOnly.length?`Ожидают синхронизации: ${pendingOnly.length}`:"";
         renderTripsList(merged);
+        AutoXAKProgress.refresh("history-progress", Number(document.querySelector("[data-days][aria-pressed=true]")?.dataset.days)||7);
     }
 
     function renderTripsList(trips) {
         const container = document.getElementById('hist-trips-list');
         if (!trips || trips.length === 0) {
-            container.innerHTML = `<div class="empty-history">Поездок пока нет. Начните первую поездку на главном экране.</div>`;
+            container.innerHTML = `<div class="empty-history">Пока нет сохраненных поездок<a href="/">Начать поездку</a></div>`;
             return;
         }
 
         container.innerHTML = trips.map((t, idx) => {
-            const rub = t.total_savings_rub===null ? null : (Number(t.total_savings_rub) || 0).toFixed(2);
+            const rub = Number.isFinite(t.total_savings_rub) ? t.total_savings_rub.toFixed(2) : null;
             const dateStr = formatRuDateTime(t.created_at);
             return `
                 <div class="trip-row-card">
@@ -579,7 +590,7 @@
         const t = loadedTrips[index];
         if (!t) return;
 
-        const rub = t.total_savings_rub===null ? null : (Number(t.total_savings_rub) || 0).toFixed(2);
+        const rub = Number.isFinite(t.total_savings_rub) ? t.total_savings_rub.toFixed(2) : null;
         const durSec = Number(t.duration_seconds) || 0;
         const idleMin = t.idle_minutes !== undefined
             ? t.idle_minutes
@@ -593,7 +604,7 @@
         document.getElementById('det-starts').innerText = t.hard_accel_count===null?'—':String(t.hard_accel_count ?? 0);
         document.getElementById('det-brakes').innerText = t.hard_brake_count===null?'—':String(t.hard_brake_count ?? 0);
         document.getElementById('det-idle').innerText = `${idleMin} мин`;
-        if (t.math_status?.version==='reference-math-1') document.getElementById('det-idle').parentElement.querySelector('.stat-cell-label').innerText='Малая скорость';
+        document.getElementById('det-idle').title='Время при скорости менее 1 м/с; остановку в пробке нельзя отличить от парковки только по датчикам.';
         document.getElementById('det-bumps').innerText = String(t.bumps_count ?? t.z_veto_count ?? 0);
         document.getElementById('det-distance').innerText = distLabel;
         document.getElementById('det-duration').innerText = formatDurationHoursMins(durSec);
@@ -601,6 +612,7 @@
             for (const id of ['det-starts','det-brakes','det-idle','det-bumps']) document.getElementById(id).innerText = '—';
         }
 
+        document.getElementById('det-smooth').textContent=Number.isFinite(t.smooth_score)?`${t.smooth_score}/100`:'— / 100';
         document.getElementById('details-modal').classList.add('active');
     }
 
@@ -609,13 +621,11 @@
     }
 
     function handleBackdropClick(e) {
-        if (e.target.id === 'details-modal') {
-            closeDetailsModal();
-        }
+        // Details are dismissed with the explicit close button (PRODUKT-0008).
     }
 
     window.addEventListener('online', () => {fetchHistory().catch(error=>console.warn('History refresh:',error));});
-    window.addEventListener('DOMContentLoaded', fetchHistory);
+    window.addEventListener('DOMContentLoaded', ()=>fetchHistory().catch(()=>{}));
 </script>
 </body>
 </html>

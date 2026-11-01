@@ -1,4 +1,4 @@
-﻿/** Authentication and service-worker lifecycle shared by all pages. */
+/** Authentication and service-worker lifecycle shared by all pages. */
 const AutoXAKSession = window.AutoXAKSession = (() => {
     let authentication = null;
     let profileSync = null;
@@ -15,7 +15,10 @@ const AutoXAKSession = window.AutoXAKSession = (() => {
         const timeout = setTimeout(abort, timeoutMs);
         try {
             const response = await fetch(url, {...options, signal:controller.signal});
-            const data = response.ok ? await response.json() : null;
+            const data = await response.json().catch(error=>{
+                if (controller.signal.aborted || !(error instanceof SyntaxError)) throw error;
+                return null;
+            });
             return {response, data};
         } finally {
             clearTimeout(timeout);
@@ -34,7 +37,7 @@ const AutoXAKSession = window.AutoXAKSession = (() => {
     function storeSession(data) {
         const previous = getUserId();
         if (previous && previous !== data.user_id) {
-            for (const name of ['trip_details_map', 'offline_trips', 'local_history', 'profile', 'car_id', 'car_name', 'selected_car_id', 'selected_car_name', 'pending_profile', 'fuel_price', 'fuel_pass', 'dashboard_cache']) {
+            for (const name of ['trip_details_map', 'offline_trips', 'local_history', 'profile', 'car_id', 'car_name', 'selected_car_id', 'selected_car_name', 'pending_profile', 'fuel_price', 'fuel_pass', 'dashboard_cache', 'unclaimed_summary', 'progress_cache']) {
                 localStorage.removeItem(key(name));
             }
         }
@@ -71,6 +74,7 @@ const AutoXAKSession = window.AutoXAKSession = (() => {
             if (navigator.onLine) window.location.replace('/login');
             throw new Error('Для восстановления сессии необходимо войти заново');
         }
+        if (!options.newGuest) {window.location.replace('/login');throw new Error('Выберите способ входа');}
         const {response, data} = await fetchJSON('/api/v1/auth/guest', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: '{}'});
         if (!response.ok) throw new Error(`Не удалось создать сессию: HTTP ${response.status}`);
         return storeSession(data);
@@ -122,7 +126,7 @@ const AutoXAKSession = window.AutoXAKSession = (() => {
     }
 
     function clearSession() {
-        for (const name of ['jwt_token', 'user_id', 'is_guest', 'user_name', 'trip_details_map', 'offline_trips', 'local_history', 'profile', 'car_id', 'car_name', 'selected_car_id', 'selected_car_name', 'pending_profile', 'fuel_price', 'fuel_pass', 'dashboard_cache']) localStorage.removeItem(key(name));
+        for (const name of ['jwt_token', 'user_id', 'is_guest', 'user_name', 'trip_details_map', 'offline_trips', 'local_history', 'profile', 'car_id', 'car_name', 'selected_car_id', 'selected_car_name', 'pending_profile', 'fuel_price', 'fuel_pass', 'dashboard_cache', 'unclaimed_summary', 'progress_cache']) localStorage.removeItem(key(name));
     }
 
     async function loginWithYandex() {

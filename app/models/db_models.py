@@ -1,13 +1,13 @@
-﻿import uuid
+import uuid
 from datetime import datetime, timezone
 from sqlalchemy import (
-    Column, 
-    String, 
-    Float, 
-    Integer, 
+    Column,
+    String,
+    Float,
+    Integer,
     Boolean,
-    DateTime, 
-    ForeignKey, 
+    DateTime,
+    ForeignKey,
     Index, JSON
 )
 from sqlalchemy.orm import relationship
@@ -30,8 +30,8 @@ class FuelRegionalPrice(Base):
 
     availability_status = Column(String(30), default="NORMAL")
     updated_at = Column(
-        DateTime(timezone=True), 
-        default=lambda: datetime.now(timezone.utc), 
+        DateTime(timezone=True),
+        default=lambda: datetime.now(timezone.utc),
         onupdate=lambda: datetime.now(timezone.utc)
     )
 
@@ -74,6 +74,8 @@ class VehicleTrim(Base):
     rolling_resistance_coeff = Column(Float, default=0.012)
     drivetrain_efficiency = Column(Float, default=0.90)
 
+    base_city_fuel_rate_l100km = Column(Float, nullable=True)
+    fuel_rate_source = Column(String(200), nullable=True)
     engine_displacement_l = Column(Float, nullable=False)
     rated_power_kw = Column(Float, nullable=False)
     drivetrain_type = Column(String(20), default="FWD")
@@ -96,6 +98,10 @@ class User(Base):
     name = Column(String(100), nullable=True)
     email = Column(String(128), unique=True, nullable=True)
     hashed_password = Column(String(256), nullable=True)
+    login = Column(String(15), nullable=True)
+    merged_into = Column(String(64), nullable=True)
+
+    __table_args__ = (Index("ix_users_login", "login", unique=True),)
 
     car_id = Column(String(100), default="haval_jolion_15t_4wd")
     car_name = Column(String(200), nullable=True)
@@ -199,3 +205,17 @@ class CPALead(Base):
     created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     user = relationship("User", back_populates="leads")
+
+class LoginAttempt(Base):
+    __tablename__ = "login_attempts"
+    key = Column(String(64), primary_key=True)
+    failures = Column(Integer, nullable=False, default=0)
+    window_started_at = Column(DateTime(timezone=True), nullable=False)
+    blocked_until = Column(DateTime(timezone=True), nullable=True)
+
+
+class TripTelemetryRecord(Base):
+    """Immutable full derived stream; original GPS/IMU remain in RecordingChunk."""
+    __tablename__ = "trip_telemetry"
+    trip_id = Column(String(64), ForeignKey("trips.id", ondelete="CASCADE"), primary_key=True)
+    payload = Column(JSON, nullable=False)

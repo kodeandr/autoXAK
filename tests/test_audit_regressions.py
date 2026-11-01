@@ -218,8 +218,7 @@ async def test_concurrent_retries_and_distinct_sessions_do_not_lose_totals(commi
     assert all(response.status_code == 200 for response in responses)
     dashboard = (await committed_client.get('/api/v1/users/' + committed_client.audit_user_id + '/dashboard')).json()
     assert dashboard['total_trips'] == 2
-    assert dashboard['total_savings_rub'] == 0
-    assert all(response.json()['cost_savings_rub'] is None for response in responses)
+    assert dashboard['total_savings_rub'] == sum(response.json()['cost_savings_rub'] for response in responses)
 
 
 async def test_recording_chunks_completion_ownership_and_streaming_export(committed_client):
@@ -269,8 +268,7 @@ async def test_guest_merge_moves_all_data_once_and_preserves_retry_identity(comm
             async with async_session_factory() as session:
                 target = await _get_or_merge_yandex_user(session, raw_yandex_id, guest_id)
                 assert target.total_trips == 1
-                assert target.total_savings_rub == 0
-                assert original['cost_savings_rub'] is None
+                assert target.total_savings_rub == original['cost_savings_rub']
         response = await client.post('/api/v1/telemetry/session', json=dict(body, user_id=ya_id), headers={'Authorization': 'Bearer ' + create_access_token(ya_id)})
         assert response.status_code == 200, response.text
         assert response.json() == original

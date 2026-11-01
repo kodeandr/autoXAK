@@ -6,7 +6,7 @@ class CustomVehicleInput(BaseModel):
     model_config = {"extra": "allow", "allow_inf_nan": False, "populate_by_name": True}
     brand: str = Field(default="Custom", min_length=1, max_length=100)
     model: str = Field(default="Vehicle", min_length=1, max_length=100)
-    custom_name: str | None = Field(default=None, max_length=200)
+    custom_name: str | None = Field(default=None, min_length=1, max_length=12)
     body_type: str = Field(default="sedan", max_length=50)
     engine_displacement_l: float | None = Field(default=None, gt=0.5, le=8.0, validation_alias=AliasChoices("engine_displacement_l", "engine_disp_l"))
     engine_power_hp: float | None = Field(default=None, gt=30.0, le=1500.0, validation_alias=AliasChoices("engine_power_hp", "power_hp"))

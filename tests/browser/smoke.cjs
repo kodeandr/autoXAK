@@ -19,6 +19,7 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
         await page.waitForFunction(() => window.AutoXAKSession && document.getElementById('select-trim').options.length > 0);
         await page.click('#tab-btn-manual');
         await page.fill('#input-custom-name','Audit Car');
+        await page.fill('#manual-fuel','8.5');
         await page.evaluate(() => saveManualVehicle());
         const response = await page.request.get(`${base}/api/v1/users/${identity.user}/profile`, {headers:identity.headers});
         const profile = await response.json();
@@ -118,7 +119,7 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
                 return {afterGps,afterTimer,emptyCount,samples:telemetryStream.length,cleared,hasAlert:!!lastAlert};
             } finally {Date.now=originalNow;window.setInterval=originalInterval;}
         });
-        assert.equal(sensors.afterGps,0.001);
+        assert(Math.abs(sensors.afterGps-0.00100075434)<1e-9);
         assert.equal(sensors.afterTimer,sensors.afterGps);
         assert.equal(sensors.emptyCount,0);
         assert.equal(sensors.samples,49);

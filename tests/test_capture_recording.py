@@ -25,11 +25,11 @@ async def test_gps_only_capture_is_durable_visible_and_idempotent(committed_clie
     assert first.status_code == duplicate.status_code == 200
     assert first.json() == duplicate.json()
     data = first.json()
-    assert data['status'] == 'RECORDED' and data['distance_km'] == pytest.approx(0.6)
+    assert data['status'] == 'RECORDED' and data['distance_km'] == pytest.approx(0.667169559867)
     assert data['cost_savings_rub'] is data['oil_wear_percent'] is None
     assert data['metrics']['capture_quality']['mode'] == 'gps_only'
     dashboard = (await client.get(f'/api/v1/users/{client.audit_user_id}/dashboard')).json()
-    assert dashboard['total_trips'] == 1 and dashboard['total_distance_km'] == pytest.approx(0.6)
+    assert dashboard['total_trips'] == 1 and dashboard['total_distance_km'] == pytest.approx(0.67)
     history = (await client.get(f'/api/v1/users/{client.audit_user_id}/analytics/period')).json()['trips']
     assert len(history) == 1 and history[0]['capture_quality']['analysis_status'] == 'unavailable'
     exported = (await client.get(f'/api/v2/trips/{data["session_id"]}/export')).json()
@@ -50,7 +50,7 @@ async def test_motion_only_and_empty_capture_keep_history_without_inventing_read
     result = response.json()
     assert result['status'] == 'RECORDED' and result['duration_seconds'] == 60
     assert result['distance_km'] == 0
-    assert result['cost_savings_rub'] is result['oil_wear_percent'] is None
+    assert result['cost_savings_rub']==0 and result['oil_wear_percent'] is None
     exported = (await client.get(f'/api/v2/trips/{result["session_id"]}/export')).json()
     assert exported['point_counts'] == {'gps':0, 'motion':int(has_motion)}
     if has_motion:

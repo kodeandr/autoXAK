@@ -345,7 +345,7 @@ async def test_unavailable_oil_and_money_do_not_change_stored_balances(
 ):
     client = committed_client
     before = (await client.get(f"/api/v1/users/{client.audit_user_id}/profile")).json()
-    payload = dict(synthetic_telemetry_batch, user_id=client.audit_user_id)
+    payload = dict(synthetic_telemetry_batch, user_id=client.audit_user_id, car_id="unknown_without_consumption")
     result = await client.post("/api/v1/telemetry/session", json=payload)
     assert result.status_code == 200, result.text
     assert (
@@ -526,7 +526,7 @@ async def test_reference_evidence_is_bound_to_recording_and_saved_atomically(
     assert evaluation["observed_fuel_l"] == pytest.approx(0.01)
     assert evaluation["fuel_comparison"]["delta_cost_rub"] == 0.7
     assert evaluation["fuel_comparison"]["causal_savings_verified"] is False
-    assert data["cost_savings_rub"] is None
+    assert data["cost_savings_rub"] == 0.0  # Coincident GPS fixes cannot earn a fuel credit.
     exported = (
         await committed_client.get("/api/v2/trips/" + data["session_id"] + "/export")
     ).json()

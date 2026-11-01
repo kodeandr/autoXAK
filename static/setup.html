@@ -1,14 +1,14 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>autoXAK — Гараж</title>
     <script src="/static/session.js"></script>
     <style>
         :root {
             --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
-            --bg-root: #121316;
+            --bg-root: #121417;
             --bg-card: #1C1E22;
             --bg-dropdown: #202329;
             --bg-dropdown-hover: #2A2E36;
@@ -58,7 +58,7 @@
             overflow: hidden;
         }
 
-        
+
 
         /* ---------------- ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ (ПРОСМОТР / РЕДАКТИРОВАНИЕ) ---------------- */
         .view-screen {
@@ -150,7 +150,7 @@
             width: 100%;
             height: 54px;
             background: var(--lime);
-            color: #121316;
+            color: #121417;
             border: none;
             border-radius: 16px;
             font-size: 15px;
@@ -474,7 +474,7 @@
             width: 100%;
             height: 100%;
             height: 100dvh;
-            background-color: var(--bg-root, var(--bg-screen, #121316));
+            background-color: var(--bg-root, var(--bg-screen, #121417));
             margin: 0;
             padding: 0;
             overflow: hidden;
@@ -483,7 +483,7 @@
 
         .mobile-container {
             width: 100%;
-            max-width: 480px;
+            max-width: 414px;
             height: 100%;
             height: 100dvh;
             max-height: none !important;
@@ -498,6 +498,7 @@
             display: none !important;
         }
     </style>
+    <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
 
@@ -553,6 +554,7 @@
 
         <!-- ВКЛАДКА 1: ИЗ РЕЕСТРА (МАКЕТ 2) -->
         <div class="tab-pane active" id="pane-registry">
+            <p id="catalog-status" class="status-message" role="status"></p>
             <!-- Марка -->
             <div class="field-group">
                 <label class="field-label">Марка</label>
@@ -598,8 +600,12 @@
                 </div>
             </div>
 
+            <div class="field-group"><label class="field-label" for="registry-fuel">Городской расход, л/100 км</label>
+                <input class="text-input-box" id="registry-fuel" type="number" min="0.1" max="100" step="0.1" inputmode="decimal" placeholder="Из паспорта автомобиля">
+                <span class="field-hint">Используется для расчётной экономии</span></div>
             <div class="bottom-cta-spacer">
                 <button class="btn-lime" type="button" onclick="saveRegistryVehicle()">Сохранить</button>
+                <button class="segment-btn" onclick="switchEditMode('manual')">Моего автомобиля нет в списке</button>
             </div>
         </div>
 
@@ -728,6 +734,9 @@
                 </div>
             </div>
 
+            <div class="field-group"><label class="field-label" for="manual-fuel">Городской расход, л/100 км</label>
+                <input class="text-input-box" id="manual-fuel" type="number" min="0.1" max="100" step="0.1" inputmode="decimal" placeholder="Из паспорта автомобиля">
+                <span class="field-hint">Используется для расчётной экономии</span></div>
             <div class="bottom-cta-spacer">
                 <button class="btn-lime" type="button" onclick="saveManualVehicle()">Сохранить</button>
             </div>
@@ -736,33 +745,24 @@
 
     <!-- Нижняя панель навигации с подписями -->
     <nav class="bottom-tab-bar" id="bottom-tab-bar">
-        <a href="/history" class="tab-link" aria-label="История поездок">
-            <div class="tab-pill">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
-                    <path d="M3 3v5h5"/>
-                    <path d="M12 7v5l4 2"/>
-                </svg>
-            </div>
-            <span class="tab-caption">История поездок</span>
+        <a href="/history" class="tab-item" aria-label="История поездок">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/>
+                <path d="M3 3v5h5"/>
+                <path d="M12 7v5l4 2"/>
+            </svg>
         </a>
-        <a href="/" class="tab-link" aria-label="Главная">
-            <div class="tab-pill">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1V9.5z"/>
-                </svg>
-            </div>
-            <span class="tab-caption">Главная</span>
+        <a href="/" class="tab-item" aria-label="Главный экран">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1V9.5z"/>
+            </svg>
         </a>
-        <a href="/setup" class="tab-link active" aria-label="Гараж">
-            <div class="tab-pill">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/>
-                    <circle cx="6.5" cy="16.5" r="2.5"/>
-                    <circle cx="16.5" cy="16.5" r="2.5"/>
-                </svg>
-            </div>
-            <span class="tab-caption">Гараж</span>
+        <a href="/setup" class="tab-item active" aria-label="Мой автомобиль">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2"/>
+                <circle cx="6.5" cy="16.5" r="2.5"/>
+                <circle cx="16.5" cy="16.5" r="2.5"/>
+            </svg>
         </a>
     </nav>
 
@@ -773,190 +773,22 @@
 
     let currentUserId = localStorage.getItem('autoXAK_user_id') || '';
 
-    const FALLBACK_CATALOG = [
-        {
-            id: 'haval',
-            name: 'Haval',
-            models: [
-                {
-                    id: 'haval_jolion',
-                    name: 'Jolion',
-                    trims: [
-                        { id: 'haval_jolion_15t_4wd', badge_name: '1.5T 4WD', fuel_rate: 8.5, mass_kg: 1505 },
-                        { id: 'haval_jolion_15t_fwd', badge_name: '1.5T 2WD', fuel_rate: 8.1, mass_kg: 1425 }
-                    ]
-                },
-                {
-                    id: 'haval_f7',
-                    name: 'F7',
-                    trims: [
-                        { id: 'haval_f7_15t_4wd', badge_name: '1.5T 4WD', fuel_rate: 8.9, mass_kg: 1680 },
-                        { id: 'haval_f7_20t_4wd', badge_name: '2.0T 4WD', fuel_rate: 9.4, mass_kg: 1735 }
-                    ]
-                }
-            ]
-        },
-        {
-            id: 'chery',
-            name: 'Chery',
-            models: [
-                {
-                    id: 'chery_tiggo_7pro',
-                    name: 'Tiggo 7 Pro',
-                    trims: [
-                        { id: 'chery_tiggo_7pro', badge_name: '1.5T CVT', fuel_rate: 8.8, mass_kg: 1465 },
-                        { id: 'chery_tiggo_7pro_16t_awd', badge_name: '1.6T AWD', fuel_rate: 8.6, mass_kg: 1580 }
-                    ]
-                }
-            ]
-        },
-        {
-            id: 'geely',
-            name: 'Geely',
-            models: [
-                {
-                    id: 'geely_coolray',
-                    name: 'Coolray',
-                    trims: [
-                        { id: 'geely_coolray_15t', badge_name: '1.5T DCT', fuel_rate: 7.9, mass_kg: 1390 }
-                    ]
-                },
-                {
-                    id: 'geely_monjaro',
-                    name: 'Monjaro',
-                    trims: [
-                        { id: 'geely_monjaro_20t_4wd', badge_name: '2.0T 4WD', fuel_rate: 9.5, mass_kg: 1855 }
-                    ]
-                }
-            ]
-        },
-        {
-            id: 'skoda',
-            name: 'Skoda',
-            models: [
-                {
-                    id: 'skoda_octavia',
-                    name: 'Octavia',
-                    trims: [
-                        { id: 'skoda_octavia_14tsi', badge_name: '1.4 TSI DSG', fuel_rate: 6.9, mass_kg: 1280 },
-                        { id: 'skoda_octavia_20tsi_dsg_4wd', badge_name: '2.0 TSI 4WD', fuel_rate: 7.8, mass_kg: 1450 },
-                        { id: 'skoda_octavia_16mpi_mt', badge_name: '1.6 MPI MT', fuel_rate: 7.5, mass_kg: 1245 }
-                    ]
-                }
-            ]
-        },
-        {
-            id: 'audi',
-            name: 'Audi',
-            models: [
-                {
-                    id: 'audi_q3',
-                    name: 'Q3',
-                    trims: [
-                        { id: 'audi_q3_20tfsi_180_culb', badge_name: '2.0 TFSI quattro', fuel_rate: 8.6, mass_kg: 1590 }
-                    ]
-                }
-            ]
-        },
-        {
-            id: 'lada',
-            name: 'LADA',
-            models: [
-                {
-                    id: 'lada_vesta',
-                    name: 'Vesta',
-                    trims: [
-                        { id: 'lada_vesta_16_mt', badge_name: '1.6 MT', fuel_rate: 7.5, mass_kg: 1230 },
-                        { id: 'lada_vesta_18_cvt', badge_name: '1.8 CVT', fuel_rate: 7.8, mass_kg: 1280 }
-                    ]
-                }
-            ]
-        }
-    ];
-
     let catalogTree = [];
 
-    // ---------------- КАСТОМНЫЙ ДВИЖОК ВЫПАДАЮЩИХ СПИСКОВ ----------------
-    function closeAllCustomDropdowns() {
-        document.querySelectorAll('.split-select-wrap.open').forEach(wrap => {
-            wrap.classList.remove('open');
-        });
-    }
-
-    function buildCustomDropdownMenu(wrap) {
-        const selectEl = wrap.querySelector('select.native-select-overlay');
-        const menuEl = wrap.querySelector('.custom-dropdown-menu');
-        if (!selectEl || !menuEl) return;
-
-        menuEl.innerHTML = '';
-        const options = Array.from(selectEl.options);
-
-        options.forEach((opt, idx) => {
-            const item = document.createElement('div');
-            item.className = 'custom-dropdown-item' + (idx === selectEl.selectedIndex ? ' selected' : '');
-            item.innerHTML = `
-                <span>${opt.text}</span>
-                <svg class="custom-dropdown-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-            `;
-            item.addEventListener('click', (e) => {
-                e.stopPropagation();
-                selectEl.selectedIndex = idx;
-                selectEl.value = opt.value;
-                selectEl.dispatchEvent(new Event('change'));
-                closeAllCustomDropdowns();
-            });
-            menuEl.appendChild(item);
-        });
-    }
-
-    function initCustomDropdowns() {
-        document.querySelectorAll('.split-select-wrap').forEach(wrap => {
-            wrap.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const isAlreadyOpen = wrap.classList.contains('open');
-                closeAllCustomDropdowns();
-
-                if (!isAlreadyOpen) {
-                    buildCustomDropdownMenu(wrap);
-                    wrap.classList.add('open');
-                    const menuEl = wrap.querySelector('.custom-dropdown-menu');
-                    if (menuEl) {
-                        const selectedItem = menuEl.querySelector('.custom-dropdown-item.selected');
-                        if (selectedItem) {
-                            selectedItem.scrollIntoView({ block: 'nearest' });
-                        }
-                        setTimeout(() => {
-                            menuEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-                        }, 60);
-                    }
-                }
-            });
-        });
-
-        document.addEventListener('click', () => {
-            closeAllCustomDropdowns();
-        });
-    }
-
-    // ---------------- НАВИГАЦИЯ МЕЖДУ ЭКРАНАМИ ГАРАЖА ----------------
+    // ---------------- ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ И НАТИВНЫЕ СПИСКИ ----------------
     function openEditScreen() {
-        closeAllCustomDropdowns();
         document.getElementById('screen-garage-view').classList.remove('active');
         document.getElementById('screen-garage-edit').classList.add('active');
         document.getElementById('bottom-tab-bar').classList.add('hidden');
     }
 
     function closeEditScreen() {
-        closeAllCustomDropdowns();
         document.getElementById('screen-garage-edit').classList.remove('active');
         document.getElementById('screen-garage-view').classList.add('active');
         document.getElementById('bottom-tab-bar').classList.remove('hidden');
     }
 
     function switchEditMode(mode) {
-        closeAllCustomDropdowns();
         const isRegistry = mode === 'registry';
         document.getElementById('tab-btn-registry').classList.toggle('active', isRegistry);
         document.getElementById('tab-btn-manual').classList.toggle('active', !isRegistry);
@@ -991,7 +823,7 @@
     // ---------------- ЗАГРУЗКА И ПАРСИНГ КАТАЛОГА ----------------
     function normalizeCatalogData(raw) {
         const items = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.catalog) ? raw.catalog : []);
-        if (!items.length) return FALLBACK_CATALOG;
+        if (!items.length) return [];
 
         if (items[0] && Array.isArray(items[0].models)) {
             return items.map(mk => ({
@@ -1003,19 +835,19 @@
                     trims: (md.trims || []).map(tr => ({
                         id: tr.id,
                         badge_name: cleanTrimBadge(tr.badge_name || tr.name || tr.id, mk.name, md.name),
-                        fuel_rate: Number(tr.base_city_fuel_rate_l100km || tr.fuel_city_l100km || 8.2),
-                        mass_kg: Number(tr.curb_weight_kg || 1500)
+                        fuel_rate: tr.base_city_fuel_rate_l100km ?? null,
+                        mass_kg: tr.curb_weight_kg ?? null
                     }))
                 }))
             }));
         }
 
-        const makesMap = {};
+        const makesMap = Object.create(null);
         for (const item of items) {
             const mkName = item.make || item.brand || item.name || 'Марка';
             const mdName = item.model || 'Модель';
             if (!makesMap[mkName]) {
-                makesMap[mkName] = { id: mkName.toLowerCase(), name: mkName, models: {} };
+                makesMap[mkName] = { id: mkName.toLowerCase(), name: mkName, models: Object.create(null) };
             }
             if (!makesMap[mkName].models[mdName]) {
                 makesMap[mkName].models[mdName] = { id: mdName.toLowerCase(), name: mdName, trims: [] };
@@ -1024,8 +856,8 @@
             makesMap[mkName].models[mdName].trims.push({
                 id: item.id,
                 badge_name: cleanTrimBadge(rawTrimName, mkName, mdName),
-                fuel_rate: Number(item.base_city_fuel_rate_l100km || item.fuel_city_l100km || 8.2),
-                mass_kg: Number(item.curb_weight_kg || 1500)
+                fuel_rate: item.base_city_fuel_rate_l100km ?? null,
+                mass_kg: item.curb_weight_kg ?? null
             });
         }
 
@@ -1035,7 +867,7 @@
             models: Object.values(mk.models)
         }));
 
-        return tree.length > 0 ? tree : FALLBACK_CATALOG;
+        return tree.length > 0 ? tree : [];
     }
 
     async function initCatalog() {
@@ -1044,17 +876,18 @@
             if (res.ok) {
                 catalogTree = normalizeCatalogData(raw);
             } else {
-                catalogTree = FALLBACK_CATALOG;
+                catalogTree = [];
             }
         } catch (e) {
-            catalogTree = FALLBACK_CATALOG;
+            catalogTree = [];
         }
+        document.getElementById("catalog-status").textContent = catalogTree.length ? "" : "Каталог сейчас недоступен. Можно добавить автомобиль вручную.";
         populateMakes();
     }
 
     function populateMakes() {
         const makeSel = document.getElementById('select-make');
-        makeSel.innerHTML = catalogTree.map(mk => `<option value="${mk.id}">${mk.name}</option>`).join('');
+        makeSel.replaceChildren(...catalogTree.map(mk => new Option(mk.name,mk.id)));
         onMakeChange();
     }
 
@@ -1067,7 +900,7 @@
 
         const modelSel = document.getElementById('select-model');
         const models = makeObj ? makeObj.models : [];
-        modelSel.innerHTML = models.map(md => `<option value="${md.id}">${md.name}</option>`).join('');
+        modelSel.replaceChildren(...models.map(md => new Option(md.name,md.id)));
         onModelChange();
     }
 
@@ -1081,7 +914,7 @@
 
         const trimSel = document.getElementById('select-trim');
         const trims = modelObj ? modelObj.trims : [];
-        trimSel.innerHTML = trims.map(tr => `<option value="${tr.id}">${tr.badge_name}</option>`).join('');
+        trimSel.replaceChildren(...trims.map(tr => new Option(tr.badge_name,tr.id)));
         onTrimChange();
     }
 
@@ -1089,6 +922,8 @@
         const trimSel = document.getElementById('select-trim');
         const opt = trimSel.options[trimSel.selectedIndex];
         document.getElementById('label-trim').innerText = opt ? opt.text : '';
+        const selected = catalogTree.flatMap(m=>m.models).flatMap(m=>m.trims).find(t=>t.id===trimSel.value);
+        document.getElementById('registry-fuel').value = selected?.fuel_rate ?? '';
     }
 
     function selectTrimInDropdowns(targetCarId) {
@@ -1119,6 +954,7 @@
 
         let carName = localStorage.getItem('autoXAK_car_name') || '';
         let carId = localStorage.getItem('autoXAK_car_id') || '';
+        let fuelRate = Number(localStorage.getItem('autoXAK_fuel_pass')) || null;
 
         const savedProfile = localStorage.getItem('autoXAK_profile');
         if (savedProfile) {
@@ -1138,6 +974,7 @@
                 if (!localStorage.getItem('autoXAK_pending_profile')) {
                     carName = prof.car_name || '';
                     carId = prof.car_id || '';
+                    fuelRate = prof.fuel_consumption;
                     for (const prefix of ['autoXAK_', 'autoXAK_selected_']) {
                         localStorage.setItem(prefix+'car_id', carId);
                         localStorage.setItem(prefix+'car_name', carName);
@@ -1146,15 +983,14 @@
             }
         } catch (_) {}
 
-        if (carId) {
-            selectTrimInDropdowns(carId);
-        }
+        const matchedCar = carId && selectTrimInDropdowns(carId);
+        if (matchedCar && Number.isFinite(fuelRate)) document.getElementById("registry-fuel").value=fuelRate;
 
         if (!carName) {
-            const mk = document.getElementById('label-make').innerText;
+            const mk = matchedCar ? document.getElementById('label-make').innerText : '';
             const md = document.getElementById('label-model').innerText;
             const tr = document.getElementById('label-trim').innerText;
-            carName = (mk && md) ? `${mk} ${md} ${tr}`.trim() : 'Haval Jolion 1.5T 4WD';
+            carName = (mk && md) ? `${mk} ${md} ${tr}`.trim() : 'Мой автомобиль';
         }
 
         document.getElementById('garage-current-car-name').innerText = carName;
@@ -1165,7 +1001,8 @@
         const makeName = document.getElementById('label-make').innerText.trim();
         const modelName = document.getElementById('label-model').innerText.trim();
         const trimBadge = document.getElementById('label-trim').innerText.trim();
-        const trimId = document.getElementById('select-trim').value || 'haval_jolion_15t_4wd';
+        const trimId = document.getElementById('select-trim').value;
+        if (!trimId) {window.alert('Каталог пуст. Добавьте автомобиль вручную.');return;}
 
         const fullCarName = `${makeName} ${modelName} ${trimBadge}`.replace(/\s+/g, ' ').trim();
 
@@ -1182,14 +1019,17 @@
         await persistVehicleSelection({
             car_id: trimId,
             car_name: fullCarName,
-            fuel_consumption: fuelPass
+            fuel_consumption: Number(document.getElementById("registry-fuel").value) || fuelPass
         });
     }
 
     // ---------------- СОХРАНЕНИЕ: ВРУЧНУЮ (МАКЕТ 3) ----------------
     async function saveManualVehicle() {
         const rawInputName = document.getElementById('input-custom-name').value.trim();
-        const customCarName = rawInputName.length > 0 ? rawInputName.slice(0, 12) : 'Мой автомобиль';
+        if (!rawInputName || [...rawInputName].length>12) {window.alert('Название: от 1 до 12 символов');return;}
+        const customCarName = rawInputName;
+        const declaredFuel = Number(document.getElementById('manual-fuel').value);
+        if (!Number.isFinite(declaredFuel) || declaredFuel<=0 || declaredFuel>100) {window.alert('Для расчёта рублей укажите городской расход больше 0 и до 100 л/100 км.');return;}
 
         const bodyType = document.getElementById('select-body').value;
         const massKg = parseInt(document.getElementById('select-mass').value, 10) || 1600;
@@ -1224,7 +1064,7 @@
         await persistVehicleSelection({
             car_id: synthesizedCarId,
             car_name: customCarName,
-            fuel_consumption: null,
+            fuel_consumption: declaredFuel,
             curb_weight_kg: massKg,
             engine_displacement_l: engineL,
             drivetrain_type: driveType,
@@ -1234,6 +1074,7 @@
 
     // ---------------- ЕДИНАЯ ФУНКЦИЯ СОХРАНЕНИЯ И СИНХРОНИЗАЦИИ ----------------
     async function persistVehicleSelection(vehicleData) {
+        if (!Number.isFinite(vehicleData.fuel_consumption) || vehicleData.fuel_consumption<=0 || vehicleData.fuel_consumption>100) {window.alert('Для расчёта рублей укажите городской расход больше 0 и до 100 л/100 км.');return;}
         localStorage.setItem('autoXAK_car_id', vehicleData.car_id);
         localStorage.setItem('autoXAK_car_name', vehicleData.car_name);
         localStorage.setItem('autoXAK_selected_car_id', vehicleData.car_id);
@@ -1257,16 +1098,18 @@
     }
 
     window.addEventListener('DOMContentLoaded', async () => {
+        try {
         const session = await AutoXAKSession.ensureAuthenticated();
         currentUserId = session.userId;
         await AutoXAKSession.syncPendingProfile();
-        initCustomDropdowns();
+        // Native select preserves iOS, keyboard and screen-reader access.
         await initCatalog();
         await loadUserGarageState();
 
         if (window.location.search.includes('edit=1')) {
             openEditScreen();
         }
+        } catch(error) {console.warn('Garage initialization:',error.message);}
     });
 </script>
 </body>

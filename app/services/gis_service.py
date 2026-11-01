@@ -1,4 +1,4 @@
-﻿import os
+import os
 import json
 import hashlib
 import math
@@ -29,8 +29,8 @@ class GISService:
     def _get_redis_client(self) -> aioredis.Redis:
         if self._pool is None:
             self._pool = aioredis.ConnectionPool(
-                host=self.redis_host, 
-                port=self.redis_port, 
+                host=self.redis_host,
+                port=self.redis_port,
                 decode_responses=True,
                 max_connections=10,
                 socket_connect_timeout=0.5, socket_timeout=0.5

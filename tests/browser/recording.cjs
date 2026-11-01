@@ -21,7 +21,7 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
 
         async function installSensors(permission='granted') {
             await page.evaluate(permission=>{
-                let clock=Date.now(),fix,error;
+                let clock=Date.now(),fix,error,meters=0;
                 window.__sensorStats={permissionCalls:0,watches:0,initialPositionCalls:0,cleared:[]};
                 Date.now=()=>clock;
                 Object.defineProperty(DeviceMotionEvent,'requestPermission',{configurable:true,value:()=>{
@@ -35,7 +35,7 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
                     clearWatch:id=>__sensorStats.cleared.push(id)
                 }});
                 window.__advance=ms=>{clock+=ms;};
-                window.__gps=(accuracy=5,speed=10)=>fix({timestamp:clock,coords:{latitude:55.75,longitude:37.61,accuracy,speed}});
+                window.__gps=(accuracy=5,speed=10)=>{meters+=10;fix({timestamp:clock,coords:{latitude:55.75+meters/111194.9266,longitude:37.61,accuracy,speed}});};
                 window.__gpsError=()=>error({code:1});
                 window.__motion=count=>{
                     for(let i=0;i<count;i++) {
@@ -60,7 +60,7 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
             return response.json();
         }
         async function closeSummary() {
-            await page.evaluate(()=>document.getElementById('summary-modal').classList.remove('active'));
+            await page.evaluate(()=>claimToPiggyBank());
         }
 
         await installSensors();
@@ -90,6 +90,7 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
         assert.deepEqual(stats.cleared,[0,1]);
         assert.deepEqual(await page.evaluate(()=>__alerts),[]);
 
+        await closeSummary();
         await page.goto(base+'/');
         await page.waitForFunction(()=>window.AutoXAKSession && !startingTrip);
         await installSensors('denied');
@@ -113,6 +114,7 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
         await closeSummary();
 
         // A failed local save must keep the original finished payload for retry.
+        await context.setOffline(true);
         await start();
         await page.evaluate(()=>{
             __gps();__advance(1000);__gps();
@@ -126,6 +128,7 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
         await page.evaluate(()=>finishActiveTrip());
         assert.equal(await page.evaluate(()=>!!pendingFinishedPayload),true);
         const retryId=await page.evaluate(()=>pendingFinishedPayload.session_id);
+        await context.setOffline(false);
         // Retry through the visible swipe control, not a direct function call.
         const thumb=await page.locator('#swipe-thumb').boundingBox();
         const track=await page.locator('#swipe-container').boundingBox();

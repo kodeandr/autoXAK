@@ -31,7 +31,7 @@ def synthetic_telemetry_batch() -> Dict[str, Any]:
 
     speed_mps = np.clip(15.0 * np.sin(np.pi * time_series / duration_s), 0.0, 15.0)
     accel_long = np.gradient(speed_mps, 1.0 / fs)
-    suspension_noise = 0.2 * np.random.normal(0, 1, n_samples)
+    suspension_noise = 0.2 * np.random.default_rng(812).normal(0, 1, n_samples)
 
     stream: List[Dict[str, float]] = []
     base_lat, base_lon = 55.751244, 37.618423
@@ -58,7 +58,7 @@ def synthetic_telemetry_batch() -> Dict[str, Any]:
     }
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
+@pytest_asyncio.fixture(scope="session", loop_scope="session", autouse=True)
 async def prepared_database():
     await initialize_schema()
     await engine.dispose()

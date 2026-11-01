@@ -13,8 +13,9 @@ async def test_preview_uses_final_model_without_credits_or_history(committed_cli
     preview = previews[0].json()
     assert preview == previews[1].json()
     assert preview['status'] == 'PREVIEW' and preview['provisional'] is True
-    assert preview['cost_savings_rub'] is None
-    assert preview['math_status']['monetary_credit_status']=='not_verified'
+    assert preview['cost_savings_rub'] >= 0
+    assert preview['math_status']['fuel_savings']['policy_version']=='twin-fuel-mvp-1'
+    assert preview['math_status']['monetary_credit_status']=='model_estimate'
     after = (await client.get(f'/api/v1/users/{client.audit_user_id}/dashboard')).json()
     assert before == after
     assert (await client.get(f'/api/v1/users/{client.audit_user_id}/trips')).json()['trips'] == []
@@ -60,7 +61,7 @@ async def test_stationary_sensor_shocks_do_not_generate_money(committed_client, 
     response = await committed_client.post('/api/v1/telemetry/preview', json=payload)
     assert response.status_code == 200
     assert response.json()['distance_km'] == 0
-    assert response.json()['cost_savings_rub'] is None
+    assert response.json()['cost_savings_rub'] == 0
 
 
 async def test_short_vertical_impacts_survive_driving_filter(committed_client, synthetic_telemetry_batch):

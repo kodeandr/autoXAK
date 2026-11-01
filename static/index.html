@@ -1,17 +1,18 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>autoXAK — Бортовой помощник</title>
     <link rel="manifest" href="/static/manifest.json">
-    <meta name="theme-color" content="#121316">
+    <meta name="theme-color" content="#121417">
     <script src="/static/session.js"></script>
     <script src="/static/offline_store.js"></script>
+    <script src="/static/progress.js"></script>
     <style>
         :root {
             --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
-            --bg-root: #121316;
+            --bg-root: #121417;
             --bg-card: #1C1E22;
             --bg-modal: #22252A;
             --bg-cell: #2A2D34;
@@ -55,7 +56,7 @@
 
         .mobile-container {
             width: 100%;
-            max-width: 480px;
+            max-width: 414px;
             height: 100%;
             height: 100dvh;
             background-color: var(--bg-root);
@@ -226,7 +227,7 @@
             width: 100%;
             height: 52px;
             background: var(--lime);
-            color: #121316;
+            color: #121417;
             border: none;
             border-radius: 16px;
             font-size: 15.5px;
@@ -341,7 +342,7 @@
             background: var(--lime);
             border: none;
             border-radius: 14px;
-            color: #121316;
+            color: #121417;
             font-size: 15px;
             font-weight: 600;
             cursor: pointer;
@@ -571,7 +572,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #121316;
+            color: #121417;
             cursor: grab;
             transition: transform 0.15s ease;
             z-index: 2;
@@ -790,6 +791,7 @@
             white-space: nowrap;
         }
     </style>
+    <link rel="stylesheet" href="/static/app.css">
 </head>
 <body>
 
@@ -825,7 +827,8 @@
                     <path d="M18 12a2 2 0 0 0-2 2c0 1.1.9 2 2 2h4v-4h-4z"/>
                 </svg>
             </div>
-            <a href="/history" class="savings-amount-big" id="cockpit-savings-val">+0.0 ₽</a>
+            <a href="/history" class="savings-amount-big" id="cockpit-savings-val">+0 ₽</a>
+            <p class="progress-caption" id="savings-empty-caption">Экономия появится после поездки</p>
             <div class="savings-card-divider"></div>
             <a href="/history" class="savings-card-bottom">
                 <span class="history-link-text">История поездок</span>
@@ -835,6 +838,11 @@
                 </svg>
             </a>
         </div>
+
+        <section class="progress-card" id="cockpit-progress"><h2>Мой прогресс</h2>
+            <div class="progress-values" style="display:none"><span class="progress-value"><span class="progress-number">—</span> <small>/ 100</small></span> <span class="progress-delta"></span></div>
+            <p class="progress-empty">Недостаточно данных. Совершите поездку, чтобы увидеть прогресс.</p>
+            <p class="progress-caption">Среднее за последние 7 дней</p></section>
 
         <!-- Модель сравнения -->
         <div class="info-card">
@@ -905,7 +913,7 @@
             <div class="geo-modal-text">
                 Геолокация нужна для точного измерения поездки и расчета результата
             </div>
-            <button type="button" class="btn-lime-modal" onclick="closeGeoModals()">Открыть настройки телефона</button>
+            <button type="button" class="btn-lime-modal" onclick="retryGeoPermission()">Как включить геолокацию</button>
         </div>
     </div>
 
@@ -1051,20 +1059,7 @@
                 </div>
             </div>
 
-                        <!-- Ячейка ввода расхода по бортовому компьютеру (по запросу ML) -->
-            <div class="bk-input-card">
-                <div class="bk-input-header">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="9"/>
-                        <path d="M12 7v5l3 3"/>
-                    </svg>
-                    <span>Расход по бортовому компьютеру машины:</span>
-                </div>
-                <div class="bk-input-row">
-                    <input type="number" id="input-bk-consumption" class="bk-input-field" step="0.1" min="1.0" max="99.0" placeholder="0.0" inputmode="decimal">
-                    <div class="bk-unit-badge">л / 100 км</div>
-                </div>
-            </div>
+            <div class="smoothness-bar"><span class="smoothness-label">Индекс плавности</span><span class="smoothness-val" id="sum-smooth">— / 100</span></div>
 
             <button type="button" class="btn-lime-primary" onclick="claimToPiggyBank()" style="margin-top: 0;">
                 Зачислить в копилку
@@ -1077,6 +1072,7 @@
 <script>
     let currentUserId = localStorage.getItem('autoXAK_user_id') || '';
     let currentCarId = localStorage.getItem('autoXAK_selected_car_id') || 'haval_jolion_15t_4wd';
+    let currentCityFuelRate = Number(localStorage.getItem('autoXAK_fuel_pass')) || (['haval_jolion_15t','haval_jolion_15t_4wd','haval_jolion_15t_fwd'].includes(currentCarId)?8.5:null);
     let tripActive = false;
     let tripStartTime = 0;
     let lastTickMs = 0;
@@ -1121,7 +1117,8 @@
             if (!tripActive || activeSessionId!==sessionId || result.session_id!==sessionId
                 || result.status!=='PREVIEW') return;
             document.getElementById('trip-live-savings').innerText = Number.isFinite(result.cost_savings_rub) ? `${result.cost_savings_rub>=0?'+':''}${result.cost_savings_rub.toFixed(2)} ₽` : '—';
-            document.getElementById('trip-live-savings').title = Number.isFinite(result.cost_savings_rub)?'Расчёт по переданным контрольным данным':'Для оценки экономии нужна сопоставимая контрольная поездка.';
+            document.getElementById('trip-live-smooth').textContent = Number.isFinite(result.smooth_score)?`${result.smooth_score}/100`:'—';
+            document.getElementById('trip-live-savings').title = Number.isFinite(result.cost_savings_rub)?'Расчётная оценка относительно базового лихача':'Укажите городской расход в гараже и дождитесь данных датчиков.';
         } catch (_) {
             if (tripActive && activeSessionId===sessionId) document.getElementById('trip-live-savings').title = 'Обновление расчёта после восстановления связи.';
         } finally {
@@ -1202,7 +1199,7 @@
         const num = Number(val);
         if (isNaN(num)) return "+0.0 ₽";
         const str = (Math.round(num * 100) % 10 === 0) ? num.toFixed(1) : num.toFixed(2);
-        return `+${str} ₽`;
+        return `${num>=0?'+':''}${num===0?'0':str} ₽`;
     }
 
     function formatDistance(km) {
@@ -1246,7 +1243,7 @@
         const owner=AutoXAKSession.getUserId();
         if (!owner) return;
         await AutoXAKSession.syncPendingProfile();
-        if (navigator.onLine) {
+        if (navigator.onLine && !document.getElementById('summary-modal').classList.contains('active')) {
             try {await AutoXAKOfflineStore.syncPendingTrips();} catch (_) {}
         }
         if (owner!==AutoXAKSession.getUserId()) return;
@@ -1277,6 +1274,8 @@
             if (replies[1].status==='fulfilled' && replies[1].value.response.ok && !localStorage.getItem('autoXAK_pending_profile')) {
                 const prof=replies[1].value.data;
                 resolvedCarId=prof.car_id || resolvedCarId;
+                currentCityFuelRate=Number.isFinite(prof.fuel_consumption)?prof.fuel_consumption:null;
+                if(currentCityFuelRate!==null)localStorage.setItem("autoXAK_fuel_pass",String(currentCityFuelRate));
                 if (prof.car_name) localStorage.setItem('autoXAK_selected_car_name',prof.car_name);
                 else if (localStorage.getItem('autoXAK_selected_car_id')!==resolvedCarId) localStorage.removeItem('autoXAK_selected_car_name');
             }
@@ -1295,6 +1294,8 @@
         document.getElementById('cockpit-car-name').innerText=carDisplayName;
         document.getElementById('cockpit-savings-val').innerText=formatCockpitSavings(totalRub);
         document.getElementById('cockpit-trips-count').innerText=String(totalTrips);
+        document.getElementById('savings-empty-caption').hidden=totalTrips>0;
+        AutoXAKProgress.refresh('cockpit-progress',7);
         document.getElementById('cockpit-ghost-status').innerText=ghostStatus;
     }
 
@@ -1311,12 +1312,13 @@
 
     function retryGeoPermission() {
         closeGeoModals();
-        requestStartTrip(true);
+        window.alert('Разрешите геолокацию для этого сайта в настройках браузера. Запись поездки продолжается.');
     }
 
     async function requestStartTrip(forceStartOnDesktop = false) {
         if (tripActive || startingTrip || finishingTrip) return;
         if (pendingFinishedPayload) { await finishActiveTrip(); return; }
+        if(currentCityFuelRate===null) {window.alert('Укажите городской расход автомобиля в гараже для расчёта рублей.');window.location.assign('/setup?edit=1');return;}
         let permission = Promise.resolve();
         if (typeof DeviceMotionEvent === 'undefined') {
             captureMotionPermission = 'unsupported';
@@ -1403,11 +1405,11 @@
 
         setTripGlowState('green');
         document.getElementById('trip-timer-display').innerText = "00:00";
-        document.getElementById('trip-live-savings').innerText = '—';
-        document.getElementById('trip-live-savings').title = 'Для оценки экономии нужны контрольный расход и сопоставимая поездка.';
+        document.getElementById('trip-live-savings').innerText = '+0.00 ₽';
+        document.getElementById('trip-live-savings').title = 'Расчёт по выбранному автомобилю и данным поездки.';
         document.getElementById('trip-live-distance').innerText = "0 км";
         document.getElementById('trip-live-bumps').innerText = "0";
-        document.getElementById('trip-live-smooth').innerText = "—";
+        document.getElementById('trip-live-smooth').innerText = "100/100";
         document.getElementById('pill-net-status').innerHTML = navigator.onLine ? "Интернет<br>подключен" : "Интернет<br>оффлайн";
         document.getElementById('pill-gps-status').innerHTML = "GPS<br>поиск...";
 
@@ -1526,7 +1528,7 @@
                 lat: hasRecentGps ? Number(currentLat.toFixed(6)) : null,
                 lon: hasRecentGps ? Number(currentLon.toFixed(6)) : null
             });
-            document.getElementById('trip-live-smooth').innerText = '—';
+            // The server calculates the descriptive smoothness score.
 
             // Live sensor impulses are visible during a stationary device check.
             // They do not create distance, driving violations or financial credit.
@@ -1539,7 +1541,7 @@
             } else {shockQuietSince=0;}
             const rotating = Math.hypot(...['alpha','beta','gamma'].map(axis=>Number.isFinite(rot[axis])?rot[axis]:0))>45;
             const shock = Math.abs(shockFiltered)>3.5 || (Math.abs(shockFiltered)>0.8 && Math.abs(jerk)>15);
-            if (!rotating && shockArmed && shock && nowMs-lastBumpTime>700 && nowMs-tripStartTime>=120) {
+            if (hasRecentGps && currentSpeedMps >= 2.0 && !rotating && shockArmed && shock && nowMs-lastBumpTime>700 && nowMs-tripStartTime>=120) {
                 lastBumpTime = nowMs;
                 shockArmed=false;
                 liveBumpsCount++;
@@ -1551,12 +1553,12 @@
             const horizMag = Math.hypot(linX, linY);
             const signedLong = Math.abs(linX) >= Math.abs(linY) ? linX : linY;
 
-            if (hasRecentGps && currentSpeedMps > 0.8 && horizMag > 2.3 && (nowMs - lastEventTime > 1400)) {
+            if (hasRecentGps && currentSpeedMps >= 2.0 && !rotating && horizMag > 2.3 && (nowMs - lastEventTime > 1400)) {
                 lastEventTime = nowMs;
                 if (signedLong >= 0) liveHarshStarts++; else liveHarshBrakes++;
-                document.getElementById('trip-live-smooth').innerText = '—';
+                // The server calculates the descriptive smoothness score.
                 setTripGlowState('red');
-            } else if (horizMag > 1.4) {
+            } else if (hasRecentGps && currentSpeedMps >= 2.0 && !rotating && horizMag > 1.4) {
                 setTripGlowState('yellow');
             } else if (nowMs - lastEventTime > 1800) {
                 setTripGlowState('green');
@@ -1591,11 +1593,15 @@
                             const dtGps = (nowMs - prevGpsTimeMs) / 1000;
                             const segKm = haversineKm(prevGpsLat, prevGpsLon, c.latitude, c.longitude);
                             if (dtGps > 0.2 && dtGps <= 10) {
-                                if (nativeSpeed !== null && previousNativeSpeedMps !== null) {
-                                    liveDistanceKm += (nativeSpeed + previousNativeSpeedMps) * 0.5 * dtGps / 1000;
-                                } else if (segKm >= 0.003 && segKm * 1000 / dtGps <= 75) {
+                                const stationary = nativeSpeed !== null && previousNativeSpeedMps !== null && Math.max(nativeSpeed,previousNativeSpeedMps)<0.5;
+                                if (!stationary && segKm >= (nativeSpeed!==null && previousNativeSpeedMps!==null ? .0002 : .003) && segKm * 1000 / dtGps <= 75) {
                                     liveDistanceKm += segKm;
                                     derivedSpeed = segKm * 1000 / dtGps;
+                                } else if (segKm * 1000 / dtGps > 75) {
+                                    currentSpeedMps=0;lastGpsFixMs=0;
+                                    previousNativeSpeedMps=prevGpsLat=prevGpsLon=prevGpsTimeMs=null;
+                                    document.getElementById('pill-gps-status').innerHTML='GPS<br>неточный';
+                                    return;
                                 }
                             }
                         }
@@ -1614,6 +1620,7 @@
                 (error) => {
                     if (!tripActive || activeSessionId !== recordingSessionId) return;
                     captureGeoPermission = error.code===1?'denied':'unavailable';
+                    if(error.code===1 || error.code===2) document.getElementById(error.code===1?'modal-geo-denied':'modal-geo-disabled').classList.add('active');
                     currentSpeedMps = 0; lastGpsFixMs = 0;
                     previousNativeSpeedMps = prevGpsLat = prevGpsLon = prevGpsTimeMs = null;
                     document.getElementById('pill-gps-status').innerHTML = error.code===1 ? "GPS<br>нет доступа" : "GPS<br>поиск...";
@@ -1638,195 +1645,91 @@
 
     // ==================== СВАЙП ДЛЯ ЗАВЕРШЕНИЯ ====================
     (function initSwipeToStop() {
-        const container = document.getElementById('swipe-container');
-        const thumb = document.getElementById('swipe-thumb');
-        let isDragging = false;
-        let startX = 0;
-        let currentX = 0;
-
-        function getMaxSlide() {
-            return Math.max(10, container.clientWidth - thumb.clientWidth - 10);
+        const container=document.getElementById('swipe-container'), thumb=document.getElementById('swipe-thumb');
+        let pointer=null, start=0, offset=0;
+        const maximum=()=>Math.max(1,container.clientWidth-thumb.clientWidth-10);
+        thumb.setAttribute('role','button');thumb.tabIndex=0;thumb.setAttribute('aria-label','Завершить поездку');
+        thumb.addEventListener('pointerdown', event=>{
+            if(pointer!==null || !event.isPrimary || event.button!==0 || finishingTrip || (!tripActive && !pendingFinishedPayload)) return;
+            event.preventDefault();pointer=event.pointerId;start=event.clientX;offset=0;
+            thumb.setPointerCapture(pointer);thumb.classList.add('dragging');
+        });
+        thumb.addEventListener('pointermove',event=>{
+            if(event.pointerId!==pointer) return;
+            offset=Math.max(0,Math.min(maximum(),event.clientX-start));thumb.style.transform=`translateX(${offset}px)`;
+        });
+        function reset(event,complete=false) {
+            if(event.pointerId!==pointer) return;
+            const finish=complete && offset>=maximum()*.85;
+            const id=pointer;pointer=null;offset=0;
+            if(thumb.hasPointerCapture(id)) thumb.releasePointerCapture(id);
+            thumb.classList.remove('dragging');thumb.style.transform='translateX(0)';
+            if(finish) finishActiveTrip();
         }
-
-        function onStart(clientX) {
-            if (finishingTrip || (!tripActive && !pendingFinishedPayload)) return;
-            isDragging = true;
-            startX = clientX;
-            currentX = 0;
-            thumb.classList.add('dragging');
-        }
-
-        function onMove(clientX) {
-            if (!isDragging) return;
-            const maxSlide = getMaxSlide();
-            currentX = Math.max(0, Math.min(maxSlide, clientX - startX));
-            thumb.style.transform = `translateX(${currentX}px)`;
-        }
-
-        function onEnd() {
-            if (!isDragging) return;
-            isDragging = false;
-            thumb.classList.remove('dragging');
-            const maxSlide = getMaxSlide();
-            if (currentX >= maxSlide * 0.6) {
-                thumb.style.transform = `translateX(${maxSlide}px)`;
-                setTimeout(() => {
-                    thumb.style.transform = 'translateX(0px)';
-                    finishActiveTrip();
-                }, 150);
-            } else {
-                thumb.style.transform = 'translateX(0px)';
-            }
-            currentX = 0;
-        }
-
-        thumb.addEventListener('touchstart', (e) => onStart(e.touches[0].clientX), { passive: true });
-        window.addEventListener('touchmove', (e) => { if (isDragging) onMove(e.touches[0].clientX); }, { passive: true });
-        window.addEventListener('touchend', onEnd);
-
-        thumb.addEventListener('mousedown', (e) => onStart(e.clientX));
-        window.addEventListener('mousemove', (e) => { if (isDragging) onMove(e.clientX); });
-        window.addEventListener('mouseup', onEnd);
+        thumb.addEventListener('pointerup',e=>reset(e,true));
+        thumb.addEventListener('pointercancel',e=>reset(e));
+        thumb.addEventListener('lostpointercapture',e=>reset(e));
+        thumb.addEventListener('keydown',e=>{if(['Enter',' '].includes(e.key)){e.preventDefault();finishActiveTrip();}});
     })();
 
     // ==================== ЗАВЕРШЕНИЕ И ОТКРЫТИЕ ЭКРАНА "ИТОГ ПОЕЗДКИ" ====================
-    async function finishActiveTrip(endReason = 'user') {
-        if (finishingTrip || (!tripActive && !pendingFinishedPayload)) return;
-        finishingTrip = true;
-        tripActive = false;
-        if (estimateController) {estimateController.abort();estimateController=null;}
-
-        clearInterval(tripTimerInterval);
-        if (motionHandler) window.removeEventListener('devicemotion', motionHandler);
-        if (geoWatchId !== null) navigator.geolocation.clearWatch(geoWatchId);
-        geoWatchId = null;
-        clearInterval(draftTimerInterval);
-        if (wakeLock) { try { await wakeLock.release(); } catch (_) {} }
-
-        const elapsedSec = Math.max(1, Math.floor((Date.now() - tripStartTime) / 1000));
-        const sessionId = activeSessionId;
-        lastFinishedSessionId = sessionId;
-        const payload = pendingFinishedPayload || {
-            session_id: sessionId,
-            user_id: recordingOwnerId,
-            car_id: recordingCarId,
-            telemetry_stream: [...telemetryStream],
-            raw_recording: rawRecording(endReason)
-        };
-        pendingFinishedPayload = payload;
-
-        try {
-            await draftSaveChain.catch(()=>{});
-            await AutoXAKOfflineStore.savePendingTrip(payload);
-        } catch (error) {
-            finishingTrip = false;
-            window.alert("console.warn('Локальный кэш переполнен, отправляем напрямую на сервер');
-        }
-        pendingFinishedPayload = null;
-        if (releaseRecordingLock) {releaseRecordingLock();releaseRecordingLock=null;}
-        document.getElementById('active-trip-screen').classList.remove('active');
-
-        // Credit only results confirmed by the calculation endpoint.
-        let savedRub = null;
-        let startsCount = liveHarshStarts;
-        let brakesCount = liveHarshBrakes;
-        let idleMins = 0;
-        let bumpsCount = liveBumpsCount;
-        let distKm = liveDistanceKm;
-        let durSec = elapsedSec;
-        let isOffline = !navigator.onLine;
-        let quality = null;
-
-        try {
-            if (!navigator.onLine) throw new Error('Offline');
-
-            const {response:res, data:result} = await AutoXAKSession.fetchJSON('/api/v1/telemetry/session', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...(typeof AutoXAKSession !== 'undefined' ? AutoXAKSession.getAuthHeaders() : {})
-                },
-                body: JSON.stringify(payload)
-            },15000);
-
-            if (res.ok) {
-                quality = result.metrics?.capture_quality || null;
-                await AutoXAKOfflineStore.removePendingTrip(sessionId);
-                AutoXAKOfflineStore.rememberSyncedTrip(result, payload);
-                lastFinishedSessionId = result.session_id;
-                savedRub = Number.isFinite(result.cost_savings_rub) ? result.cost_savings_rub : null;
-                startsCount = Number.isFinite(result.harsh_accel_count) ? result.harsh_accel_count : null;
-                brakesCount = Number.isFinite(result.harsh_brake_count) ? result.harsh_brake_count : null;
-                bumpsCount = Number(result.road_anomalies_count ?? bumpsCount);
-                distKm = Number(result.distance_km ?? distKm);
-                durSec = Number(result.duration_seconds ?? durSec);
-                idleMins = Math.round(Number(result.traffic_jam_seconds ?? 0) / 60);
-                isOffline = false;
-
-                saveTripDetailsLocally(result.session_id || sessionId, {
-                    session_id: result.session_id || sessionId,
-                    hard_accel_count: startsCount,
-                    hard_brake_count: brakesCount,
-                    idle_minutes: idleMins,
-                    bumps_count: bumpsCount,
-                    distance_km: distKm,
-                    duration_seconds: durSec,
-                    total_savings_rub: savedRub,
-                    capture_quality: quality,
-                    math_status: result.metrics?.math_status || null,
-                    created_at: new Date(tripStartTime).toISOString()
-                }, false);
-            } else {
-                throw new Error('HTTP ' + res.status);
-            }
-        } catch (_) {
-            isOffline = true;
-            // The durable copy already exists. Never overwrite it with a later draft.
-            saveTripDetailsLocally(sessionId, {
-                session_id: sessionId,
-                hard_accel_count: startsCount,
-                hard_brake_count: brakesCount,
-                idle_minutes: idleMins,
-                bumps_count: bumpsCount,
-                distance_km: distKm,
-                duration_seconds: durSec,
-                total_savings_rub: savedRub,
-                capture_quality: {analysis_status:'unavailable',style_metrics_available:false},
-                created_at: new Date(tripStartTime).toISOString()
-            }, true);
-        }
-
-        document.getElementById('sum-savings-rub').innerText = Number.isFinite(savedRub) ? `${savedRub>=0?'+':''}${savedRub.toFixed(2)} ₽` : '—';
-        document.getElementById('sum-starts').innerText = startsCount===null?'—':String(startsCount);
-        document.getElementById('sum-brakes').innerText = brakesCount===null?'—':String(brakesCount);
-        document.getElementById('sum-idle').innerText = `${idleMins} мин`;
-        document.getElementById('sum-idle').parentElement.querySelector('.stat-cell-label').innerText='Малая скорость';
-        document.getElementById('sum-bumps').innerText = String(bumpsCount);
-        document.getElementById('sum-distance').innerText = formatDistance(distKm);
-        document.getElementById('sum-duration').innerText = formatDurationHoursMins(durSec);
-
-        const offlineBanner = document.getElementById('sum-offline-banner');
-        if (isOffline) {
-            offlineBanner.innerText = 'Поездка сохранена на устройстве и появится на сервере после синхронизации.';
-            offlineBanner.classList.add('visible');
-        } else {
-            offlineBanner.classList.remove('visible');
-        }
-        if (isOffline || (quality && !quality.style_metrics_available)) {
-            for (const id of ['sum-starts','sum-brakes','sum-idle']) document.getElementById(id).innerText = '—';
-        }
-        if (isOffline || (quality && !quality.style_metrics_available) || distKm===0) {
-            document.getElementById('sum-bumps').innerText = motionSamples.length ? String(liveBumpsCount) : '—';
-            document.getElementById('sum-bumps').title = 'Вертикальные импульсы датчика. Без подтверждённого движения они не считаются дорожными событиями.';
-        } else {
-            document.getElementById('sum-bumps').title = 'Дорожные события по данным поездки';
-        }
-
-        document.querySelector('#summary-modal .trophy-text').innerText = Number.isFinite(savedRub)?'Выгода сохранена':'Поездка сохранена';
-        document.querySelector('#summary-modal .summary-sub-caption').innerText = Number.isFinite(savedRub)?'Сэкономлено на топливе\nотносительно контрольной поездки':'Данные поездки сохранены';
-        document.querySelector('#summary-modal .btn-lime-primary').innerText = Number.isFinite(savedRub)?'Зачислить в копилку':'Готово';
+    let finishedResult=null;
+    function showTripSummary(result, payload, pending) {
+        const value=(id,n,format=String)=>{document.getElementById(id).textContent=Number.isFinite(n)?format(n):'—';};
+        value('sum-savings-rub',result.cost_savings_rub,n=>`${n>=0?'+':''}${n.toFixed(2)} ₽`);
+        value('sum-starts',result.harsh_accel_count);value('sum-brakes',result.harsh_brake_count);
+        value('sum-bumps',result.road_anomalies_count);value('sum-idle',result.traffic_jam_seconds,n=>`${Math.round(n/60)} мин`);
+        value('sum-distance',result.distance_km,formatDistance);value('sum-duration',result.duration_seconds,formatDurationHoursMins);
+        value('sum-smooth',result.smooth_score,n=>`${n}/100`);
+        document.querySelector('#summary-modal .trophy-text').textContent=pending?'Ожидает синхронизации':'Выгода сохранена';
+        document.querySelector('#summary-modal .summary-sub-caption').textContent='Сэкономлено на топливе относительно лихача';
+        document.getElementById('sum-offline-banner').textContent='Поездка синхронизируется при появлении сети. Итог будет уточнён.';
+        document.getElementById('sum-offline-banner').classList.toggle('visible',pending);
         document.getElementById('summary-modal').classList.add('active');
-        finishingTrip = false;
+        try {localStorage.setItem('autoXAK_unclaimed_summary',JSON.stringify({user_id:payload.user_id,session_id:result.session_id,result,pending}));} catch(_) {}
+    }
+    async function finishActiveTrip(endReason='user') {
+        if(finishingTrip || (!tripActive && !pendingFinishedPayload)) return;
+        finishingTrip=true;tripActive=false;closeGeoModals();
+        if(estimateController){estimateController.abort();estimateController=null;}
+        clearInterval(tripTimerInterval);clearInterval(draftTimerInterval);
+        if(motionHandler) window.removeEventListener('devicemotion',motionHandler);
+        if(geoWatchId!==null) navigator.geolocation.clearWatch(geoWatchId);
+        geoWatchId=null;
+        if(wakeLock){try{await wakeLock.release();}catch(_){}wakeLock=null;}
+        const payload=pendingFinishedPayload || {session_id:activeSessionId,user_id:recordingOwnerId,car_id:recordingCarId,
+            telemetry_stream:[...telemetryStream],raw_recording:rawRecording(endReason)};
+        pendingFinishedPayload=payload;
+        await draftSaveChain.catch(()=>{});
+        let localSaved=false, result=null;
+        try {await AutoXAKOfflineStore.savePendingTrip(payload);localSaved=true;}catch(error){console.warn('Trip local persistence failed:',error.name);}
+        if(navigator.onLine) {
+            try {
+                const reply=await AutoXAKSession.fetchJSON('/api/v1/telemetry/session',{method:'POST',
+                    headers:{'Content-Type':'application/json',...AutoXAKSession.getAuthHeaders()},body:JSON.stringify(payload)},30000);
+                if(reply.response.ok) result=reply.data;
+            }catch(_){}
+        }
+        if(!localSaved && !result) {
+            finishingTrip=false;
+            window.alert('Поездка пока только в памяти этой вкладки: не удалось сохранить её на устройстве и сервере. Не закрывайте вкладку. Восстановите сеть или освободите место и повторите свайп.');
+            return;
+        }
+        if(releaseRecordingLock){releaseRecordingLock();releaseRecordingLock=null;}
+        pendingFinishedPayload=null;
+        if(result) {
+            // POST already credited the trip atomically. Keep no second action
+            // between the displayed receipt and its credited balance.
+            AutoXAKOfflineStore.rememberSyncedTrip(result,payload);
+            try {await AutoXAKOfflineStore.removePendingTrip(payload.session_id);} catch(_) {}
+        }
+        lastFinishedSessionId=result?.session_id || payload.session_id;
+        finishedResult=result;
+        document.getElementById('active-trip-screen').classList.remove('active');
+        showTripSummary(result || {session_id:payload.session_id,cost_savings_rub:null,
+            duration_seconds:(payload.raw_recording.ended_at_ms-payload.raw_recording.started_at_ms)/1000,
+            distance_km:gpsSamples.length>1?liveDistanceKm:null},payload,!result);
+        finishingTrip=false;
     }
 
     function saveTripDetailsLocally(sid, details, isOfflineTrip = false) {
@@ -1846,30 +1749,17 @@
 
     let lastFinishedSessionId = null;
 
+    let claiming=false;
     async function claimToPiggyBank() {
-        const bkInput = document.getElementById('input-bk-consumption');
-        const bkVal = bkInput ? parseFloat(bkInput.value.replace(',', '.')) : NaN;
-        if (bkInput && bkInput.value.trim() && (!Number.isFinite(bkVal) || bkVal <= 0 || bkVal > 100)) { window.alert('Введите расход от 0 до 100 л/100 км.'); return; }
-
-        // Если водитель ввел значение БК — отправляем на бэкенд для ML
-        if (!isNaN(bkVal) && bkVal > 0 && lastFinishedSessionId) {
-            try {
-                await AutoXAKOfflineStore.savePendingControl(lastFinishedSessionId, bkVal);
-                await AutoXAKOfflineStore.syncPendingTrips();
-                // Обновляем локальную запись
-                const map = JSON.parse(localStorage.getItem('autoXAK_trip_details_map') || '{}');
-                if (map[lastFinishedSessionId]) {
-                    map[lastFinishedSessionId].board_computer_consumption_l100km = bkVal;
-                    localStorage.setItem('autoXAK_trip_details_map', JSON.stringify(map));
-                }
-            } catch (err) {
-                console.warn('[ML-Audit] Не удалось отправить значение БК на сервер (оффлайн):', err);
-            }
-        }
-
-        if (bkInput) bkInput.value = '';
-        document.getElementById('summary-modal').classList.remove('active');
-        syncCockpitWithBackend();
+        if(claiming) return;
+        claiming=true;
+        const button=document.querySelector('#summary-modal .btn-lime-primary');button.disabled=true;
+        try {
+            localStorage.removeItem('autoXAK_unclaimed_summary');
+            document.getElementById('summary-modal').classList.remove('active');
+            await syncCockpitWithBackend();
+        } catch(error) {window.alert(error.message);}
+        finally {claiming=false;button.disabled=false;}
     }
 
     window.addEventListener('online', () => {
@@ -1877,126 +1767,19 @@
     });
 
     window.addEventListener('DOMContentLoaded', async () => {
+        try {
         if (typeof AutoXAKSession !== 'undefined' && AutoXAKSession.ensureAuthenticated) {
             const session = await AutoXAKSession.ensureAuthenticated();
             if (session && session.userId) currentUserId = session.userId;
         }
+        try {
+            const summary=JSON.parse(localStorage.getItem('autoXAK_unclaimed_summary')||'null');
+            if(summary?.user_id===currentUserId){finishedResult=summary.pending?null:summary.result;lastFinishedSessionId=summary.session_id;showTripSummary(summary.result,{user_id:currentUserId},summary.pending);}
+        } catch(_){}
         await AutoXAKOfflineStore.recoverInterruptedTrips();
         await syncCockpitWithBackend();
+        } catch(error) {console.warn('Session initialization:',error.message);}
     });
-
-        // === AUTOXAK FULL REFERENCE PATCH V2 ===
-        (function() {
-            let _refPrevLat = null, _refPrevLon = null, _refPrevGpsMs = 0;
-            let _refGravX = 0.0, _refGravY = 0.0, _refGravZ = 9.81, _refGravInit = false;
-
-            // 1. Постоянная калибровка гравитации (устраняет 337 ложных неровностей в держателе)
-            window.addEventListener('devicemotion', function(e) {
-                if (typeof isDemoMode !== 'undefined' && isDemoMode) return;
-                const ag = e.accelerationIncludingGravity;
-                if (ag && ag.x !== null && ag.x !== undefined) {
-                    const rx = Number(ag.x) || 0.0;
-                    const ry = Number(ag.y) || 0.0;
-                    const rz = Number(ag.z) || 9.81;
-                    if (!_refGravInit) {
-                        _refGravX = rx; _refGravY = ry; _refGravZ = rz;
-                        _refGravInit = true;
-                    } else {
-                        const a = 0.96;
-                        _refGravX = a * _refGravX + (1 - a) * rx;
-                        _refGravY = a * _refGravY + (1 - a) * ry;
-                        _refGravZ = a * _refGravZ + (1 - a) * rz;
-                    }
-                    if (typeof gravX !== 'undefined') {
-                        gravX = _refGravX; gravY = _refGravY; gravZ = _refGravZ;
-                    }
-                    if (e.acceleration && e.acceleration.x !== null) {
-                        if (typeof linAx !== 'undefined') {
-                            linAx = Number(e.acceleration.x) || 0.0;
-                            linAy = Number(e.acceleration.y) || 0.0;
-                            linAz = Number(e.acceleration.z) || 0.0;
-                        }
-                    } else if (typeof linAx !== 'undefined') {
-                        linAx = rx - _refGravX;
-                        linAy = ry - _refGravY;
-                        linAz = rz - _refGravZ;
-                    }
-                }
-            }, { capture: true, passive: true });
-
-            // 2. Расчет скорости по координатам GPS (Haversine Fallback), чтобы экономия не замирала на 1.41р
-            if (navigator.geolocation && navigator.geolocation.watchPosition) {
-                const _origWatch = navigator.geolocation.watchPosition.bind(navigator.geolocation);
-                navigator.geolocation.watchPosition = function(successCb, errorCb, options) {
-                    return _origWatch(function(pos) {
-                        try {
-                            const nowMs = Date.now();
-                            const lat = pos.coords.latitude;
-                            const lon = pos.coords.longitude;
-                            const acc = pos.coords.accuracy || 999;
-                            let spd = pos.coords.speed;
-
-                            if ((spd === null || spd === undefined || spd === 0) && _refPrevLat !== null && acc <= 45) {
-                                const dtSec = (nowMs - _refPrevGpsMs) / 1000.0;
-                                if (dtSec >= 0.4 && dtSec <= 15.0) {
-                                    const R = 6371000.0;
-                                    const dLat = (lat - _refPrevLat) * Math.PI / 180.0;
-                                    const dLon = (lon - _refPrevLon) * Math.PI / 180.0;
-                                    const a = Math.sin(dLat / 2) ** 2 +
-                                              Math.cos(_refPrevLat * Math.PI / 180.0) * Math.cos(lat * Math.PI / 180.0) *
-                                              Math.sin(dLon / 2) ** 2;
-                                    const distM = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(Math.max(0, 1 - a)));
-                                    const calcSpd = distM / dtSec;
-                                    if (calcSpd >= 1.0 && calcSpd <= 55.0) {
-                                        spd = calcSpd;
-                                        if (typeof isRecording !== 'undefined' && isRecording && typeof liveDistanceKm !== 'undefined' && curSpeed < 0.5) {
-                                            liveDistanceKm += distM / 1000.0;
-                                        }
-                                    }
-                                }
-                            }
-                            if (acc <= 45) {
-                                _refPrevLat = lat; _refPrevLon = lon; _refPrevGpsMs = nowMs;
-                            }
-                            if (spd !== null && spd !== undefined && spd >= 0.5) {
-                                if (typeof curSpeed !== 'undefined') curSpeed = Number(spd);
-                                try {
-                                    Object.defineProperty(pos.coords, 'speed', { value: Number(spd), configurable: true });
-                                } catch (_) {}
-                            }
-                        } catch (err) {
-                            console.warn('[GPS Fallback]', err);
-                        }
-                        return successCb(pos);
-                    }, errorCb, options);
-                };
-            }
-
-            // 3. Безотказная обертка над всеми методами сохранения в AutoXAKOfflineStore
-            if (typeof AutoXAKOfflineStore !== 'undefined') {
-                const storeClone = Object.assign({}, AutoXAKOfflineStore);
-                for (const fnName of ['savePendingTrip', 'putTrip', 'saveTrip', 'enqueueTrip']) {
-                    if (typeof storeClone[fnName] === 'function') {
-                        const _origFn = storeClone[fnName].bind(AutoXAKOfflineStore);
-                        storeClone[fnName] = async function(tripPayload) {
-                            try {
-                                const slim = Object.assign({}, tripPayload);
-                                if (slim.raw_recording && Array.isArray(slim.telemetry_stream) && slim.telemetry_stream.length >= 50) {
-                                    delete slim.raw_recording;
-                                }
-                                return await _origFn(slim);
-                            } catch (err) {
-                                console.warn('[OfflineStore Fallback] Пропускаем сбой IndexedDB:', err);
-                                return { skipped_local: true, id: tripPayload && tripPayload.session_id };
-                            }
-                        };
-                    }
-                }
-                try {
-                    window.AutoXAKOfflineStore = storeClone;
-                } catch (_) {}
-            }
-        })();
 
     </script>
 </body>

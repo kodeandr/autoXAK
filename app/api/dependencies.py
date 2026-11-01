@@ -35,7 +35,7 @@ async def require_user(
     if not math.isfinite(expires) or expires <= time.time():
         raise denied
     user = await db.get(User, subject)
-    if user is None:
+    if user is None or user.merged_into:
         raise denied
     return user
 

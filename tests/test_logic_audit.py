@@ -70,7 +70,8 @@ async def test_traffic_score_cannot_manufacture_oil_or_money(committed_client, s
     response = await committed_client.post('/api/v1/telemetry/preview', json=body)
     assert response.status_code == 200, response.text
     assert calls == [1]
-    assert response.json()['cost_savings_rub'] is None
+    assert response.json()['math_status']['oil_wear']['status']=='unavailable'
+    assert response.json()['math_status']['fuel_savings']['policy_version']=='twin-fuel-mvp-1'
 
 
 async def test_dsp_runs_outside_request_event_loop(committed_client, synthetic_telemetry_batch, monkeypatch):
@@ -130,7 +131,7 @@ async def test_raw_capture_with_unsupported_frequency_is_still_saved(committed_c
     assert response.status_code == 200, response.text
     assert response.json()['status'] == 'RECORDED'
     assert 'unsupported_motion_rate' in response.json()['metrics']['capture_quality']['quality_flags']
-    assert response.json()['cost_savings_rub'] is None
+    assert response.json()['cost_savings_rub'] == 0.0  # No GPS distance: strict short-trip rule.
     exported = await committed_client.get('/api/v2/trips/'+response.json()['session_id']+'/export')
     assert exported.status_code == 200
     assert exported.json()['point_counts']['motion'] == 50

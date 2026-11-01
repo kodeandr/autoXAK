@@ -1,4 +1,4 @@
-﻿"""Finite, bounded legacy telemetry input; missing coordinates stay missing."""
+"""Finite, bounded legacy telemetry input; missing coordinates stay missing."""
 import uuid
 from typing import Optional, Literal
 from pydantic import BaseModel, ConfigDict, Field, model_validator
