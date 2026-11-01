@@ -28,7 +28,8 @@ class TwinEngine:
     def filter_road_anomalies(
         user_ax: np.ndarray,
         raw_az: Optional[np.ndarray] = None,
-        dt: float = 0.02
+        dt: float = 0.02,
+        eligible_mask=None
     ) -> Tuple[np.ndarray, int]:
         """Z-Shock Veto: подавление ложных перегрузок при наезде на лежачие полицейские и ямы."""
         if not np.isfinite(dt) or dt <= 0:
@@ -45,17 +46,22 @@ class TwinEngine:
             az = np.asarray(raw_az, dtype=float)
             az = az - np.median(az)  # Accept gravity-inclusive and linear vertical inputs.
             jerk_z = np.gradient(az, dt) if n > 1 else np.zeros(n)
-            impact_mask = (np.abs(az) > 3.5) | (np.abs(jerk_z) > 15.0)
-
-            i = 0
-            while i < n:
+            impact_mask = (np.abs(az) > 3.5) | ((np.abs(az) > .8) & (np.abs(jerk_z) > 15.0))
+            if eligible_mask is not None:
+                eligible = np.asarray(eligible_mask, dtype=bool)
+                if eligible.shape != az.shape:
+                    raise ValueError('Shock eligibility must align with acceleration')
+                impact_mask &= eligible
+            armed, quiet, last = True, 0.0, -1.0
+            for i in range(n):
+                quiet = quiet + dt if abs(az[i]) < .5 else 0.0
+                if quiet >= .12:
+                    armed = True
                 if impact_mask[i]:
-                    anomalies_count += 1
-                    end_idx = min(n, i + suppression_window)
-                    clean_ax[i:end_idx] = 0.0
-                    i = end_idx
-                else:
-                    i += 1
+                    clean_ax[max(0, i-int(.1/dt)):min(n, i+suppression_window)] = 0.0
+                    if armed and i*dt-last >= .7:
+                        anomalies_count += 1
+                        armed, last = False, i*dt
         else:
             jerk_x = np.gradient(clean_ax, dt) if n > 1 else np.zeros(n)
             spike_mask = (np.abs(clean_ax) > 2.5) & (np.abs(jerk_x) > 20.0)
@@ -100,11 +106,13 @@ class TwinEngine:
     def calculate_cmem_traction_power(self, speed_mps, ax_mps2):
         raise ValueError('Use road_energy with explicit slope, wind, rotating mass and road-load parameters')
 
-    def evaluate_financial_delta(self, *args, comparison=None, fuel_price_rub=None, **kwargs):
-        """Only explicit matched fuel observations support a signed comparison.
+    def evaluate_financial_delta(self, *args, comparison=None, fuel_price_rub=None,
+                                 distance_km=None, user_ax=None, **kwargs):
+        """Evaluate the approved MVP fuel multiplier policy on cleaned user_ax.
 
-        Legacy speed, distance and oil arguments cannot manufacture liters or rubles.
-        A numerical comparison of caller declarations is not a verified causal saving.
+        K_user = 1 + mean(user_ax > 1.8) * 2.2; K_twin = 1.66.
+        Distance <= 10 m earns exactly zero. Matched observations remain an
+        independent explicit comparison path for research callers.
         """
         from app.services.reference_math import VERSION, compare_fuel
         result = {'status':'unavailable','reason':'matched_reference_fuel_required','math_version':VERSION,
@@ -117,6 +125,33 @@ class TwinEngine:
             result.update(compared, fuel_saved_rub=compared['delta_cost_rub'],fuel_savings_rub=compared['delta_cost_rub'],
                           total_savings_rub=compared['delta_cost_rub'],cost_savings_rub=compared['delta_cost_rub'],
                           saved_fuel_liters=compared['delta_fuel_l'],fuel_saved_liters=compared['delta_fuel_l'],reason=None)
+        elif distance_km is not None and user_ax is not None:
+            distance = float(distance_km)
+            ax = np.asarray(user_ax, dtype=float)
+            if not np.isfinite(distance) or distance < 0 or ax.ndim != 1 or not np.all(np.isfinite(ax)):
+                raise ValueError('Finite nonnegative distance and finite acceleration samples are required')
+            rate = getattr(self.profile, 'base_city_fuel_rate_l100km', None)
+            price = fuel_price_rub if fuel_price_rub is not None else (self.fuel_price if self.fuel_price is not None else 72.40)
+            if distance > .01 and (not len(ax) or rate is None or price is None):
+                result.update(reason='declared_fuel_rate_price_and_acceleration_required')
+                return result
+            if rate is not None and (not np.isfinite(rate) or not 0 < rate <= 100):
+                raise ValueError('Fuel rate must be in (0, 100] l/100km')
+            if price is not None and (not np.isfinite(price) or not 0 < price <= 10000):
+                raise ValueError('Fuel price must be in (0, 10000] rub/l')
+            hard = int(np.count_nonzero(ax > 1.8))
+            fraction = hard / max(1, len(ax))
+            multiplier = 1.0 + fraction * 2.2
+            delta = max(0.0, 1.66 - multiplier)
+            liters = 0.0 if distance <= .01 else distance / 100 * rate * delta
+            rubles = round(liters * price, 2)
+            result.update(status='model_estimate', reason=None, policy_version='twin-fuel-mvp-1',
+                          n_hard=hard, n_total=max(1, len(ax)), stress_fraction=fraction,
+                          k_user=multiplier, k_twin=1.66, distance_km=distance,
+                          base_city_fuel_rate_l100km=rate, price_rub_per_l=price,
+                          fuel_saved_rub=rubles, fuel_savings_rub=rubles, total_savings_rub=rubles,
+                          cost_savings_rub=rubles, saved_fuel_liters=liters, fuel_saved_liters=liters,
+                          causal_savings_verified=False, validation_status='not_established_by_real_obd_logs')
         return result
 
     simulate_twin_and_delta = evaluate_financial_delta
@@ -125,5 +160,15 @@ class TwinEngine:
 AggressiveTwinEngine = TwinEngine
 
 def calculate_trip_smoothness_score(*args, **kwargs):
-    """No validated mapping from event rates to a universal 0..100 score exists."""
-    return None
+    """Product indicator: percent of valid samples within maneuver thresholds.
+
+    This is an explicit descriptive policy, not a safety or fuel certification.
+    Legacy count-only calls cannot determine the fraction of smooth samples.
+    """
+    signal = kwargs.get('acceleration')
+    if signal is None:
+        return None
+    values = np.asarray(signal, dtype=float)
+    if not len(values) or not np.all(np.isfinite(values)):
+        return None
+    return int(np.floor(100 * np.mean((values <= 2.0) & (values >= -2.3)) + .5))

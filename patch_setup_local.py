@@ -1,4 +1,4 @@
-﻿path = "static/setup.html"
+path = "static/setup.html"
 with open(path, "r", encoding="utf-8") as f:
     html = f.read()
 

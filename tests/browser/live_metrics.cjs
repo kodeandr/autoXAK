@@ -16,14 +16,14 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
         const headers=await page.evaluate(()=>AutoXAKSession.getAuthHeaders());
         const owner=await page.evaluate(()=>AutoXAKSession.getUserId());
         await page.evaluate(()=>{
-            let clock=Date.now(),gps;
+            let clock=Date.now(),gps,meters=0;
             Date.now=()=>clock;
             window.__advance=ms=>{clock+=ms;};
             Object.defineProperty(DeviceMotionEvent,'requestPermission',{configurable:true,value:()=>Promise.resolve('granted')});
             Object.defineProperty(navigator,'geolocation',{configurable:true,value:{
                 watchPosition:callback=>{gps=callback;return 0;},clearWatch:()=>{}
             }});
-            window.__gps=speed=>gps({timestamp:clock,coords:{latitude:55.75,longitude:37.61,accuracy:5,speed}});
+            window.__gps=speed=>{meters+=speed;gps({timestamp:clock,coords:{latitude:55.75+meters/111194.9266,longitude:37.61,accuracy:5,speed}});};
             window.__motion=(gravity,linear=[0,0,0],rotation=0,withLinear=true)=>{
                 clock+=20;
                 const event=new Event('devicemotion');
@@ -59,16 +59,16 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
             for(let i=0;i<5;i++) __motion([0,9.81,0],[0,5,0],0,false);
             return {counts,beforeRotation,afterRotation:beforeFallback,fallback:liveBumpsCount-beforeFallback};
         });
-        assert(geometry.counts.every(value=>value.difference===1));
+        assert(geometry.counts.every(value=>value.difference===0));
         assert(geometry.counts.every(value=>value.horizontal<0.001 && Math.abs(value.vertical-5)<0.001));
         assert.equal(geometry.afterRotation,geometry.beforeRotation);
-        assert.equal(geometry.fallback,1);
-        assert.equal(await page.locator('#trip-live-savings').innerText(),'—');
+        assert.equal(geometry.fallback,0);
+        assert.equal(await page.locator('#trip-live-savings').innerText(),'+0.00 ₽');
         await page.evaluate(()=>finishActiveTrip());
-        assert.equal(await page.locator('#sum-bumps').innerText(),'5');
-        assert.equal(await page.locator('#sum-savings-rub').innerText(),'—');
+        assert.equal(await page.locator('#sum-bumps').innerText(),'0');
+        assert.equal(await page.locator('#sum-savings-rub').innerText(),'+0.00 ₽');
         assert.equal(await page.locator('#sum-offline-banner').evaluate(el=>el.classList.contains('visible')),false);
-        await page.evaluate(()=>document.getElementById('summary-modal').classList.remove('active'));
+        await page.evaluate(()=>claimToPiggyBank());
 
         const before=(await (await page.request.get(`${base}/api/v1/users/${owner}/dashboard`,{headers})).json());
         await start();
@@ -82,17 +82,17 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
         const previewResponse=page.waitForResponse('**/api/v1/telemetry/preview');
         await page.evaluate(()=>updateLiveEstimate());
         const preview=await (await previewResponse).json();
-        assert.equal(preview.cost_savings_rub,null);
-        assert.equal(preview.math_status.monetary_credit_status,'not_verified');
-        assert.equal(await page.locator('#trip-live-savings').innerText(),'—');
+        assert(preview.cost_savings_rub>0);
+        assert.equal(preview.math_status.monetary_credit_status,'model_estimate');
+        assert.match(await page.locator('#trip-live-savings').innerText(),/^\+[0-9]+\.[0-9]{2} ₽$/);
         assert.deepEqual(await (await page.request.get(`${base}/api/v1/users/${owner}/dashboard`,{headers})).json(),before);
         await page.evaluate(()=>finishActiveTrip());
-        assert.equal(await page.locator('#sum-savings-rub').innerText(),'—');
+        assert(Number((await page.locator('#sum-savings-rub').innerText()).replace(/[+ ₽]/g,''))>0);
         const after=await (await page.request.get(`${base}/api/v1/users/${owner}/dashboard`,{headers})).json();
         assert.equal(after.total_trips,before.total_trips+1);
 
         // A response for a finished recording must not update the next trip.
-        await page.evaluate(()=>document.getElementById('summary-modal').classList.remove('active'));
+        await page.evaluate(()=>claimToPiggyBank());
         await start();
         await page.evaluate(()=>{__gps(10);for(let i=0;i<100;i++) __motion([0,9.81,0]);});
         let releaseOldPreview;
@@ -108,16 +108,16 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
         await page.evaluate(()=>{window.__oldPreview=updateLiveEstimate();});
         await requested;
         await page.evaluate(()=>finishActiveTrip());
-        await page.evaluate(()=>document.getElementById('summary-modal').classList.remove('active'));
+        await page.evaluate(()=>claimToPiggyBank());
         await start();
         releaseOldPreview();
         await page.evaluate(()=>window.__oldPreview);
-        assert.equal(await page.locator('#trip-live-savings').innerText(),'—');
+        assert.equal(await page.locator('#trip-live-savings').innerText(),'+0.00 ₽');
         await page.unroute('**/api/v1/telemetry/preview');
         await page.evaluate(()=>finishActiveTrip());
 
         // Long recordings retain their raw samples while bounding preview uploads.
-        await page.evaluate(()=>document.getElementById('summary-modal').classList.remove('active'));
+        await page.evaluate(()=>claimToPiggyBank());
         await start();
         await page.evaluate(()=>{
             __gps(10);
@@ -132,7 +132,7 @@ const base = process.env.AUTOXAK_BASE_URL || 'http://127.0.0.1:8000';
         assert.equal(sampled.telemetry_stream.at(-1).t,await page.evaluate(()=>telemetryStream.at(-1).t));
         await page.evaluate(()=>finishActiveTrip());
         assert.deepEqual(errors,[]);
-        console.log('Live metrics: portrait/landscape/tilted impulses without GPS, rotation veto, gravity fallback, zero stationary money, hidden quality banner and non-crediting shared-model preview passed');
+        console.log('Live metrics: stationary speed veto, gravity projection, rotation veto, moving financial preview, stale replies and full long-capture retention passed');
         await context.close();
     } finally {await browser.close();}
 })().catch(error=>{console.error(error);process.exit(1);});

@@ -1,16 +1,17 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>autoXAK — Вход</title>
     <link rel="manifest" href="/static/manifest.json">
-    <meta name="theme-color" content="#121316">
+    <meta name="theme-color" content="#121417">
     <script src="/static/session.js"></script>
+    <script src="/static/offline_store.js"></script>
     <style>
         :root {
             --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
-            --bg-root: #121316;
+            --bg-root: #121417;
             --bg-card: #1C1E22;
             --border-card: rgba(255, 255, 255, 0.08);
             --lime: #D2FA58;
@@ -43,7 +44,7 @@
 
         .mobile-container {
             width: 100%;
-            max-width: 480px;
+            max-width: 414px;
             height: 100%;
             height: 100dvh;
             background-color: var(--bg-root);
@@ -96,7 +97,7 @@
             width: 100%;
             height: 52px;
             background: var(--lime);
-            color: #121316;
+            color: #121417;
             border: none;
             border-radius: 16px;
             font-size: 15.5px;
@@ -148,12 +149,15 @@
             flex-shrink: 0;
         }
     </style>
+    <link rel="stylesheet" href="/static/app.css">
+    <link rel="stylesheet" href="/static/auth.css">
 </head>
 <body>
 
 <div class="mobile-container">
 
     <!-- Центральный логотип точь-в-точь по референсу Figma -->
+    <div id="welcome-view" class="auth-view">
     <div class="hero-section">
         <svg class="brand-icon" viewBox="0 0 180 170" fill="none" xmlns="http://www.w3.org/2000/svg">
             <!-- Полукруглая дуга спидометра (180 градусов, центр 90,86, радиус 56) -->
@@ -172,7 +176,7 @@
             <line x1="132" y1="84" x2="123" y2="84" stroke="#D2FA58" stroke-width="5.5" stroke-linecap="round"/>
 
             <!-- Стрелка спидометра и центральное кольцо -->
-            <circle cx="90" cy="84" r="7.5" stroke="#D2FA58" stroke-width="5.5" fill="#121316"/>
+            <circle cx="90" cy="84" r="7.5" stroke="#D2FA58" stroke-width="5.5" fill="#121417"/>
             <line x1="95.3" y1="78.7" x2="111.5" y2="62.5" stroke="#D2FA58" stroke-width="5.5" stroke-linecap="round"/>
 
             <!-- Ломаная стрелка снижения затрат -->
@@ -195,26 +199,96 @@
             Продолжить как гость
         </button>
 
-        <button type="button" class="btn-yandex" onclick="handleLoginWithYandex()">
-            <span class="yandex-badge">Я</span>
-            <span>Войти с Яндекс ID</span>
-        </button>
+        <button type="button" class="btn-yandex" onclick="showAuthForm('login')">Войти</button>
+        <button type="button" class="auth-link" onclick="showAuthForm('register')">Зарегистрироваться</button>
+        <p id="welcome-error" class="field-error" role="alert"></p>
     </div>
-
+    </div>
+    <section id="credentials-view" class="auth-view" hidden>
+        <button type="button" class="auth-back" onclick="showWelcome()">← Назад</button>
+        <h1 id="auth-title">Вход</h1>
+        <p id="register-description" class="auth-description" hidden>Сохраняйте историю поездок и возвращайтесь к результатам</p>
+        <form id="credentials-form" novalidate>
+            <label for="auth-login">Логин</label>
+            <input id="auth-login" name="login" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Введите логин" aria-describedby="login-hint login-error">
+            <p id="login-hint" class="auth-hint">5–15 латинских букв</p>
+            <p id="login-error" class="field-error" role="alert"></p>
+            <label for="auth-password">Пароль</label>
+            <div class="password-wrap"><input id="auth-password" name="password" type="password" autocomplete="current-password" placeholder="Введите пароль" aria-describedby="password-hint password-error">
+                <button id="toggle-password" type="button" aria-label="Показать пароль" aria-pressed="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+            <p id="password-hint" class="auth-hint">8–15 символов</p>
+            <p id="password-error" class="field-error" role="alert"></p>
+            <p id="auth-error" class="auth-error" role="alert" hidden></p>
+            <button id="auth-submit" class="btn-guest" type="submit">Войти</button>
+        </form>
+        <button id="auth-switch" type="button" class="auth-link" onclick="showAuthForm(authMode==='login'?'register':'login')">Нет аккаунта? Зарегистрироваться</button>
+    </section>
 </div>
 
 <script>
-    async function handleContinueAsGuest() {
-        try {
-            await AutoXAKSession.ensureAuthenticated({newGuest: true});
-            window.location.href = '/';
-        } catch (error) { window.alert(error.message); }
-    }
-
-    async function handleLoginWithYandex() {
-        try { await AutoXAKSession.loginWithYandex(); }
-        catch (error) { window.alert(error.message); }
-    }
+let authMode='login', submitting=false, blockedUntil=0;
+function showWelcome() {
+    document.getElementById('welcome-view').hidden=false;
+    document.getElementById('credentials-view').hidden=true;
+}
+function showAuthForm(mode) {
+    authMode=mode;
+    const register=mode==='register';
+    document.getElementById('welcome-view').hidden=true;
+    document.getElementById('credentials-view').hidden=false;
+    document.getElementById('auth-title').textContent=register?'Создать аккаунт':'Вход';
+    document.getElementById('register-description').hidden=!register;
+    document.getElementById('auth-submit').textContent=register?'Создать аккаунт':'Войти';
+    document.getElementById('auth-switch').textContent=register?'Уже есть аккаунт? Войти':'Нет аккаунта? Зарегистрироваться';
+    document.getElementById('auth-password').autocomplete=register?'new-password':'current-password';
+    for (const id of ['login-error','password-error','auth-error']) document.getElementById(id).textContent='';
+    document.getElementById('auth-error').hidden=true;
+}
+document.getElementById('toggle-password').addEventListener('click',()=>{
+    const input=document.getElementById('auth-password'), show=input.type==='password';
+    input.type=show?'text':'password';
+    document.getElementById('toggle-password').setAttribute('aria-pressed',String(show));
+    document.getElementById('toggle-password').setAttribute('aria-label',show?'Скрыть пароль':'Показать пароль');
+});
+async function handleContinueAsGuest() {
+    if(submitting) return;
+    submitting=true;
+    try {await AutoXAKSession.ensureAuthenticated({newGuest:true});window.location.assign('/');}
+    catch(error) {document.getElementById('welcome-error').textContent=error.message;}
+    finally {submitting=false;}
+}
+document.getElementById('credentials-form').addEventListener('submit',async event=>{
+    event.preventDefault();
+    if(submitting) return;
+    const login=document.getElementById('auth-login').value, password=document.getElementById('auth-password').value;
+    const loginError=/^[a-zA-Z]{5,15}$/.test(login)?'':'Используйте 5–15 латинских букв';
+    const passwordError=[...password].length>=8 && [...password].length<=15?'':'Пароль: 8–15 символов';
+    document.getElementById('login-error').textContent=loginError;
+    document.getElementById('password-error').textContent=passwordError;
+    if(loginError || passwordError) return;
+    const button=document.getElementById('auth-submit'), errorBox=document.getElementById('auth-error');
+    errorBox.hidden=true;
+    if(authMode==='login' && Date.now()<blockedUntil) {errorBox.textContent='Слишком много попыток. Попробуйте позже';errorBox.hidden=false;return;}
+    submitting=true;button.disabled=true;button.setAttribute('aria-busy','true');
+    const mode=authMode, previous=AutoXAKSession.getUserId();
+    const guest=AutoXAKSession.isGuest() && previous && AutoXAKSession.getToken();
+    try {
+        if (guest) await AutoXAKSession.syncPendingProfile();
+        const {response,data}=await AutoXAKSession.fetchJSON('/api/v1/auth/'+mode, {
+            method:'POST',headers:{'Content-Type':'application/json',...(guest?AutoXAKSession.getAuthHeaders():{})},
+            body:JSON.stringify({login,password,...(guest?{guest_id:previous}:{})})},15000);
+        if(!response.ok) {
+            if(mode==='login') document.getElementById('auth-password').value='';
+            if(response.status===429) {blockedUntil=Date.now()+1000*(Number(response.headers.get('Retry-After'))||300);}
+            if(response.status===409) {document.getElementById('login-error').textContent='Этот логин уже занят';return;}
+            throw new Error(typeof data?.detail==='string'?data.detail:'Не удалось выполнить вход. Повторите попытку.');
+        }
+        if(guest && previous!==data.user_id) await AutoXAKOfflineStore.reassignOwner(previous,data.user_id);
+        AutoXAKSession.adoptSession(data);
+        window.location.assign('/');
+    } catch(error) {errorBox.textContent=error.message;errorBox.hidden=false;}
+    finally {submitting=false;button.disabled=false;button.removeAttribute('aria-busy');}
+});
 </script>
 </body>
 </html>

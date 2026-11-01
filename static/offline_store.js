@@ -1,18 +1,4 @@
-
-// Авто-сжатие пакета перед записью в IndexedDB (защита от переполнения квоты смартфона)
-function _compactTripForLocalStore(payload) {
-    if (!payload || typeof payload !== 'object') return payload;
-    const copy = Object.assign({}, payload);
-    if (copy.raw_recording && Array.isArray(copy.telemetry_stream) && copy.telemetry_stream.length >= 50) {
-        delete copy.raw_recording;
-    }
-    if (Array.isArray(copy.telemetry_stream) && copy.telemetry_stream.length > 3000) {
-        copy.telemetry_stream = copy.telemetry_stream.filter((_, idx) => idx % 2 === 0);
-    }
-    return copy;
-}
-
-﻿/** Pending trips are acknowledged only after the IndexedDB transaction commits. */
+/** Pending trips are acknowledged only after the IndexedDB transaction commits. */
 const AutoXAKOfflineStore = window.AutoXAKOfflineStore = (() => {
     const DB_NAME = 'autoXAK_storage', STORE = 'pending_trips', CONTROLS = 'pending_controls';
     let opening = null, syncing = null;
@@ -149,7 +135,7 @@ const AutoXAKOfflineStore = window.AutoXAKOfflineStore = (() => {
                 duration_seconds:result.duration_seconds, distance_km:result.distance_km,
                 total_savings_rub:result.cost_savings_rub, hard_accel_count:result.harsh_accel_count,
                 hard_brake_count:result.harsh_brake_count, bumps_count:result.road_anomalies_count,
-                idle_minutes:Math.round((result.traffic_jam_seconds || 0)/60), capture_quality:result.metrics?.capture_quality,math_status:result.metrics?.math_status};
+                smooth_score:result.smooth_score, idle_minutes:Math.round((result.traffic_jam_seconds || 0)/60), capture_quality:result.metrics?.capture_quality,math_status:result.metrics?.math_status};
             if (trip.session_id !== result.session_id) delete map[trip.session_id];
             map[result.session_id] = details;
             localStorage.setItem('autoXAK_trip_details_map', JSON.stringify(map));

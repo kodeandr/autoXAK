@@ -1,12 +1,12 @@
-﻿import asyncio
+import asyncio
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
-from app.core.database import engine, Base
+from app.core.database import engine, Base, initialize_schema
 from app.models.db_models import VehicleMake, VehicleModel, VehicleTrim
 
 # Автономная фабрика сессий, независимая от имен в database.py
 SessionLocal = async_sessionmaker(
-    bind=engine, 
-    class_=AsyncSession, 
+    bind=engine,
+    class_=AsyncSession,
     expire_on_commit=False,
     autoflush=False
 )
@@ -224,8 +224,7 @@ TOP_FLEET_DATA = [
 
 
 async def seed():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    await initialize_schema()
 
     async with SessionLocal() as session:
         for m_data in TOP_FLEET_DATA:
@@ -260,6 +259,7 @@ async def seed():
                             setattr(trim, k, v)
 
         await session.commit()
+        await initialize_schema()
         print("База данных Top-Fleet успешно наполнена модификациями.")
 
 if __name__ == "__main__":

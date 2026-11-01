@@ -1,5 +1,5 @@
-const CACHE_NAME = 'autoxak-shell-v4';
-const STATIC_ASSETS = ['/', '/setup', '/history', '/login', '/static/session.js', '/static/offline_store.js', '/static/manifest.json', '/static/icon-192.png', '/static/icon-512.png'];
+const CACHE_NAME = 'autoxak-shell-v6';
+const STATIC_ASSETS = ['/', '/setup', '/history', '/login', '/static/session.js', '/static/app.css', '/static/auth.css', '/static/progress.js', '/static/offline_store.js', '/static/manifest.json', '/static/icon-192.png', '/static/icon-512.png'];
 self.addEventListener('install', event => {
     event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS)).then(() => self.skipWaiting()));
 });

@@ -1,10 +1,10 @@
-﻿import os
+import os
 import json
 import uuid
 import hashlib
 import secrets
 import hmac
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 import asyncio
 import urllib.request
 import urllib.parse
@@ -12,13 +12,13 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update
+from sqlalchemy import select, update, text
 
 from app.core.database import get_db
-from app.models.db_models import User, Trip
-from app.core.security import create_access_token, decode_access_token, SECRET_KEY
+from app.models.db_models import User, Trip, LoginAttempt
+from app.core.security import create_access_token, decode_access_token, SECRET_KEY, hash_password, verify_password
 from app.api.dependencies import require_user, bearer
 from fastapi.security import HTTPAuthorizationCredentials
 from app.models.recordings import TripRecording, RecordingVehicle
@@ -47,6 +47,124 @@ class AuthTokenResponse(BaseModel):
     car_id: str
     is_guest: bool
     is_new_user: bool = False
+
+
+class CredentialsPayload(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    login: str = Field(min_length=5, max_length=15, pattern=r"^[a-zA-Z]+$")
+    password: str = Field(min_length=8, max_length=15)
+    guest_id: Optional[str] = Field(default=None, max_length=64)
+
+
+async def _credential_lock(db, key):
+    if db.bind.dialect.name == "postgresql":
+        lock = int.from_bytes(hashlib.sha256(key.encode()).digest()[:8], "big", signed=True)
+        await db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": lock})
+
+
+async def _merge_guest(db, guest, target):
+    """Caller locks both rows; transfer once, in the same transaction as login."""
+    if guest is None or guest.id == target.id:
+        return
+    if guest.merged_into == target.id:
+        return  # Retry after a lost HTTP response.
+    if not guest.is_guest or guest.merged_into:
+        raise HTTPException(403, "Guest session proof is required")
+    for field in ("total_savings_rub", "total_fuel_saved_liters", "range_bank_km", "total_distance_km", "total_trips", "current_oil_wear_percent"):
+        value = (getattr(target, field) or 0) + (getattr(guest, field) or 0)
+        setattr(target, field, min(100.0, value) if field == "current_oil_wear_percent" else value)
+        setattr(guest, field, 0)
+    for table in (Trip, TripRecording, CPALead):
+        await db.execute(update(table).where(table.user_id == guest.id).values(user_id=target.id))
+    profile = await db.get(RecordingVehicle, guest.id)
+    if profile:
+        if await db.get(RecordingVehicle, target.id) is None:
+            db.add(RecordingVehicle(user_id=target.id, profile=profile.profile))
+        await db.delete(profile)
+    guest.merged_into = target.id
+
+
+def _guest_proof(payload, credentials):
+    if not payload.guest_id:
+        return None
+    claims = decode_access_token(credentials.credentials) if credentials and credentials.scheme.lower() == "bearer" else None
+    if not claims or claims.get("purpose", "access") != "access" or claims.get("sub") != payload.guest_id:
+        raise HTTPException(403, "Guest session proof is required")
+    return payload.guest_id
+
+
+def _session_response(user, new=False):
+    return AuthTokenResponse(token=create_access_token(user.id), user_id=user.id,
+                             name=user.name or user.login or "Гость", car_id=user.car_id,
+                             is_guest=user.is_guest, is_new_user=new)
+
+
+@router.post("/register", response_model=AuthTokenResponse)
+async def register(payload: CredentialsPayload, db: AsyncSession = Depends(get_db),
+                   credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer)):
+    guest_id = _guest_proof(payload, credentials)
+    login = payload.login.lower()
+    await _credential_lock(db, "login:" + login)
+    existing = await db.scalar(select(User).where(User.login == login))
+    if existing:
+        # Idempotent recovery only with proof of the same guest and password.
+        if existing.id == guest_id and await asyncio.to_thread(verify_password, payload.password, existing.hashed_password):
+            return _session_response(existing)
+        raise HTTPException(409, "Этот логин уже занят")
+    guest = await db.scalar(select(User).where(User.id == guest_id).with_for_update()) if guest_id else None
+    if guest_id and (not guest or not guest.is_guest or guest.merged_into):
+        raise HTTPException(403, "Guest session proof is required")
+    user = guest or User(id="account_" + uuid.uuid4().hex, car_id="haval_jolion_15t_4wd")
+    user.login = login
+    user.name = payload.login
+    user.hashed_password = await asyncio.to_thread(hash_password, payload.password)
+    user.is_guest = False
+    db.add(user)
+    await db.commit()
+    return _session_response(user, True)
+
+
+@router.post("/login", response_model=AuthTokenResponse)
+async def login(payload: CredentialsPayload, db: AsyncSession = Depends(get_db),
+                credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer)):
+    guest_id = _guest_proof(payload, credentials)
+    login_name = payload.login.lower()
+    await _credential_lock(db, "login:" + login_name)
+    now = datetime.now(timezone.utc)
+    key = hashlib.sha256(login_name.encode()).hexdigest()
+    attempt = await db.get(LoginAttempt, key)
+    if attempt and attempt.blocked_until and attempt.blocked_until > now:
+        seconds = max(1, int((attempt.blocked_until - now).total_seconds()) + 1)
+        raise HTTPException(429, "Слишком много попыток. Попробуйте позже", headers={"Retry-After": str(seconds)})
+    target = await db.scalar(select(User).where(User.login == login_name))
+    # Perform the same password work for unknown logins to avoid a timing oracle.
+    dummy = "0" * 32 + "$" + "0" * 64
+    valid = await asyncio.to_thread(verify_password, payload.password, target.hashed_password if target else dummy)
+    if not valid or target is None:
+        if attempt is None:
+            attempt = LoginAttempt(key=key, failures=0, window_started_at=now)
+            db.add(attempt)
+        if now - attempt.window_started_at >= timedelta(minutes=5):
+            attempt.failures = 0
+            attempt.window_started_at = now
+        attempt.failures += 1
+        if attempt.failures >= 4:
+            attempt.blocked_until = now + timedelta(minutes=5)
+        await db.commit()  # Failed attempts must survive the error response.
+        if attempt.failures >= 4:
+            raise HTTPException(429, "Слишком много попыток. Попробуйте позже", headers={"Retry-After": "300"})
+        raise HTTPException(401, "Неверный логин или пароль")
+    users = (await db.execute(select(User).where(User.id.in_(sorted({target.id, guest_id} - {None})))
+                             .order_by(User.id).with_for_update().execution_options(populate_existing=True))).scalars().all()
+    by_id = {user.id: user for user in users}
+    if guest_id and guest_id not in by_id:
+        raise HTTPException(403, "Guest session proof is required")
+    target = by_id[target.id]
+    await _merge_guest(db, by_id.get(guest_id), target)
+    if attempt:
+        await db.delete(attempt)
+    await db.commit()
+    return _session_response(target)
 
 
 def _build_anonymized_yandex_id(raw_yandex_id: str) -> str:
@@ -129,18 +247,7 @@ async def _get_or_merge_yandex_user(
                        service_cost_rub=getattr(guest_user, "service_cost_rub", None) or 9500.0)
         db.add(ya_user)
         await db.flush()  # Parent must exist before moving foreign keys.
-    if guest_user is not None:
-        for field in ("total_savings_rub", "total_fuel_saved_liters", "range_bank_km", "total_distance_km", "total_trips", "current_oil_wear_percent"):
-            value = (getattr(ya_user, field) or 0) + (getattr(guest_user, field) or 0)
-            setattr(ya_user, field, min(100.0, value) if field == "current_oil_wear_percent" else value)
-            setattr(guest_user, field, 0)
-        for table in (Trip, TripRecording, CPALead):
-            await db.execute(update(table).where(table.user_id == guest_user.id).values(user_id=ya_user_id))
-        profile = await db.get(RecordingVehicle, guest_user.id)
-        if profile is not None:
-            if await db.get(RecordingVehicle, ya_user_id) is None:
-                db.add(RecordingVehicle(user_id=ya_user_id, profile=profile.profile))
-            await db.delete(profile)
+    await _merge_guest(db, guest_user, ya_user)
     await db.commit()
     await db.refresh(ya_user)
     return ya_user

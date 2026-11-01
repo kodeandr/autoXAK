@@ -1,4 +1,4 @@
-﻿import urllib.request, json, ssl
+import urllib.request, json, ssl
 
 ctx = ssl.create_default_context()
 ctx.check_hostname = False

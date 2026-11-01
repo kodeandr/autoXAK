@@ -1,4 +1,4 @@
-﻿from typing import Dict, Optional
+from typing import Dict, Optional
 from pydantic import BaseModel, Field
 
 
@@ -39,7 +39,7 @@ VEHICLE_REGISTRY: Dict[str, VehiclePhysicalProfile] = {
         rolling_resistance_coeff=0.0135,
         drag_coefficient_area=0.36 * 2.38,
         drivetrain_efficiency=0.87,
-        base_city_fuel_rate_l100km=9.8,
+        base_city_fuel_rate_l100km=8.5,
         engine_displacement_l=1.5,
         rated_power_kw=110.0,
         oil_capacity_l=3.8,

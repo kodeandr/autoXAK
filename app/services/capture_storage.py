@@ -46,16 +46,15 @@ def measured_distance(raw):
         dt = (current.timestamp_ms - previous.timestamp_ms) / 1000
         if not 0 < dt <= 10:
             continue
-        speeds = [previous.speed_mps, current.speed_mps]
-        if all(speed is not None and 0 <= speed <= 75 for speed in speeds):
-            distance += sum(speeds) * 0.5 * dt / 1000
-        else:
-            latitude = math.radians(current.latitude - previous.latitude)
-            longitude = math.radians(current.longitude - previous.longitude)
-            a = math.sin(latitude / 2) ** 2 + math.cos(math.radians(previous.latitude)) * math.cos(math.radians(current.latitude)) * math.sin(longitude / 2) ** 2
-            meters = 6371000 * 2 * math.atan2(math.sqrt(min(1, a)), math.sqrt(max(0, 1 - a)))
-            if 3 <= meters <= 75 * dt:
-                distance += meters / 1000
+        latitude = math.radians(current.latitude - previous.latitude)
+        longitude = math.radians(current.longitude - previous.longitude)
+        a = math.sin(latitude / 2) ** 2 + math.cos(math.radians(previous.latitude)) * math.cos(math.radians(current.latitude)) * math.sin(longitude / 2) ** 2
+        meters = 6371000 * 2 * math.atan2(math.sqrt(min(1, a)), math.sqrt(max(0, 1 - a)))
+        # Haversine is the distance source; speed only rejects stationary GPS drift.
+        stationary = previous.speed_mps is not None and current.speed_mps is not None and max(previous.speed_mps, current.speed_mps) < .5
+        minimum = .2 if previous.speed_mps is not None and current.speed_mps is not None else 3
+        if not stationary and minimum <= meters <= 75 * dt:
+            distance += meters / 1000
     return distance
 
 
@@ -89,12 +88,14 @@ def unscored_trip(payload, trip_id, digest, owner, quality):
     raw = payload.raw_recording
     duration = (raw.ended_at_ms - raw.started_at_ms) / 1000
     distance = measured_distance(raw)
+    stationary = distance <= .01
     result = {"session_id": trip_id, "duration_seconds": duration, "distance_km": distance,
-              "oil_wear_percent": None, "cost_savings_rub": None, "status": "RECORDED",
+              "oil_wear_percent": None, "cost_savings_rub": 0.0 if stationary else None, "fuel_saved_rub": 0.0 if stationary else None,
+              "fuel_saved_liters": 0.0 if stationary else None, "status": "RECORDED",
               "metrics": {"capture_quality": quality, "math_status": {
-                  "version":"reference-math-1", "fuel_savings":{"status":"unavailable","reason":"matched_reference_fuel_required"},
+                  "version":"reference-math-1", "fuel_savings":{"status":"model_estimate" if stationary else "insufficient_observations","reason":"distance_at_most_10m" if stationary else "incomplete_sensor_capture"},
                   "oil_wear":{"status":"unavailable","reason":"oil_condition_reference_required"},
-                  "monetary_credit_status":"not_verified"}}}
+                  "monetary_credit_status":"zero_distance" if stationary else "insufficient_observations"}}}
     trip = Trip(id=trip_id, client_session_id=payload.session_id, user_id=owner.id, car_id=payload.car_id,
                 created_at=datetime.fromtimestamp(raw.started_at_ms / 1000, tz=timezone.utc),
                 request_hash=digest, calculation_result=result, duration_seconds=duration, distance_km=distance,
