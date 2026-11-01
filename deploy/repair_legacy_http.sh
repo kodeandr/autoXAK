@@ -28,7 +28,23 @@ while IFS= read -r container; do
         *) printf 'Another container mounts PGDATA: %s. Inspect it before continuing.\n' "$name" >&2; exit 1 ;;
     esac
 done < <(docker ps -q --filter "volume=$volume")
-docker exec "$postgres" sh -ec 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"' >/dev/null
+if [[ "$(docker inspect "$postgres" --format '{{.State.Running}}')" != true ]]; then
+    printf 'Starting existing PostgreSQL on volume %s.\n' "$volume"
+    docker start "$postgres"
+fi
+postgres_ready=false
+for attempt in {1..45}; do
+    if docker exec "$postgres" sh -ec 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"' >/dev/null 2>&1; then
+        postgres_ready=true
+        break
+    fi
+    sleep 1
+done
+if [[ "$postgres_ready" != true ]]; then
+    printf 'Existing PostgreSQL did not become ready; no API/config changes applied.\n' >&2
+    docker logs --tail=80 "$postgres"
+    exit 1
+fi
 compose() { docker compose -p "$project" "$@"; }
 # Validate existing environment without printing credentials.
 compose config --quiet
