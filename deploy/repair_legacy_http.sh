@@ -77,6 +77,10 @@ services:
     ports: !override
       - "127.0.0.1:8000:8000"
 YAML
+# Preserve a previously verified credential override on subsequent HTTP repairs.
+if [[ -f "$override" ]]; then
+    sed -n '/^    # BEGIN autoXAK database authentication$/,/^    # END autoXAK database authentication$/p' "$override" >> "$temporary"
+fi
 # !override is supported by Compose >=2.24.4 (this server reports 5.6.0).
 if ! docker compose -p "$project" -f docker-compose.yml -f "$temporary" config --quiet; then
     rm -f -- "$temporary"
