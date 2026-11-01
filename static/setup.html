@@ -774,6 +774,42 @@
     let currentUserId = localStorage.getItem('autoXAK_user_id') || '';
 
     let catalogTree = [];
+    let taxonomySnapshot = null;
+    let taxonomyRevision = 0;
+    function currentModel() {
+        const make=catalogTree.find(m=>String(m.id)===document.getElementById('select-make').value);
+        return make?.models.find(m=>String(m.id)===document.getElementById('select-model').value);
+    }
+    async function loadTaxonomyModels(make) {
+        if(!taxonomySnapshot || make.taxonomyLoaded===taxonomySnapshot) return;
+        const snapshot=taxonomySnapshot, additions=[];
+        for(let offset=0;;offset+=200) {
+            const params=new URLSearchParams({make_id:make.id,snapshot_id:snapshot,offset:String(offset),limit:'200'});
+            const {response,data}=await AutoXAKSession.fetchJSON('/api/v1/vehicles/catalog/taxonomy/models?'+params);
+            if(!response.ok || !Array.isArray(data?.models) || !Number.isInteger(data?.total)) throw new Error('Не удалось загрузить модели. Обновите каталог.');
+            if(taxonomySnapshot!==snapshot)return;
+            for(const model of data.models) additions.push({id:model.id,name:model.name,trims:[],taxonomy:true});
+            if(offset+data.models.length>=data.total)break;
+            if(!data.models.length)throw new Error('Неполный каталог');
+        }
+        const existing=new Set(make.models.map(m=>m.id));
+        make.models.push(...additions.filter(m=>!existing.has(m.id)));
+        make.taxonomyLoaded=snapshot;
+    }
+    function renderModels(make, selected) {
+        const select=document.getElementById('select-model');
+        select.disabled=!(make?.models?.length);
+        const previousModel=select.value, previousTrim=document.getElementById('select-trim').value;
+        const previousFuel=document.getElementById('registry-fuel').value;
+        select.replaceChildren(...(make?.models||[]).map(m=>new Option(m.name+(m.taxonomy?' — параметры вручную':''),m.id)));
+        if(selected && [...select.options].some(o=>o.value===selected))select.value=selected;
+        onModelChange();
+        if(selected && previousModel===selected) {
+            const trim=document.getElementById('select-trim');
+            if([...trim.options].some(o=>o.value===previousTrim)) {trim.value=previousTrim;onTrimChange();}
+            document.getElementById('registry-fuel').value=previousFuel;
+        }
+    }
 
     // ---------------- ПЕРЕКЛЮЧЕНИЕ ЭКРАНОВ И НАТИВНЫЕ СПИСКИ ----------------
     function openEditScreen() {
@@ -847,7 +883,7 @@
             const mkName = item.make || item.brand || item.name || 'Марка';
             const mdName = item.model || 'Модель';
             if (!makesMap[mkName]) {
-                makesMap[mkName] = { id: mkName.toLowerCase(), name: mkName, models: Object.create(null) };
+                makesMap[mkName] = { id: item.make_id || mkName.toLowerCase(), name: mkName, models: Object.create(null) };
             }
             if (!makesMap[mkName].models[mdName]) {
                 makesMap[mkName].models[mdName] = { id: mdName.toLowerCase(), name: mdName, trims: [] };
@@ -875,6 +911,13 @@
             const {response:res, data:raw} = await AutoXAKSession.fetchJSON('/api/v1/vehicles/catalog');
             if (res.ok) {
                 catalogTree = normalizeCatalogData(raw);
+                try {
+                    const taxonomy=await AutoXAKSession.fetchJSON('/api/v1/vehicles/catalog/taxonomy/makes');
+                    if(taxonomy.response.ok) {
+                        taxonomySnapshot=taxonomy.data.snapshot_id;
+                        for(const make of taxonomy.data.makes)if(!catalogTree.some(m=>m.id===make.id))catalogTree.push({id:make.id,name:make.name,models:[]});
+                    }
+                } catch(_) {} // Legacy catalog remains usable if extension is unavailable.
             } else {
                 catalogTree = [];
             }
@@ -898,10 +941,16 @@
 
         document.getElementById('label-make').innerText = makeObj ? makeObj.name : '';
 
-        const modelSel = document.getElementById('select-model');
-        const models = makeObj ? makeObj.models : [];
-        modelSel.replaceChildren(...models.map(md => new Option(md.name,md.id)));
-        onModelChange();
+        renderModels(makeObj);
+        const revision=++taxonomyRevision;
+        if(makeObj)loadTaxonomyModels(makeObj).then(()=>{
+            if(revision===taxonomyRevision && document.getElementById('select-make').value===String(makeObj.id)) {
+                document.getElementById('catalog-status').textContent='';
+                renderModels(makeObj,document.getElementById('select-model').value);
+            }
+        }).catch(error=>{
+            if(revision===taxonomyRevision)document.getElementById('catalog-status').textContent=error.message;
+        });
     }
 
     function onModelChange() {
@@ -921,7 +970,11 @@
     function onTrimChange() {
         const trimSel = document.getElementById('select-trim');
         const opt = trimSel.options[trimSel.selectedIndex];
-        document.getElementById('label-trim').innerText = opt ? opt.text : '';
+        const model=currentModel();
+        trimSel.disabled=!model || !!model.taxonomy;
+        document.querySelector('[onclick="saveRegistryVehicle()"]').disabled=!model;
+        document.getElementById('label-trim').innerText = model?.taxonomy?'Модификация не указана':(opt ? opt.text : '');
+        if(model?.taxonomy)document.getElementById('catalog-status').textContent='Для этой модели укажите городской расход. Модификация и технические параметры не заданы.';
         const selected = catalogTree.flatMap(m=>m.models).flatMap(m=>m.trims).find(t=>t.id===trimSel.value);
         document.getElementById('registry-fuel').value = selected?.fuel_rate ?? '';
     }
@@ -983,7 +1036,19 @@
             }
         } catch (_) {}
 
-        const matchedCar = carId && selectTrimInDropdowns(carId);
+        let matchedCar = carId && selectTrimInDropdowns(carId);
+        if(!matchedCar && carId.startsWith('catalog_model_')) {
+            try {
+                const {response,data}=await AutoXAKSession.fetchJSON('/api/v1/vehicles/catalog/taxonomy/models/'+encodeURIComponent(carId));
+                const make=response.ok && catalogTree.find(m=>m.id===data.make_id);
+                if(make) {
+                    await loadTaxonomyModels(make);
+                    if(!make.models.some(m=>m.id===carId))make.models.push({id:carId,name:data.name,trims:[],taxonomy:true});
+                    document.getElementById('select-make').value=make.id;
+                    onMakeChange();renderModels(make,carId);matchedCar=true;
+                }
+            } catch(_) {}
+        }
         if (matchedCar && Number.isFinite(fuelRate)) document.getElementById("registry-fuel").value=fuelRate;
 
         if (!carName) {
@@ -1002,9 +1067,10 @@
         const modelName = document.getElementById('label-model').innerText.trim();
         const trimBadge = document.getElementById('label-trim').innerText.trim();
         const trimId = document.getElementById('select-trim').value;
-        if (!trimId) {window.alert('Каталог пуст. Добавьте автомобиль вручную.');return;}
+        const model=currentModel();
+        if (!trimId && !model?.taxonomy) {window.alert('Каталог пуст. Добавьте автомобиль вручную.');return;}
 
-        const fullCarName = `${makeName} ${modelName} ${trimBadge}`.replace(/\s+/g, ' ').trim();
+        const fullCarName = (model?.taxonomy?`${makeName} ${modelName}`:`${makeName} ${modelName} ${trimBadge}`).replace(/\s+/g, ' ').trim();
 
         let fuelPass = null;
         for (const mk of catalogTree) {
@@ -1017,7 +1083,7 @@
         }
 
         await persistVehicleSelection({
-            car_id: trimId,
+            car_id: model?.taxonomy?model.id:trimId,
             car_name: fullCarName,
             fuel_consumption: Number(document.getElementById("registry-fuel").value) || fuelPass
         });

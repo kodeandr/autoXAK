@@ -1,6 +1,6 @@
 # Проверка и нормализация данных каталога
 
-Проверка выполнена 27 октября 2026 года. Версия: `catalog-normalization-1`.
+Историческая проверка выполнена 27 октября 2026 года. Версия: `catalog-normalization-1`.
 Обработаны доступные файлы проекта и зафиксированный снимок carsBase.
 Данные PostgreSQL боевого сервера из облачной среды не читались.
 
@@ -109,8 +109,9 @@ python -m app.cli.normalize_vehicle_catalog \
   --manifest catalog/sources/legacy_seed.source.json \
   --output-dir /tmp/autoxak-seed-review
 
+git show 9969ec0:static/setup.html > /tmp/autoxak-frontend-9969ec0.html
 python -m app.cli.normalize_vehicle_catalog \
-  --input static/setup.html \
+  --input /tmp/autoxak-frontend-9969ec0.html \
   --manifest catalog/sources/frontend_fallback.source.json \
   --compare-review /tmp/autoxak-seed-review/normalized.json \
   --output-dir /tmp/autoxak-frontend-review
@@ -186,3 +187,16 @@ docker cp autoxak-production-api-1:/tmp/autoxak-catalog-snapshot \
 Рабочий каталог, ORM-схема, расчёты приложения, пользовательские профили,
 поездки и дизайн не менялись. Следующий этап применения данных — отдельная
 миграция каталога и импорт с проверенным происхождением и условиями использования.
+
+## Актуализация после исправлений приложения
+
+Манифест `legacy_seed.source.json` обновлён на `seed_fleet.py@727158c`: после
+исправлений приложения изменились BOM/переводы строк и запуск инициализации
+схемы. Исторический отчёт выше относится к прежнему снимку `9969ec0`. Браузерный
+`FALLBACK_CATALOG` в актуальном приложении удалён; для исторического сравнения
+нужно извлечь файл той ревизии, как показано в команде, а не нормализовать текущий
+HTML под старым хешем.
+
+Следующий этап реализован отдельно: [импорт и подключение](CATALOG_IMPORT.md).
+Он использует разрешённую модельную таксономию в дополнительных таблицах,
+не переносит непроверенные технические claims в действующие модификации.

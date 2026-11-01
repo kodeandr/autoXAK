@@ -1,9 +1,9 @@
 {
   "source_id": "autoxak_legacy_seed",
   "format": "legacy_seed",
-  "revision": "9969ec0",
-  "source_url": "repository:seed_fleet.py@9969ec0",
-  "expected_sha256": "e5862816fea9e64b1bfc8c504690c490bbbd16aa7964ac5ba07213dc5c59714d",
+  "revision": "727158cd166f5f0de09b2fb83414026794eff6f9",
+  "source_url": "repository:seed_fleet.py@727158cd166f5f0de09b2fb83414026794eff6f9",
+  "expected_sha256": "4c5eae0455b76d032dd009813a6bf46627a971dc02514ce64006a014c77e82ba",
   "license_status": "project_license",
   "license_evidence": "Existing autoXAK seed under the project license; technical parameters have no OEM/measurement provenance and remain unverified."
 }

@@ -25,6 +25,8 @@ from sqlalchemy.exc import IntegrityError
 from app.core.logger import logger
 from app.api.auth import router as auth_router
 from app.api.recordings import router as recordings_router
+from app.api.catalog import router as catalog_router
+from app.services.catalog_import import lookup_model, PREFIX as CATALOG_MODEL_PREFIX
 from app.api.reference_math import router as reference_math_router
 from app.services.reference_math import VERSION as MATH_VERSION, trajectory_metrics, threshold_events
 
@@ -252,6 +254,9 @@ async def resolve_car_profile_async(car_id: Optional[str], db: AsyncSession, use
             engine_displacement_l=trim.engine_displacement_l,rated_power_kw=trim.rated_power_kw,
             oil_capacity_l=trim.oil_capacity_l,
             base_city_fuel_rate_l100km=(user.custom_profile or {}).get("base_city_fuel_rate_l100km", trim.base_city_fuel_rate_l100km) if user and (user.custom_profile or {}).get("car_id") == car_id else trim.base_city_fuel_rate_l100km)
+    catalog_model = await lookup_model(db, car_id)
+    if catalog_model is not None:
+        return VehiclePhysicalProfile(car_id=car_id, brand=catalog_model.make_name, model=catalog_model.name)
     if VEHICLE_REGISTRY and car_id in VEHICLE_REGISTRY:
         return VEHICLE_REGISTRY[car_id]
     # An unknown ID must not silently inherit the physics of a Haval.
@@ -317,6 +322,7 @@ app = FastAPI(
 
 app.include_router(auth_router)
 app.include_router(recordings_router)
+app.include_router(catalog_router)
 app.include_router(reference_math_router)
 
 app.add_middleware(
@@ -1429,6 +1435,15 @@ async def update_user_vehicle_profile(
         if payload.current_oil_wear_percent is not None:
             user.current_oil_wear_percent = payload.current_oil_wear_percent
 
+    if payload.car_id and payload.car_id.startswith(CATALOG_MODEL_PREFIX):
+        catalog_model = await lookup_model(db, payload.car_id, active_only=True)
+        existing_choice = user.custom_profile and user.custom_profile.get("car_id") == payload.car_id
+        if catalog_model is None and not existing_choice:
+            raise HTTPException(422, "Выбранная модель больше не доступна. Обновите каталог.")
+        if payload.fuel_consumption is None and not existing_choice:
+            raise HTTPException(422, "Укажите городской расход выбранной модели.")
+        if catalog_model is not None:
+            user.car_name = catalog_model.make_name + " " + catalog_model.name
     if payload.fuel_consumption is not None:
         resolved = await resolve_car_profile_async(user.car_id, db, user)
         user.custom_profile = {**resolved.model_dump(mode="json"), "car_name": user.car_name,
