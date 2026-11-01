@@ -6,7 +6,7 @@ services:
       - "8000:8000"
     volumes:
       - .:/app
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --ssl-keyfile /app/key.pem --ssl-certfile /app/cert.pem --reload
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     environment:
       - SECRET_KEY=${SECRET_KEY:?Set a persistent random SECRET_KEY in .env}
       - YANDEX_ID_SALT=${YANDEX_ID_SALT:-}
@@ -19,7 +19,7 @@ services:
       - DGIS_USE_MOCK=${DGIS_USE_MOCK:-true}
       - YANDEX_CLIENT_ID=${YANDEX_CLIENT_ID:-}
       - YANDEX_CLIENT_SECRET=${YANDEX_CLIENT_SECRET:-}
-      - YANDEX_REDIRECT_URI=${YANDEX_REDIRECT_URI:-https://autoxak.ru/api/v1/auth/yandex/callback}     
+      - YANDEX_REDIRECT_URI=${YANDEX_REDIRECT_URI:-https://autoxak.ru/api/v1/auth/yandex/callback}
 
     depends_on:
       postgres:
