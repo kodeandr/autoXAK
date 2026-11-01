@@ -1,0 +1,147 @@
+{
+  "left_source": {
+    "source_id": "autoxak_frontend_fallback",
+    "format": "frontend_fallback",
+    "revision": "9969ec0",
+    "source_url": "repository:static/setup.html@9969ec0#FALLBACK_CATALOG",
+    "expected_sha256": "0ae4723a0c7cef8939dfe9e4a6bdb81f05828b1303030a506d23cb191c7113e0",
+    "license_status": "project_license",
+    "license_evidence": "Existing autoXAK frontend literal. Extracted without JS execution; technical values are unverified source claims."
+  },
+  "right_source": {
+    "source_id": "autoxak_legacy_seed",
+    "format": "legacy_seed",
+    "revision": "9969ec0",
+    "source_url": "repository:seed_fleet.py@9969ec0",
+    "expected_sha256": "e5862816fea9e64b1bfc8c504690c490bbbd16aa7964ac5ba07213dc5c59714d",
+    "license_status": "project_license",
+    "license_evidence": "Existing autoXAK seed under the project license; technical parameters have no OEM/measurement provenance and remain unverified."
+  },
+  "shared_legacy_ids": 7,
+  "conflicts": [
+    {
+      "car_id": "chery_tiggo_7pro_16t_awd",
+      "field": "curb_weight_kg",
+      "left_claim": {
+        "value": 1580,
+        "unit": "kg",
+        "status": "legacy_unverified",
+        "path": "$[1].models[0].trims[1].curb_weight_kg"
+      },
+      "right_claim": {
+        "value": 1540.0,
+        "unit": "kg",
+        "status": "legacy_unverified",
+        "path": "$[4].models[0].trims[0].curb_weight_kg"
+      },
+      "resolution": "unresolved_no_automatic_winner"
+    },
+    {
+      "car_id": "chery_tiggo_7pro_16t_awd",
+      "field": "model_label",
+      "left_claim": "Tiggo 7 Pro",
+      "right_claim": "Tiggo 7 Pro Max",
+      "resolution": "identity_requires_review"
+    },
+    {
+      "car_id": "haval_jolion_15t_fwd",
+      "field": "curb_weight_kg",
+      "left_claim": {
+        "value": 1425,
+        "unit": "kg",
+        "status": "legacy_unverified",
+        "path": "$[0].models[0].trims[1].curb_weight_kg"
+      },
+      "right_claim": {
+        "value": 1420.0,
+        "unit": "kg",
+        "status": "legacy_unverified",
+        "path": "$[0].models[0].trims[0].curb_weight_kg"
+      },
+      "resolution": "unresolved_no_automatic_winner"
+    },
+    {
+      "car_id": "lada_vesta_16_mt",
+      "field": "curb_weight_kg",
+      "left_claim": {
+        "value": 1230,
+        "unit": "kg",
+        "status": "legacy_unverified",
+        "path": "$[5].models[0].trims[0].curb_weight_kg"
+      },
+      "right_claim": {
+        "value": 1220.0,
+        "unit": "kg",
+        "status": "legacy_unverified",
+        "path": "$[3].models[0].trims[0].curb_weight_kg"
+      },
+      "resolution": "unresolved_no_automatic_winner"
+    },
+    {
+      "car_id": "lada_vesta_16_mt",
+      "field": "model_label",
+      "left_claim": "Vesta",
+      "right_claim": "Vesta NG",
+      "resolution": "identity_requires_review"
+    },
+    {
+      "car_id": "lada_vesta_18_cvt",
+      "field": "curb_weight_kg",
+      "left_claim": {
+        "value": 1280,
+        "unit": "kg",
+        "status": "legacy_unverified",
+        "path": "$[5].models[0].trims[1].curb_weight_kg"
+      },
+      "right_claim": {
+        "value": 1270.0,
+        "unit": "kg",
+        "status": "legacy_unverified",
+        "path": "$[3].models[0].trims[1].curb_weight_kg"
+      },
+      "resolution": "unresolved_no_automatic_winner"
+    },
+    {
+      "car_id": "lada_vesta_18_cvt",
+      "field": "model_label",
+      "left_claim": "Vesta",
+      "right_claim": "Vesta NG",
+      "resolution": "identity_requires_review"
+    },
+    {
+      "car_id": "skoda_octavia_16mpi_mt",
+      "field": "curb_weight_kg",
+      "left_claim": {
+        "value": 1245,
+        "unit": "kg",
+        "status": "legacy_unverified",
+        "path": "$[3].models[0].trims[2].curb_weight_kg"
+      },
+      "right_claim": {
+        "value": 1235.0,
+        "unit": "kg",
+        "status": "legacy_unverified",
+        "path": "$[1].models[0].trims[0].curb_weight_kg"
+      },
+      "resolution": "unresolved_no_automatic_winner"
+    },
+    {
+      "car_id": "skoda_octavia_20tsi_dsg_4wd",
+      "field": "curb_weight_kg",
+      "left_claim": {
+        "value": 1450,
+        "unit": "kg",
+        "status": "legacy_unverified",
+        "path": "$[3].models[0].trims[1].curb_weight_kg"
+      },
+      "right_claim": {
+        "value": 1455.0,
+        "unit": "kg",
+        "status": "legacy_unverified",
+        "path": "$[1].models[0].trims[2].curb_weight_kg"
+      },
+      "resolution": "unresolved_no_automatic_winner"
+    }
+  ],
+  "records_merged": false
+}

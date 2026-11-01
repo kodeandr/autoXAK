@@ -1,0 +1,125 @@
+{
+  "source_sha256": "91da1886a11295abda0b18b22d03bca2bf9c5381bae76163b6db4cd89ce11980",
+  "relation": "search_candidates_only",
+  "requests": [
+    {
+      "make": "LADA",
+      "model_or_family": "Samara",
+      "model_external_ids": [
+        "VAZ_2108",
+        "VAZ_2109",
+        "VAZ_21099",
+        "VAZ_2113",
+        "VAZ_2114",
+        "VAZ_2115"
+      ],
+      "rationale": "Reviewed against the pinned source labels. Search candidate group only; distinct models, markets, generations and powertrains remain separate."
+    },
+    {
+      "make": "LADA",
+      "model_or_family": "2101–2107 (семейство)",
+      "model_external_ids": [
+        "VAZ_2101",
+        "VAZ_2102",
+        "VAZ_2103",
+        "VAZ_2104",
+        "VAZ_2105",
+        "VAZ_2106",
+        "VAZ_2107"
+      ],
+      "rationale": "Reviewed against the pinned source labels. Search candidate group only; distinct models, markets, generations and powertrains remain separate."
+    },
+    {
+      "make": "LADA",
+      "model_or_family": "2110–2112 (семейство)",
+      "model_external_ids": [
+        "VAZ_2110",
+        "VAZ_2111",
+        "VAZ_2112"
+      ],
+      "rationale": "Reviewed against the pinned source labels. Search candidate group only; distinct models, markets, generations and powertrains remain separate."
+    },
+    {
+      "make": "УАЗ",
+      "model_or_family": "Patriot",
+      "model_external_ids": [
+        "UAZ_PATRIOT"
+      ],
+      "rationale": "Reviewed against the pinned source labels. Search candidate group only; distinct models, markets, generations and powertrains remain separate."
+    },
+    {
+      "make": "УАЗ",
+      "model_or_family": "Hunter",
+      "model_external_ids": [
+        "UAZ_HUNTER"
+      ],
+      "rationale": "Reviewed against the pinned source labels. Search candidate group only; distinct models, markets, generations and powertrains remain separate."
+    },
+    {
+      "make": "BMW",
+      "model_or_family": "3 Series",
+      "model_external_ids": [
+        "BMW_3ER"
+      ],
+      "rationale": "Reviewed against the pinned source labels. Search candidate group only; distinct models, markets, generations and powertrains remain separate."
+    },
+    {
+      "make": "BMW",
+      "model_or_family": "5 Series",
+      "model_external_ids": [
+        "BMW_5ER"
+      ],
+      "rationale": "Reviewed against the pinned source labels. Search candidate group only; distinct models, markets, generations and powertrains remain separate."
+    },
+    {
+      "make": "Mercedes-Benz",
+      "model_or_family": "C-Class",
+      "model_external_ids": [
+        "MERCEDES_C_KLASSE"
+      ],
+      "rationale": "Reviewed against the pinned source labels. Search candidate group only; distinct models, markets, generations and powertrains remain separate."
+    },
+    {
+      "make": "Mercedes-Benz",
+      "model_or_family": "E-Class",
+      "model_external_ids": [
+        "MERCEDES_E_KLASSE"
+      ],
+      "rationale": "Reviewed against the pinned source labels. Search candidate group only; distinct models, markets, generations and powertrains remain separate."
+    },
+    {
+      "make": "JETOUR",
+      "model_or_family": "X70 Plus",
+      "model_external_ids": [
+        "JETOUR_X70_PLUS"
+      ],
+      "rationale": "Reviewed against the pinned source labels. Search candidate group only; distinct models, markets, generations and powertrains remain separate."
+    },
+    {
+      "make": "JETOUR",
+      "model_or_family": "X90 Plus",
+      "model_external_ids": [
+        "JETOUR_X90_PLUS"
+      ],
+      "rationale": "Reviewed against the pinned source labels. Search candidate group only; distinct models, markets, generations and powertrains remain separate."
+    },
+    {
+      "make": "Toyota",
+      "model_or_family": "Yaris / Vitz (проверить рынок)",
+      "model_external_ids": [
+        "TOYOTA_YARIS",
+        "TOYOTA_VITZ"
+      ],
+      "rationale": "Reviewed against the pinned source labels. Search candidate group only; distinct models, markets, generations and powertrains remain separate."
+    },
+    {
+      "make": "Honda",
+      "model_or_family": "Fit / Jazz (проверить рынок)",
+      "model_external_ids": [
+        "HONDA_FIT",
+        "HONDA_JAZZ"
+      ],
+      "rationale": "Reviewed against the pinned source labels. Search candidate group only; distinct models, markets, generations and powertrains remain separate."
+    }
+  ]
+}

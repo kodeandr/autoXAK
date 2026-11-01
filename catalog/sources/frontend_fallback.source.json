@@ -1,0 +1,9 @@
+{
+  "source_id": "autoxak_frontend_fallback",
+  "format": "frontend_fallback",
+  "revision": "9969ec0",
+  "source_url": "repository:static/setup.html@9969ec0#FALLBACK_CATALOG",
+  "expected_sha256": "0ae4723a0c7cef8939dfe9e4a6bdb81f05828b1303030a506d23cb191c7113e0",
+  "license_status": "project_license",
+  "license_evidence": "Existing autoXAK frontend literal. Extracted without JS execution; technical values are unverified source claims."
+}

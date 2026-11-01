@@ -1,0 +1,114 @@
+{
+  "checked_on": "2026-10-27",
+  "production_import_performed": false,
+  "datasets": [
+    {
+      "normalization_version": "catalog-normalization-1",
+      "source": {
+        "source_id": "carsbase",
+        "format": "carsbase_taxonomy",
+        "revision": "62b0427245dfb944caf03509d84391c5af20b1ae",
+        "source_url": "https://github.com/blanzh/carsBase/blob/62b0427245dfb944caf03509d84391c5af20b1ae/cars.json",
+        "expected_sha256": "91da1886a11295abda0b18b22d03bca2bf9c5381bae76163b6db4cd89ce11980",
+        "license_status": "unresolved",
+        "license_evidence": "README describes free taxonomy. Commercial reuse and redistribution terms have not been established; review-only staging."
+      },
+      "publication_status": "review_only_not_imported",
+      "input_counts": {
+        "makes": 426,
+        "models": 4952,
+        "variants": 0
+      },
+      "accepted_counts": {
+        "makes": 426,
+        "models": 4952,
+        "variants": 0
+      },
+      "rejected_counts": {},
+      "issues": {
+        "embedded_generation_label": 2184,
+        "make_alias_normalized": 2
+      },
+      "error_count": 0,
+      "legacy_parameter_claims": 0,
+      "usable_reference_parameters": 0,
+      "generation_or_variant_accuracy_verified": false,
+      "requested_families": 207,
+      "requested_families_with_candidates": 206,
+      "requested_families_without_candidates": 1,
+      "candidate_matching_is_not_market_or_exact_variant_coverage": true
+    },
+    {
+      "normalization_version": "catalog-normalization-1",
+      "source": {
+        "source_id": "autoxak_legacy_seed",
+        "format": "legacy_seed",
+        "revision": "9969ec0",
+        "source_url": "repository:seed_fleet.py@9969ec0",
+        "expected_sha256": "e5862816fea9e64b1bfc8c504690c490bbbd16aa7964ac5ba07213dc5c59714d",
+        "license_status": "project_license",
+        "license_evidence": "Existing autoXAK seed under the project license; technical parameters have no OEM/measurement provenance and remain unverified."
+      },
+      "publication_status": "review_only_not_imported",
+      "input_counts": {
+        "makes": 5,
+        "models": 5,
+        "variants": 9
+      },
+      "accepted_counts": {
+        "makes": 5,
+        "models": 5,
+        "variants": 9
+      },
+      "rejected_counts": {},
+      "issues": {
+        "unverified_legacy_parameters": 9
+      },
+      "error_count": 0,
+      "legacy_parameter_claims": 99,
+      "usable_reference_parameters": 0,
+      "generation_or_variant_accuracy_verified": false,
+      "requested_families": 0,
+      "requested_families_with_candidates": 0,
+      "requested_families_without_candidates": 0,
+      "candidate_matching_is_not_market_or_exact_variant_coverage": true
+    },
+    {
+      "normalization_version": "catalog-normalization-1",
+      "source": {
+        "source_id": "autoxak_frontend_fallback",
+        "format": "frontend_fallback",
+        "revision": "9969ec0",
+        "source_url": "repository:static/setup.html@9969ec0#FALLBACK_CATALOG",
+        "expected_sha256": "0ae4723a0c7cef8939dfe9e4a6bdb81f05828b1303030a506d23cb191c7113e0",
+        "license_status": "project_license",
+        "license_evidence": "Existing autoXAK frontend literal. Extracted without JS execution; technical values are unverified source claims."
+      },
+      "publication_status": "review_only_not_imported",
+      "input_counts": {
+        "makes": 6,
+        "models": 8,
+        "variants": 14
+      },
+      "accepted_counts": {
+        "makes": 6,
+        "models": 8,
+        "variants": 14
+      },
+      "rejected_counts": {},
+      "issues": {
+        "unverified_legacy_parameters": 14
+      },
+      "error_count": 0,
+      "legacy_parameter_claims": 28,
+      "usable_reference_parameters": 0,
+      "generation_or_variant_accuracy_verified": false,
+      "requested_families": 0,
+      "requested_families_with_candidates": 0,
+      "requested_families_without_candidates": 0,
+      "candidate_matching_is_not_market_or_exact_variant_coverage": true,
+      "comparison_shared_legacy_ids": 7,
+      "comparison_conflicts": 9
+    }
+  ]
+}

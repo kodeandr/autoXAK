@@ -1,0 +1,9 @@
+{
+  "source_id": "autoxak_legacy_seed",
+  "format": "legacy_seed",
+  "revision": "9969ec0",
+  "source_url": "repository:seed_fleet.py@9969ec0",
+  "expected_sha256": "e5862816fea9e64b1bfc8c504690c490bbbd16aa7964ac5ba07213dc5c59714d",
+  "license_status": "project_license",
+  "license_evidence": "Existing autoXAK seed under the project license; technical parameters have no OEM/measurement provenance and remain unverified."
+}
