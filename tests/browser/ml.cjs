@@ -39,7 +39,7 @@ const assert = require('node:assert/strict');
       await new Promise(resolve => setTimeout(resolve, 100));
     }
     assert(ready, 'UI server failed to start: ' + logs);
-    browser = await chromium.launch({executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium',
+    browser = await chromium.launch({executablePath: process.env.CHROMIUM_PATH || undefined,
       headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage']});
     const page = await browser.newPage({viewport: {width: 390, height: 844}});
     const errors = [];

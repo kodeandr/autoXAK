@@ -20,6 +20,7 @@ cert.pem
 
 
 node_modules/
+experiments/packages/
 backups/
 backups-migration-*/
 .migration-secrets.json

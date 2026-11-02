@@ -26,10 +26,17 @@ def runtime(tmp_path, monkeypatch):
     subprocess.run(['docker','--host=unix:///var/run/docker.sock','volume','create','--driver','local',
                     '--opt','type=none','--opt','o=bind','--opt','device='+str(registry.root),volume],check=True,capture_output=True)
     controller = Controller()
-    controller.heartbeat()
     try:
+        inspected = controller.docker(['image', 'inspect', controller.image, '--format', '{{.Id}}'])
+        assert inspected.returncode == 0, 'Build autoxak-ml-runtime:qa before enabling Docker tests'
+        controller.runtime_id = inspected.stdout.decode().strip()
+        controller.heartbeat()
         yield controller
     finally:
+        leftovers = controller.docker(['ps', '-aq', '--filter', 'label=autoxak.ml.volume='+volume])
+        names = leftovers.stdout.decode().split()
+        if names:
+            controller.docker(['rm', '-f', *names])
         subprocess.run(['docker','--host=unix:///var/run/docker.sock','volume','rm',volume],capture_output=True)
 
 
@@ -49,6 +56,9 @@ def predict_trip(trip):
     assert "control" not in trip
     assert not any(key in os.environ for key in ("SECRET_KEY", "DATABASE_URL", "POSTGRES_PASSWORD"))
     assert not Path("/var/run/docker.sock").exists()
+    assert not Path("/var/lib/autoxak/ml").exists()
+    assert not Path("/input/original.json").exists()
+    assert os.getuid() == 10001
     assert os.statvfs("/").f_flag & os.ST_RDONLY
     try:
         connection=socket.create_connection(("192.0.2.1",80),timeout=.1)
@@ -61,6 +71,9 @@ def predict_trip(trip):
     assert result['status'] == 'succeeded', result
     assert result['result']['trips'][0]['estimated_fuel_l'] == .05
     assert result['result']['mae_l'] == pytest.approx(.002)
+    assert result['runtime_image_id'] == runtime.runtime_id
+    assert result['result']['accuracy_certified'] is False
+    assert Runs().read(result['id']) == result
     assert runtime.docker(['inspect','autoxak-ml-job-'+result['id']]).returncode != 0
 
 
@@ -68,6 +81,8 @@ def predict_trip(trip):
     ('def predict_trip(trip): raise ValueError("visible-model-error")', 'visible-model-error'),
     ('def predict_trip(trip): return {"estimated_fuel_l":-1}', 'неотрицательным'),
     ('import time\ndef predict_trip(trip): time.sleep(60)', 'превысило'),
+    ('def predict_trip(trip): return {"estimated_fuel_l":.05,"oversized":"x"*(600*1024)}', '512 КиБ'),
+    ('def predict_trip(trip): return {"allocation":bytearray(700*1024*1024)}', 'памяти'),
 ])
 def test_model_failures_and_timeout_are_saved(runtime, code, fragment):
     runtime.timeout = 2 if "sleep(60)" in code else 30
@@ -76,3 +91,38 @@ def test_model_failures_and_timeout_are_saved(runtime, code, fragment):
     assert fragment in result['error']
     assert result['result'] is None
     assert Runs().runner()['ready']
+    assert runtime.docker(['inspect','autoxak-ml-job-'+result['id']]).returncode != 0
+
+
+def test_engine_applies_candidate_isolation(runtime):
+    model = Registry().import_bundle({'name': 'Isolation inspection', 'files': {
+        'predict.py': base64.b64encode(b'import time\ndef predict_trip(trip): time.sleep(60)').decode()}})
+    row = Runs().submit({'model_id': model['id'], 'data': {'gps': []}})
+    name = 'autoxak-ml-job-' + row['id']
+    try:
+        created = runtime.docker(runtime.command(row['id']))
+        assert created.returncode == 0, created.stderr
+        inspected = runtime.docker(['inspect', name])
+        assert inspected.returncode == 0
+        state = json.loads(inspected.stdout)[0]
+        host = state['HostConfig']
+        assert host['NetworkMode'] == 'none'
+        assert host['ReadonlyRootfs'] is True
+        assert host['Memory'] == host['MemorySwap'] == 512 * 1024 * 1024
+        assert host['NanoCpus'] == 500000000
+        assert host['PidsLimit'] == 64
+        assert host['CapDrop'] == ['ALL']
+        assert 'no-new-privileges' in host['SecurityOpt']
+        assert state['Config']['User'] == '10001:10001'
+        assert state['Image'] == runtime.runtime_id
+        assert not host['Privileged']
+        mounts = {mount['Destination']: mount for mount in state['Mounts']}
+        # tmpfs mounts may be reported here by some Engine versions.
+        assert set(mounts) <= {'/model', '/input', '/tmp', '/output'}
+        assert {'/model', '/input'} <= set(mounts)
+        for destination in ('/model', '/input'):
+            assert mounts[destination]['RW'] is False
+            assert mounts[destination]['Name'] == runtime.volume
+        assert set(host['Tmpfs']) == {'/tmp', '/output'}
+    finally:
+        runtime.docker(['rm', '-f', name])
