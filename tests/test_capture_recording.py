@@ -75,8 +75,15 @@ async def test_complete_capture_still_runs_existing_calculation(committed_client
     result = response.json()
     assert result['status'] == 'PROCESSED' and result['distance_km'] > 0
     assert result['metrics']['capture_quality']['analysis_status'] == 'available'
+    assert 'research_fuel_estimate' not in result['metrics']['math_status']
     exported = (await client.get(f'/api/v2/trips/{result["session_id"]}/export')).json()
     assert exported['point_counts']['motion'] == len(payload['telemetry_stream'])
+    assert exported['gps'] == payload['raw_recording']['gps']
+    assert [{key: point[key] for key in original} for point, original in
+            zip(exported['motion'], payload['raw_recording']['motion'])] == payload['raw_recording']['motion']
+    assert exported['fuel_estimate']['status'] == 'model_not_trained'
+    assert exported['fuel_estimate']['estimated_fuel_l'] is None
+    assert exported['fuel_estimate']['complete_trip_fuel_l'] is None
 
 
 async def test_background_sensor_gap_is_saved_without_scoring(committed_client, synthetic_telemetry_batch):
