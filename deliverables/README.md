@@ -34,3 +34,8 @@ d4696b592d3cddcce6c525b14249dc50f988b3c846009472edea71732fa69155  autoXAK_CHANGE
 - [Скачать MP4](https://raw.githubusercontent.com/kodeandr/autoXAK/docs/audit-downloads/deliverables/autoxak-demo-20s.mp4).
 - Обновлённый архив `autoxak-demo.zip` включает режим `-Short` и готовый пример.
 - Полная синтетическая поездка: 20 минут, 13,6358 км, 55,12 ₽ по backend; ролик смонтирован до 20 секунд. Полные 60 001 IMU-отсчёт и 1 201 GPS-точка сохранены и проверены.
+
+
+### Демо со входом и историей прогресса
+
+[Скачать MP4: вход, поездка и графики за 7/30 дней](https://raw.githubusercontent.com/kodeandr/autoXAK/docs/audit-downloads/deliverables/autoxak-demo-progress-20s.mp4). Длительность 20 секунд. 59 предварительных синтетических поездок рассчитаны API; новая поездка становится 60-й. После поездки: среднее за 7 дней 90,4 (+4 пункта), за 30 дней 85,2 (+11,3 пункта). Скрипты и примеры включены в обновлённый `autoxak-demo.zip`; приватные учётные данные не публикуются.
