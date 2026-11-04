@@ -1,0 +1,110 @@
+{
+  "synthetic": true,
+  "real_backend_calculations": true,
+  "source_capture": "2026-11-04T12-47-29-919Z",
+  "format": "PNG",
+  "screenshots": [
+    {
+      "file": "01-trip-history.png",
+      "label": "История: копилка и график за 7 дней",
+      "width": 852,
+      "height": 1846,
+      "sha256": "d17fdfcbaeaa883f31e07526da36724c2fbacc58b440033d038a7b79e9f0f0a4",
+      "unmodified_browser_capture": false,
+      "original_sha256": "1bea81854f1e5f50ad507e3a2bafcaac0c3af8d22edbd0d243adc648d0f6d39d",
+      "demo_caption_removed": true
+    },
+    {
+      "file": "02-active-trip.png",
+      "label": "Статистика во время активной поездки",
+      "width": 852,
+      "height": 1846,
+      "sha256": "ceed03fdc414c46a722578a79fe7ef1a3ba6810492e38f51cff0963888f9dae3",
+      "unmodified_browser_capture": false,
+      "original_sha256": "f914005a4c202147db84cc7168b95e8b538a5e34b63da142662a9feb9f249f7e",
+      "demo_caption_removed": true
+    },
+    {
+      "file": "03-trip-report.png",
+      "label": "Отчёт после поездки",
+      "width": 852,
+      "height": 1846,
+      "sha256": "5dc440fa8ae5d7d322db2b0680a95d03dfecfcbaa1df108535c10309c6dd6962",
+      "unmodified_browser_capture": false,
+      "original_sha256": "26ae0231c0e1f001177a6b41ac6e77076723a7de5a8a1410e9109ff073490f64",
+      "demo_caption_removed": true
+    },
+    {
+      "file": "04-history-list.png",
+      "label": "История: список последних поездок",
+      "width": 852,
+      "height": 1846,
+      "sha256": "36e189e54c497164098139bf0afd6d6ac2ac0db654baa04d5e2ea2a8a49ca0a8",
+      "unmodified_browser_capture": false,
+      "original_sha256": "00bf756842ef021813d410e047646dff9e3fff59096aa5dd01b528329912c6f8",
+      "demo_caption_removed": true
+    }
+  ],
+  "trip": {
+    "session_id": "dad0f19e-449b-4dab-8a8e-cc626c9ba613",
+    "cost_savings_rub": 50.72,
+    "distance_km": 13.021467922559554,
+    "harsh_accel_count": 3,
+    "harsh_brake_count": 4,
+    "road_anomalies_count": 7,
+    "smooth_score": 97,
+    "duration_seconds": 1200,
+    "traffic_jam_seconds": 222.84065043720705
+  },
+  "balance_after_rub": 1826.2,
+  "history_trip_count": 60,
+  "progress_7_days": {
+    "days": 7,
+    "policy": "smooth-sample-fraction-1",
+    "trip_count": 7,
+    "average": 89.9,
+    "previous_average": 85.6,
+    "delta": 4.3,
+    "sufficient_data": true,
+    "points": [
+      {
+        "date": "2026-10-29",
+        "score": 88
+      },
+      {
+        "date": "2026-10-30",
+        "score": 82
+      },
+      {
+        "date": "2026-10-31",
+        "score": 95
+      },
+      {
+        "date": "2026-11-01",
+        "score": 89
+      },
+      {
+        "date": "2026-11-02",
+        "score": 83
+      },
+      {
+        "date": "2026-11-03",
+        "score": 95
+      },
+      {
+        "date": "2026-11-04",
+        "score": 97
+      }
+    ],
+    "period_start": "2026-10-29",
+    "period_end": "2026-11-04"
+  },
+  "image_edit": {
+    "method": "image_gen",
+    "description": "Removed the top demo caption; image editor output resolution is 852 x 1846.",
+    "original_dimensions": [
+      414,
+      896
+    ]
+  }
+}

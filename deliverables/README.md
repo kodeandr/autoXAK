@@ -69,3 +69,8 @@ d4696b592d3cddcce6c525b14249dc50f988b3c846009472edea71732fa69155  autoXAK_CHANGE
 ### Скриншоты на синтетических данных
 
 [Скачать комплект PNG](https://raw.githubusercontent.com/kodeandr/autoXAK/docs/audit-downloads/deliverables/autoxak-demo-screenshots.zip): история с графиком, список поездок, активная поездка и итоговый отчёт. Исходные снимки браузера, 414 × 896 пикселей, без сжатия видео и редактирования показателей. Данные совпадают с последним роликом: 13,02 км, +50,72 ₽, 3 разгона, 4 торможения, 7 неровностей; после поездки — 60 поездок и 1 826,20 ₽ в копилке. [Описание файлов](autoxak-demo-screenshots/README.md).
+
+
+### Скриншоты без верхней строки «ДЕМО»
+
+[Скачать обновлённый комплект PNG](https://raw.githubusercontent.com/kodeandr/autoXAK/docs/audit-downloads/deliverables/autoxak-demo-screenshots-clean.zip). С четырёх изображений удалена верхняя подпись. Обработанные файлы: 852 × 1846 пикселей. Данные синтетические, показатели совпадают с исходным демо. [Описание комплекта](autoxak-demo-screenshots-clean/README.md).
