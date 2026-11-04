@@ -18,3 +18,12 @@ ZIP включает полный исходный проект и оба Markdo
 fbd2570a9b762bf16efa93fba8595a39ecb41069851a46fe25b802ca37949384  autoXAK_CHANGES_FULL_4325f10.md
 d4696b592d3cddcce6c525b14249dc50f988b3c846009472edea71732fa69155  autoXAK_CHANGES_REVIEW_4325f10.md
 ```
+
+
+## Запись демо без автомобиля
+
+- [Скачать архив со скриптом и примером видео](https://raw.githubusercontent.com/kodeandr/autoXAK/docs/audit-downloads/deliverables/autoxak-demo.zip).
+- [Скачать MP4](https://raw.githubusercontent.com/kodeandr/autoXAK/docs/audit-downloads/deliverables/autoxak-demo.mp4).
+- [Инструкция запуска](DEMO_DOWNLOAD.md).
+
+Данные и поездка синтетические; расчёты выполнены настоящим backend локальной копии. Скрипт создаёт нового гостя и одну поездку на выбранном адресе.
