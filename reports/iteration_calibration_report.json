@@ -1,0 +1,32 @@
+{
+  "experiment": "Algorithm_Calibration_Iteration_Benchmark",
+  "iteration_1_baseline_heuristic": {
+    "method": "Unsigned acceleration magnitude sqrt(ax^2 + ay^2)",
+    "defect": "Braking phase (-1.2 m/s2) treated as positive acceleration (+1.2 m/s2)",
+    "mape_percent": 34.1,
+    "hypothesis_status": "H1 rejected (MAPE > 10%)"
+  },
+  "iteration_2_calibrated_physics": {
+    "method": "Signed longitudinal tractive balance ax with Butterworth LPF and drag forces",
+    "stand_mape_percent": 3.36,
+    "fleet_cross_validation": [
+      {
+        "vehicle": "Skoda Octavia 1.4 TSI",
+        "mass_kg": 1340,
+        "mape_percent": 0.18
+      },
+      {
+        "vehicle": "Geely Coolray 1.5T",
+        "mass_kg": 1415,
+        "mape_percent": 5.06
+      },
+      {
+        "vehicle": "Haval Jolion 1.5T 4WD",
+        "mass_kg": 1505,
+        "mape_percent": 5.66
+      }
+    ],
+    "mean_fleet_mape_percent": 3.63,
+    "hypothesis_status": "H1 confirmed on in-silico bench (MAPE <= 10%, p < 0.05)"
+  }
+}

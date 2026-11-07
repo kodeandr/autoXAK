@@ -2,10 +2,13 @@ import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+asyncpg://autoXAK_user@localhost:5432/autoXAK_db"
-)
+DATABASE_URL = os.getenv("DATABASE_URL", "").strip()
+if not DATABASE_URL:
+    # Only set default if explicitly testing; otherwise raise to avoid silent misconfiguration
+    if os.getenv("PYTEST_CURRENT_TEST") or os.getenv("TESTING"):
+        DATABASE_URL = "postgresql+asyncpg://autoxak:ci_only@127.0.0.1:5432/autoxak_test"
+    else:
+        raise RuntimeError("DATABASE_URL environment variable is required but not set")
 
 engine = create_async_engine(
     DATABASE_URL,
@@ -42,6 +45,15 @@ async def initialize_schema():
     """Add supported nullable columns to existing installations; never hide DDL errors."""
     from sqlalchemy import inspect, text
     from sqlalchemy.schema import CreateColumn
+
+    ALLOWED_TABLES = {"vehicle_trims", "trips", "users", "recording_vehicles", "login_attempts"}
+    ALLOWED_COLUMNS = {
+        "base_city_fuel_rate_l100km", "fuel_rate_source",
+        "board_computer_consumption_l100km", "request_hash", "calculation_result", "client_session_id",
+        "car_name", "custom_profile", "login", "merged_into",
+    }
+    ALLOWED_INDEXES = {"ix_trips_user_client_session", "ix_users_login", "ix_trips_user_car", "ix_cpa_leads_user_partner", "ix_login_attempts_blocked_until"}
+
     additions = {
         "vehicle_trims": {"base_city_fuel_rate_l100km", "fuel_rate_source"},
         "trips": {"board_computer_consumption_l100km", "request_hash", "calculation_result", "client_session_id"},
@@ -52,16 +64,25 @@ async def initialize_schema():
             await connection.execute(text("SELECT pg_advisory_xact_lock(173512341)"))
         await connection.run_sync(Base.metadata.create_all)
         for table_name, names in additions.items():
+            if table_name not in ALLOWED_TABLES:
+                raise ValueError(f"Table {table_name} is not in allowed DDL whitelist")
+            safe_names = names & ALLOWED_COLUMNS
+            if not safe_names:
+                continue
             columns = await connection.run_sync(lambda sync, name=table_name: {col["name"] for col in inspect(sync).get_columns(name)})
-            for name in names - columns:
+            for name in safe_names - columns:
+                if name not in Base.metadata.tables[table_name].c:
+                    continue
                 column = Base.metadata.tables[table_name].c[name]
                 ddl = str(CreateColumn(column).compile(dialect=connection.dialect))
                 await connection.execute(text(f'ALTER TABLE {table_name} ADD COLUMN {ddl}'))
-        index = next(index for index in Base.metadata.tables["trips"].indexes if index.name == "ix_trips_user_client_session")
-        await connection.run_sync(lambda sync: index.create(sync, checkfirst=True))
+        index = next((index for index in Base.metadata.tables["trips"].indexes if index.name == "ix_trips_user_client_session"), None)
+        if index:
+            await connection.run_sync(lambda sync: index.create(sync, checkfirst=True))
 
-        user_index = next(index for index in Base.metadata.tables["users"].indexes if index.name == "ix_users_login")
-        await connection.run_sync(lambda sync: user_index.create(sync, checkfirst=True))
+        user_index = next((index for index in Base.metadata.tables["users"].indexes if index.name == "ix_users_login"), None)
+        if user_index:
+            await connection.run_sync(lambda sync: user_index.create(sync, checkfirst=True))
         # Preserve the three pre-existing backend rates with explicit provenance.
         # Do not infer consumption for other modifications from mass/body/engine size.
         from app.models.vehicle_profiles import VEHICLE_REGISTRY

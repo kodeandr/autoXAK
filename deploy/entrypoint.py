@@ -17,6 +17,8 @@ def main():
         ).render_as_string(hide_password=False)
     if len(sys.argv) < 2:
         raise SystemExit("A command is required")
+    # Flush stdout before exec to avoid lost logs in Docker
+    sys.stdout.flush()
     os.execvp(sys.argv[1], sys.argv[1:])
 
 

@@ -2,6 +2,7 @@ import os
 os.environ.setdefault("SECRET_KEY", "autoxak-test-only-signing-key-do-not-deploy")
 os.environ.setdefault("DGIS_USE_MOCK", "true")
 os.environ.setdefault("LOG_DIR", "/tmp/autoxak-test-logs")
+os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://autoxak:ci_only@127.0.0.1:5432/autoxak_test")
 import pytest
 import pytest_asyncio
 import numpy as np

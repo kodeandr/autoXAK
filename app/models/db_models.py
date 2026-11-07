@@ -177,6 +177,7 @@ class Trip(Base):
     __table_args__ = (
         Index("ix_trips_user_created", "user_id", "created_at"),
         Index("ix_trips_user_client_session", "user_id", "client_session_id", unique=True),
+        Index("ix_trips_user_car", "user_id", "car_id"),
     )
 
     @property
@@ -206,12 +207,21 @@ class CPALead(Base):
 
     user = relationship("User", back_populates="leads")
 
+    __table_args__ = (
+        Index("ix_cpa_leads_user_partner", "user_id", "partner_id", unique=True),
+    )
+
+
 class LoginAttempt(Base):
     __tablename__ = "login_attempts"
     key = Column(String(64), primary_key=True)
     failures = Column(Integer, nullable=False, default=0)
     window_started_at = Column(DateTime(timezone=True), nullable=False)
     blocked_until = Column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("ix_login_attempts_blocked_until", "blocked_until"),
+    )
 
 
 class TripTelemetryRecord(Base):

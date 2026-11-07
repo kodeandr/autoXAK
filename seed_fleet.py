@@ -255,11 +255,12 @@ async def seed():
                         trim = VehicleTrim(model_id=model.id, **trim_dict)
                         session.add(trim)
                     else:
+                        # Update existing trim with latest data (idempotent)
                         for k, v in trim_dict.items():
                             setattr(trim, k, v)
 
         await session.commit()
-        await initialize_schema()
+        # No need to call initialize_schema again — it's idempotent
         print("База данных Top-Fleet успешно наполнена модификациями.")
 
 if __name__ == "__main__":

@@ -105,6 +105,7 @@ async def seed():
             if entry is None:
                 session.add(FuelRegionalPrice(**f))
             else:
+                # Update existing entry with latest data (idempotent)
                 for name, value in f.items():
                     setattr(entry, name, value)
 

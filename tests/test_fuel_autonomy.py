@@ -28,7 +28,7 @@ def test_speed_oscillations_do_not_measure_throttle_or_fuel_penalty():
 
     hunting_detected, penalty_liters, pke = engine.detect_throttle_hunting(speeds, ax, dt=dt)
     assert hunting_detected is None
-    expected=np.maximum(np.diff(speeds**2),0).sum()/2 / np.trapz(speeds,dx=dt)
+    expected = np.maximum(np.diff(speeds**2), 0).sum() / 2 / getattr(np, "trapezoid", getattr(np, "trapz", None))(speeds, dx=dt)
     assert pke == pytest.approx(expected)
     assert penalty_liters is None
 

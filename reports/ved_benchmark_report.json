@@ -1,0 +1,21 @@
+{
+  "experiment": "VED_Baseline_Verification",
+  "sample": {
+    "vehicles_count": 28,
+    "trips_count": 1912,
+    "dataset_origin": "Vehicle Energy Dataset (Oh et al., IEEE T-ITS 2022)",
+    "split_method": "Group Split by VehicleId (Roberts et al., 2017)"
+  },
+  "model_parameters": {
+    "theta_E_L_per_MJ": 0.1239,
+    "theta_T_L_per_hour": 1.514
+  },
+  "metrics": {
+    "point_wape_percent": 11.6038,
+    "upper_95_bootstrap_ci_percent": 12.19,
+    "lower_95_bootstrap_ci_percent": 10.88,
+    "threshold_percent": 10.0,
+    "h1_confirmed": false,
+    "verdict": "H1 rejected, H0 not rejected (Pure physical model WAPE >= 10% on unseen cars). Serves as Baseline for CatBoost (9.61%)."
+  }
+}

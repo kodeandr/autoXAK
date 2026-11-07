@@ -23,7 +23,7 @@ from sqlalchemy import select, func, and_, or_, text
 from sqlalchemy.exc import IntegrityError
 
 from app.core.logger import logger
-from app.api.auth import router as auth_router
+from app.api.auth import router as auth_router, _check_rate_limit
 from app.api.recordings import router as recordings_router
 from app.api.reference_math import router as reference_math_router
 from app.services.reference_math import VERSION as MATH_VERSION, trajectory_metrics, threshold_events
@@ -301,6 +301,12 @@ def calculate_haversine_distance_km(coords: List[Dict[str, float]]) -> float:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await initialize_schema()
+    # Warm up CatBoost model artifacts to avoid cold-start latency on first request
+    try:
+        from app.services.fuel_prediction import _load_artifacts
+        _load_artifacts()
+    except Exception as e:
+        logger.warning(f"Failed to warm up fuel prediction model: {e}")
     try:
         yield
     finally:
@@ -321,7 +327,7 @@ app.include_router(reference_math_router)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[origin.strip() for origin in os.getenv("CORS_ORIGINS", "").split(",") if origin.strip()],
+    allow_origins=[origin.strip() for origin in os.getenv("CORS_ORIGINS", "https://autoxak.ru,http://localhost:8000,https://localhost:8000,http://127.0.0.1:8000").split(",") if origin.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -352,13 +358,15 @@ gis_service = GISService()
 async def log_requests_middleware(request: Request, call_next):
     request_id = str(uuid.uuid4())[:8]
     start_time = time.time()
-    logger.info(f"[{request_id}] START {request.method} {request.url.path}")
+    # Sanitize URL: log only path, never query parameters (may contain tokens, codes, passwords)
+    log_url = request.url.path
+    logger.info(f"[{request_id}] START {request.method} {log_url}")
 
     try:
         response = await call_next(request)
         process_time = (time.time() - start_time) * 1000
         logger.info(
-            f"[{request_id}] FINISH {request.method} {request.url.path} "
+            f"[{request_id}] FINISH {request.method} {log_url} "
             f"Status={response.status_code} ({process_time:.2f}ms)"
         )
         return response
@@ -547,6 +555,9 @@ def _stored_trip_result(trip: Trip) -> ExtendedTripCalculationResult:
 
 @app.post("/api/v1/vehicles/synthesize")
 async def synthesize_vehicle(payload: CustomVehicleInput, db: AsyncSession = Depends(get_db), user: User = Depends(require_user)):
+    # Rate limit vehicle synthesis
+    if not _check_rate_limit(f"synthesize:{user.id}", max_requests=10, window_seconds=60):
+        raise HTTPException(429, "Too many vehicle synthesis requests. Please wait a minute.")
     profile = ProfileSynthesizer.synthesize_profile(payload)
     user.custom_profile = jsonable_encoder(profile)
     await db.commit()
@@ -897,13 +908,20 @@ async def process_telemetry_session(
         user = (await db.execute(select(User).where(User.id == owner.id).with_for_update().execution_options(populate_existing=True))).scalar_one()
         if user.merged_into:
             raise HTTPException(401, "Session was merged; sign in again")
-        existing_trip = (await db.execute(select(Trip).where(or_(Trip.id == parsed_uuid, and_(Trip.user_id == owner.id, Trip.client_session_id == session_ref))))).scalar_one_or_none()
+
+        # Atomic check-and-insert to prevent race conditions on concurrent requests with same session_id
+        # The user row is already locked with FOR UPDATE above; now we lock the potential trip row too.
+        existing_trip = (await db.execute(select(Trip).where(or_(Trip.id == parsed_uuid, and_(Trip.user_id == owner.id, Trip.client_session_id == session_ref))).with_for_update())).scalar_one_or_none()
         if existing_trip is not None:
             if existing_trip.user_id != owner.id or (existing_trip.request_hash and existing_trip.request_hash != digest):
                 raise HTTPException(409, "Session identifier already contains different data")
             if existing_trip.calculation_result:
                 return ExtendedTripCalculationResult.model_validate(existing_trip.calculation_result)
             return _stored_trip_result(existing_trip)
+
+        # For new trips, also check if another concurrent request already inserted this UUID
+        # (with_for_update skip_locked will return None if another tx holds the lock)
+        # We rely on the unique index ix_trips_user_client_session and PK to catch duplicates at commit.
         reference_evaluation=await _evaluate_reference_evidence(payload)
         quality = None
         if payload.raw_recording is not None:

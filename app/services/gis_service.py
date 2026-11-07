@@ -32,8 +32,9 @@ class GISService:
                 host=self.redis_host,
                 port=self.redis_port,
                 decode_responses=True,
-                max_connections=10,
-                socket_connect_timeout=0.5, socket_timeout=0.5
+                max_connections=20,
+                socket_connect_timeout=2.0,
+                socket_timeout=2.0,
             )
         return aioredis.Redis(connection_pool=self._pool)
 

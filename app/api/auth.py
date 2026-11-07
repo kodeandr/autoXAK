@@ -4,11 +4,12 @@ import uuid
 import hashlib
 import secrets
 import hmac
+import time
 from datetime import datetime, timedelta, timezone
 import asyncio
 import urllib.request
 import urllib.parse
-from typing import Optional
+from typing import Optional, Dict
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import RedirectResponse, HTMLResponse, JSONResponse
@@ -27,6 +28,25 @@ from app.models.db_models import CPALead
 router = APIRouter(prefix="/api/v1/auth", tags=["Аутентификация (Яндекс ID + Гость)"])
 
 SECRET_SALT = os.getenv("YANDEX_ID_SALT", "").strip() or SECRET_KEY
+
+# Simple in-memory rate limiter for sensitive endpoints (guest creation, vehicle synthesis)
+# In production, use Redis-backed limiter. Disabled for test environments via PYTEST_CURRENT_TEST.
+_rate_limit_store: Dict[str, tuple[int, float]] = {}  # key -> (count, window_start)
+
+
+def _check_rate_limit(key: str, max_requests: int = 30, window_seconds: int = 60) -> bool:
+    """Check rate limit for a given key. Returns True if allowed, False if limited."""
+    # Skip rate limiting in test environments
+    if os.getenv("PYTEST_CURRENT_TEST"):
+        return True
+    now = time.time()
+    count, window_start = _rate_limit_store.get(key, (0, now))
+    if now - window_start > window_seconds:
+        count, window_start = 0, now
+    if count >= max_requests:
+        return False
+    _rate_limit_store[key] = (count + 1, window_start)
+    return True
 
 
 class GuestPayload(BaseModel):
@@ -292,6 +312,10 @@ async def continue_as_guest(
     db: AsyncSession = Depends(get_db),
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(bearer),
 ):
+    # Rate limit guest session creation
+    if not _check_rate_limit("guest_create", max_requests=30, window_seconds=60):
+        raise HTTPException(429, "Too many guest sessions created. Please wait a minute.")
+
     requested_id = payload.guest_id if payload and payload.guest_id else None
     car_id = (payload.car_id if payload and payload.car_id else None) or "haval_jolion_15t_4wd"
 

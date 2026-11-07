@@ -16,6 +16,7 @@ playwright-artifacts/
 logs/*.log
 key.pem
 cert.pem
+dump.sql
 .pytest-tmp*/
 
 

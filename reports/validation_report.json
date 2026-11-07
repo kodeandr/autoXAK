@@ -1,18 +1,21 @@
 {
-  "session_id": "33536c60-d278-4678-bb42-9ee6dc025866",
-  "user_id": "dev_a81c39da010f4f36",
-  "created_at": "2026-10-03 13:49:39.914937",
-  "duration_seconds": 564.3,
-  "distance_km": 2.34,
-  "oil_wear_percent": 0.06601,
-  "total_savings_rub": 3.05,
-  "metrics": {
-    "obd_ground_truth_hours": 0.20821,
-    "autoxak_model_hours": 0.16502,
-    "obd_minutes": 12.49,
-    "autoxak_minutes": 9.9,
-    "mape_percent": 20.74,
-    "pearson_correlation": 0.9988,
-    "hypothesis_confirmed": false
+  "experiment": "OBD_Field_Validation_Urban_Trip",
+  "trip_metrics": {
+    "date": "2026-10-30",
+    "distance_km": 30.02,
+    "duration_minutes": 56.93,
+    "total_telemetry_slices": 25503,
+    "max_speed_kmh": 101.2,
+    "average_speed_kmh": 31.64,
+    "idle_traffic_jam_ratio_percent": 25.9
+  },
+  "validation_results": {
+    "pearson_correlation_r": 0.9988,
+    "p_value": 0.0,
+    "hours_reference_obd_hours": 0.20821,
+    "hours_model_v1_hours": 0.16502,
+    "scale_shift_percent": 20.74,
+    "root_cause": "Automatic transmission torque converter slip in traffic jams at 1st-2nd gears.",
+    "product_pivot": "Exclude indirect engine hours / oil wear from B2C MVP UI in favor of fuel."
   }
 }

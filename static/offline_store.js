@@ -7,14 +7,20 @@ const AutoXAKOfflineStore = window.AutoXAKOfflineStore = (() => {
         if (opening) return opening;
         opening = new Promise((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, 2);
-            request.onupgradeneeded = () => {
+            request.onupgradeneeded = (event) => {
                 const db = request.result;
-                if (!db.objectStoreNames.contains(CONTROLS)) db.createObjectStore(CONTROLS, {keyPath: "session_id"});
+                const oldVersion = event.oldVersion || 0;
+                // Add missing object stores without recreating existing ones
+                if (!db.objectStoreNames.contains(CONTROLS)) {
+                    db.createObjectStore(CONTROLS, {keyPath: "session_id"});
+                }
                 if (!db.objectStoreNames.contains(STORE)) {
                     const store = db.createObjectStore(STORE, {keyPath: 'session_id'});
                     store.createIndex('status', 'status');
                     store.createIndex('created_at', 'created_at');
                 }
+                // Future version migrations can be added here based on oldVersion:
+                // if (oldVersion < 3) { ... }
             };
             request.onsuccess = () => {
                 const db = request.result;
