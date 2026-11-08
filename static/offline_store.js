@@ -1,12 +1,12 @@
 /** Pending trips are acknowledged only after the IndexedDB transaction commits. */
 const AutoXAKOfflineStore = window.AutoXAKOfflineStore = (() => {
-    const DB_NAME = 'autoXAK_storage', STORE = 'pending_trips', CONTROLS = 'pending_controls';
+    const DB_NAME = 'autoXAK_storage', STORE = 'pending_trips', CONTROLS = 'pending_controls', ACTIVE_STORE = 'active_trip_draft';
     let opening = null, syncing = null;
 
     function openDB() {
         if (opening) return opening;
         opening = new Promise((resolve, reject) => {
-            const request = indexedDB.open(DB_NAME, 2);
+            const request = indexedDB.open(DB_NAME, 3);
             request.onupgradeneeded = (event) => {
                 const db = request.result;
                 const oldVersion = event.oldVersion || 0;
@@ -18,6 +18,9 @@ const AutoXAKOfflineStore = window.AutoXAKOfflineStore = (() => {
                     const store = db.createObjectStore(STORE, {keyPath: 'session_id'});
                     store.createIndex('status', 'status');
                     store.createIndex('created_at', 'created_at');
+                }
+                if (!db.objectStoreNames.contains(ACTIVE_STORE)) {
+                    db.createObjectStore(ACTIVE_STORE, {keyPath: 'session_id'});
                 }
                 // Future version migrations can be added here based on oldVersion:
                 // if (oldVersion < 3) { ... }
@@ -46,6 +49,19 @@ const AutoXAKOfflineStore = window.AutoXAKOfflineStore = (() => {
         });
     }
 
+    async function saveActiveTripDraft(draft) {
+        return transaction('readwrite', store => store.put({...draft, created_at: Date.now()}), ACTIVE_STORE);
+    }
+    async function getActiveTripDraft() {
+        const all = await transaction('readonly', store => store.getAll(), ACTIVE_STORE);
+        return all?.[0] || null;
+    }
+    async function clearActiveTripDraft() {
+        const all = await transaction('readonly', store => store.getAll(), ACTIVE_STORE);
+        if (all && all.length > 0) {
+            return transaction('readwrite', store => store.delete(all[0].session_id), ACTIVE_STORE);
+        }
+    }
     function savePendingTrip(payload) {
         return transaction('readwrite', store => store.put({...payload, created_at: Date.now(), status: 'PENDING'}));
     }
@@ -181,5 +197,5 @@ const AutoXAKOfflineStore = window.AutoXAKOfflineStore = (() => {
         }
         return syncing;
     }
-    return {rememberSyncedTrip, reassignOwner, savePendingControl, saveDraftTrip, recoverInterruptedTrips, savePendingTrip, removePendingTrip, getPendingTrips, countPendingTrips, syncPendingTrips};
+    return {rememberSyncedTrip, reassignOwner, savePendingControl, saveDraftTrip, recoverInterruptedTrips, savePendingTrip, removePendingTrip, getPendingTrips, countPendingTrips, syncPendingTrips, saveActiveTripDraft, getActiveTripDraft, clearActiveTripDraft};
 })();

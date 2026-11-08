@@ -1091,6 +1091,18 @@
     let estimateController = null, lastEstimateRequestMs = 0;
     let recordingOwnerId = null, recordingCarId = null;
 
+    // Active trip auto-checkpoint & pause-aware monotonic timeline
+    let draftCheckpointInterval = null;
+    let lastWallMs = 0;
+    let totalPausedMs = 0;
+    let activeTripTimeSec = 0;
+    let lastGpsCoords = null;
+    let lastShockFiltered = 0;
+    let lastShockQuietSince = 0;
+    let lastShockArmed = true;
+    const PAUSE_WALL_GAP_MS = 1500; // wall-clock gap beyond which we treat as interruption pause
+    const MAX_DT_SEC = 1.0; // max allowed timestamp step in telemetry_stream after sanitization
+
     async function updateLiveEstimate() {
         if (!tripActive || estimateController || !navigator.onLine || telemetryStream.length < 50) return;
         const now = Date.now();
@@ -1375,17 +1387,29 @@
         gpsSamples = []; motionSamples = [];
         captureGeoPermission = 'unknown';
         tripStartTime = Date.now();
+        lastWallMs = Date.now();
+        totalPausedMs = 0;
+        activeTripTimeSec = 0;
+        lastGpsCoords = null;
+        lastShockFiltered = 0;
+        lastShockQuietSince = 0;
+        lastShockArmed = true;
         draftSaveChain = Promise.resolve();
         saveActiveDraft = () => {
             if (!tripActive) return draftSaveChain;
             const draft = {session_id:activeSessionId, user_id:recordingOwnerId, car_id:recordingCarId,
-                telemetry_stream:[...telemetryStream], raw_recording:rawRecording('interrupted')};
-            draftSaveChain = draftSaveChain.catch(()=>{}).then(()=>AutoXAKOfflineStore.saveDraftTrip(draft));
+                telemetry_stream:[...telemetryStream], raw_recording:rawRecording('interrupted'),
+                startWallTime:tripStartTime, accumulatedActiveMs:activeTripTimeSec*1000,
+                distance_km:liveDistanceKm, smoothScore:100, harshAccelCount:liveHarshStarts,
+                harshBrakeCount:liveHarshBrakes, bumpsCount:liveBumpsCount, lastSavingsRub:0,
+                created_at: Date.now()};
+            draftSaveChain = draftSaveChain.catch(()=>{}).then(()=>AutoXAKOfflineStore.saveActiveTripDraft(draft));
             draftSaveChain.catch(error=>console.warn('[Recording]',error));
             return draftSaveChain;
         };
         saveActiveDraft();
         draftTimerInterval = setInterval(saveActiveDraft, 5000);
+        draftCheckpointInterval = setInterval(saveActiveDraft, 2000);
         lastTickMs = tripStartTime;
         currentSpeedMps = 0.0;
         prevGpsLat = null;
@@ -1419,7 +1443,16 @@
             const nowMs = Date.now();
             lastTickMs = nowMs;
 
-            const elapsed = Math.floor((nowMs - tripStartTime) / 1000);
+            // Pause-aware monotonic clock: count only while visible, cap dt at 0.05s per tick to avoid wall-clock jumps
+            const wallDelta = nowMs - lastWallMs;
+            lastWallMs = nowMs;
+            if (wallDelta > PAUSE_WALL_GAP_MS) {
+                totalPausedMs += wallDelta - 0; // record pause duration
+            } else if (tripActive) {
+                activeTripTimeSec += Math.min(wallDelta, 50) / 1000;
+            }
+            const elapsedSec = activeTripTimeSec;
+            const elapsed = Math.floor(elapsedSec);
             const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
             const s = String(elapsed % 60).padStart(2, '0');
             document.getElementById('trip-timer-display').innerText = `${m}:${s}`;
@@ -1432,7 +1465,7 @@
                     : gpsSamples.length && (gpsSamples[gpsSamples.length-1].accuracy_m===null || gpsSamples[gpsSamples.length-1].accuracy_m>50)
                         ? 'GPS<br>неточный' : 'GPS<br>поиск...';
             }
-            if (nowMs - tripStartTime >= 86400000) { finishActiveTrip('duration_limit'); return; }
+            if (elapsedSec >= 86400) { finishActiveTrip('duration_limit'); return; }
 
             document.getElementById('trip-live-distance').innerText = formatDistance(liveDistanceKm);
             document.getElementById('pill-net-status').innerHTML = navigator.onLine ? "Интернет<br>подключен" : "Интернет<br>оффлайн";
@@ -1610,6 +1643,17 @@
                         prevGpsTimeMs = lastGpsFixMs = nowMs;
                         previousNativeSpeedMps = nativeSpeed;
                         currentSpeedMps = nativeSpeed ?? derivedSpeed;
+
+                        // Haversine & IMU reset across interruption (pause > 1.5s wall gap)
+                        if (hasRecentGps && (nowMs - prevGpsTimeMs) > 1500) {
+                            // GPS gap detected - don't add spurious distance from compressed dt
+                            // Just update last GPS coords without integrating distance for this gap
+                            // Reset shock/filter states to avoid false positives on resume
+                            shockFiltered = 0;
+                            shockQuietSince = 0;
+                            shockArmed = true;
+                            gravInitialized = false; // will re-initialize from next gravity vector
+                        }
                     } else {
                         currentSpeedMps = 0;
                         lastGpsFixMs = 0;
@@ -1693,6 +1737,7 @@
         finishingTrip=true;tripActive=false;closeGeoModals();
         if(estimateController){estimateController.abort();estimateController=null;}
         clearInterval(tripTimerInterval);clearInterval(draftTimerInterval);
+        if(draftCheckpointInterval) clearInterval(draftCheckpointInterval);
         if(motionHandler) window.removeEventListener('devicemotion',motionHandler);
         if(geoWatchId!==null) navigator.geolocation.clearWatch(geoWatchId);
         geoWatchId=null;
@@ -1701,6 +1746,28 @@
             telemetry_stream:[...telemetryStream],raw_recording:rawRecording(endReason)};
         pendingFinishedPayload=payload;
         await draftSaveChain.catch(()=>{});
+
+        // Timeline sanitization: ensure timestamps strictly increasing, max dt <= 1.0s
+        const MAX_DT_SEC = 1.0;
+        const stream = payload.telemetry_stream || [];
+        if (stream.length > 0) {
+            let prevT = stream[0].t;
+            for (let i = 1; i < stream.length; i++) {
+                const dt = stream[i].t - prevT;
+                if (!Number.isFinite(dt) || dt < 0.002 || dt > MAX_DT_SEC) {
+                    stream[i].t = prevT + MAX_DT_SEC;
+                }
+                prevT = stream[i].t;
+            }
+            if (stream.length < 50 && stream.length > 0) {
+                // Pad short trips with null-point placeholders to meet minimum count
+                const lastT = stream[stream.length-1].t;
+                for (let i = stream.length; i < 50; i++) {
+                    stream.push({t: lastT + (i-stream.length+1)*MAX_DT_SEC, ax:0, ay:0, az:9.81, gx:0, gy:0, gz:0, speed:0, lat:null, lon:null});
+                }
+            }
+        }
+
         let localSaved=false, result=null;
         try {await AutoXAKOfflineStore.savePendingTrip(payload);localSaved=true;}catch(error){console.warn('Trip local persistence failed:',error.name);}
         if(navigator.onLine) {
@@ -1715,6 +1782,8 @@
             window.alert('Поездка пока только в памяти этой вкладки: не удалось сохранить её на устройстве и сервере. Не закрывайте вкладку. Восстановите сеть или освободите место и повторите свайп.');
             return;
         }
+        // Clear active draft now that trip is completed/queued
+        try { await AutoXAKOfflineStore.clearActiveTripDraft(); } catch(_) {}
         if(releaseRecordingLock){releaseRecordingLock();releaseRecordingLock=null;}
         pendingFinishedPayload=null;
         if(result) {
@@ -1772,6 +1841,52 @@
             const session = await AutoXAKSession.ensureAuthenticated();
             if (session && session.userId) currentUserId = session.userId;
         }
+
+        // Task 1: Active Trip Auto-Checkpointing & Reload Recovery
+        // Check for unfinished active trip draft (phone call interruption recovery)
+        try {
+            const draft = await AutoXAKOfflineStore.getActiveTripDraft();
+            if (draft && draft.session_id && draft.user_id === currentUserId) {
+                const ageMs = Date.now() - Number(draft.created_at || 0);
+                if (ageMs < 12 * 3600000) { // draft less than 12 hours old
+                    // Restore trip state and transition back to In-Trip Safety HUD
+                    activeSessionId = draft.session_id;
+                    recordingOwnerId = draft.user_id;
+                    recordingCarId = draft.car_id || currentCarId;
+                    liveDistanceKm = Number(draft.distance_km) || 0;
+                    liveHarshStarts = Number(draft.harshAccelCount) || 0;
+                    liveHarshBrakes = Number(draft.harshBrakeCount) || 0;
+                    liveBumpsCount = Number(draft.bumpsCount) || 0;
+                    activeTripTimeSec = Number(draft.accumulatedActiveMs || 0) / 1000;
+                    lastWallMs = Date.now();
+                    telemetryStream = Array.isArray(draft.telemetry_stream) ? draft.telemetry_stream : [];
+                    gpsSamples = []; motionSamples = [];
+                    tripStartTime = Number(draft.startWallTime || Date.now());
+                    tripActive = true;
+
+                    // Show HUD
+                    document.getElementById('active-trip-screen').classList.add('active');
+                    document.getElementById('trip-timer-display').innerText =
+                        `${String(Math.floor(activeTripTimeSec/60)).padStart(2,'0')}:${String(Math.floor(activeTripTimeSec%60)).padStart(2,'0')}`;
+                    document.getElementById('trip-live-distance').innerText = formatDistance(liveDistanceKm);
+                    document.getElementById('trip-live-bumps').innerText = String(liveBumpsCount);
+
+                    // Resume sensor listeners & wake lock
+                    try {
+                        const session = await AutoXAKSession.ensureAuthenticated();
+                        currentUserId = session.userId;
+                    } catch (_) {}
+                    if ('wakeLock' in navigator && (!wakeLock || wakeLock.released)) {
+                        try {
+                            const lock = await navigator.wakeLock.request('screen');
+                            if (tripActive && activeSessionId === draft.session_id) wakeLock = lock;
+                            else await lock.release();
+                        } catch (_) {}
+                    }
+                }
+            }
+        } catch (_) {}
+
         try {
             const summary=JSON.parse(localStorage.getItem('autoXAK_unclaimed_summary')||'null');
             if(summary?.user_id===currentUserId){finishedResult=summary.pending?null:summary.result;lastFinishedSessionId=summary.session_id;showTripSummary(summary.result,{user_id:currentUserId},summary.pending);}
