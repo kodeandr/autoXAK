@@ -76,13 +76,17 @@ async def initialize_schema():
                 column = Base.metadata.tables[table_name].c[name]
                 ddl = str(CreateColumn(column).compile(dialect=connection.dialect))
                 await connection.execute(text(f'ALTER TABLE {table_name} ADD COLUMN {ddl}'))
-        index = next((index for index in Base.metadata.tables["trips"].indexes if index.name == "ix_trips_user_client_session"), None)
-        if index:
-            await connection.run_sync(lambda sync: index.create(sync, checkfirst=True))
+        trips_table = Base.metadata.tables.get("trips")
+        if trips_table is not None:
+            index = next((index for index in trips_table.indexes if index.name == "ix_trips_user_client_session"), None)
+            if index:
+                await connection.run_sync(lambda sync: index.create(sync, checkfirst=True))
 
-        user_index = next((index for index in Base.metadata.tables["users"].indexes if index.name == "ix_users_login"), None)
-        if user_index:
-            await connection.run_sync(lambda sync: user_index.create(sync, checkfirst=True))
+        users_table = Base.metadata.tables.get("users")
+        if users_table is not None:
+            user_index = next((index for index in users_table.indexes if index.name == "ix_users_login"), None)
+            if user_index:
+                await connection.run_sync(lambda sync: user_index.create(sync, checkfirst=True))
         # Preserve the three pre-existing backend rates with explicit provenance.
         # Do not infer consumption for other modifications from mass/body/engine size.
         from app.models.vehicle_profiles import VEHICLE_REGISTRY
