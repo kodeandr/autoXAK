@@ -740,10 +740,13 @@ def _calculate_session_values_sync(
     # 1. Вычисление реального шага времени dt по меткам времени (защита от плавающей частоты браузера)
     times -= times[0]
     raw_diffs = np.diff(times)
-    clipped_diffs = np.clip(raw_diffs, 0.001, 1.0)
-    dt = float(np.median(clipped_diffs)) if len(clipped_diffs) > 0 else 0.02
+    dt = float(np.mean(raw_diffs))
     if not math.isfinite(dt) or dt < 0.001:
-        dt = 0.02
+        raise HTTPException(
+            422, "Telemetry sampling period must be at least one millisecond"
+        )
+    if np.max(raw_diffs) > max_gap_seconds:
+        raise HTTPException(422, "Telemetry contains gaps longer than two seconds")
 
     span_sec = float(times[-1] - times[0]) if times[-1] > times[0] else 0.0
     duration_sec = span_sec
@@ -810,70 +813,49 @@ def _calculate_session_values_sync(
     wear = WearEngine(profile=profile).evaluate_trip_wear(
         times_s=times, speed_mps=speeds, ax_mps2=clean_signed_ax
     )
-    savings = TwinEngine(profile=profile).evaluate_financial_delta()
+    if payload.raw_recording is not None:
+        distance_km = measured_distance(payload.raw_recording)
+    aligned_for_style = bool(aligned[3].get("is_aligned") or np.max(np.hypot(filt_x, aligned[1])) < 1.8)
+    from app.services.twin_engine import calculate_trip_smoothness_score
+    smooth_score = calculate_trip_smoothness_score(acceleration=clean_signed_ax) if aligned_for_style else None
+    savings = TwinEngine(profile=profile, fuel_price_rub=getattr(user, "fuel_price_rub", None) or 72.40).evaluate_financial_delta(
+        distance_km=distance_km, user_ax=clean_signed_ax)
+
     if distance_km == 0:
         harsh_accel_count = harsh_brake_count = detected_bumps = 0
-
-    fuel_price = float(getattr(user, "fuel_price_rub", 72.40) or 72.40)
-    service_cost = float(getattr(user, "service_cost_rub", 9500.0) or 9500.0)
-    base_fuel_rate = float(getattr(profile, "base_city_fuel_rate_l100km", 8.5) or 8.5)
-
-    h_acc = int(harsh_accel_count or 0)
-    h_brk = int(harsh_brake_count or 0)
-    harsh_total = h_acc + h_brk
-    smooth_score = max(40, min(100, int(round(100 - harsh_total * 4 - int(detected_bumps) * 1))))
-
-    equiv_hours = round((duration_sec / 3600.0) * (1.0 + 0.25 * idle_ratio + 0.04 * harsh_total), 5)
-    oil_wear_pct = round((equiv_hours / 250.0) * 100.0, 5)
-
-    if distance_km >= 0.01:
-        base_liters = distance_km * 0.018 * (0.65 + 0.35 * (smooth_score / 100.0))
-        base_potential_rub = round(base_liters * fuel_price, 2)
-        rush_cost_rub = round(harsh_total * 1.85, 2)
-        fuel_saved_rub = round(max(0.15 * distance_km * fuel_price * 0.018, base_potential_rub - rush_cost_rub), 2)
-        fuel_saved_liters = round(fuel_saved_rub / fuel_price, 4)
-        range_bonus_km = round((fuel_saved_liters / base_fuel_rate) * 100.0, 2)
-        oil_saved_rub = round((oil_wear_pct * 0.30 / 100.0) * service_cost, 2)
-        total_savings_rub = round(fuel_saved_rub + oil_saved_rub, 2)
-        autonomy_days = round(fuel_saved_liters / 4.2, 2)
-    else:
-        base_potential_rub = rush_cost_rub = fuel_saved_rub = 0.0
-        fuel_saved_liters = range_bonus_km = oil_saved_rub = total_savings_rub = autonomy_days = 0.0
-
-    hunting_detected = bool(harsh_total >= 4)
-
     math_status = {
         "version": MATH_VERSION,
         "kinematics": kinematics,
         "imu_alignment": aligned[3],
         "low_speed_time_is_not_engine_runtime": True,
         "dsp_interpolation": "linear_regular_grid_for_filtering_only",
-        "fuel_savings": {"status": "evaluated", "reason": "twin_delta_active"},
-        "oil_wear": {"status": "evaluated", "reason": "equivalent_hours_active"},
-        "monetary_credit_status": "verified",
-        "style_score_status": "active",
-        "counterfactual_status": "active_twin_baseline",
+        "fuel_savings": savings,
+        "oil_wear": {"status": wear["status"], "reason": wear["reason"]},
+        "monetary_credit_status": "model_estimate" if savings["status"] == "model_estimate" else "not_verified",
+        "style_score_status": "descriptive_sample_fraction" if smooth_score is not None else "alignment_required",
+        "style_score_policy": "smooth-sample-fraction-1",
+        "counterfactual_status": "declared_product_multiplier_policy",
     }
     return {
         "duration_sec": duration_sec,
         "distance_km": distance_km,
         "idle_ratio": idle_ratio,
         "resolved_car_id": payload.car_id,
-        "equiv_hours": equiv_hours,
-        "oil_wear_pct": oil_wear_pct,
-        "total_savings_rub": total_savings_rub,
-        "fuel_saved_liters": fuel_saved_liters,
-        "range_bonus_km": range_bonus_km,
-        "oil_saved_rub": oil_saved_rub,
-        "fuel_saved_rub": fuel_saved_rub,
-        "autonomy_days": autonomy_days,
-        "harsh_accel_count": h_acc,
-        "harsh_brake_count": h_brk,
-        "rush_cost_rub": rush_cost_rub,
-        "base_potential_rub": base_potential_rub,
+        "equiv_hours": None,
+        "oil_wear_pct": None,
+        "total_savings_rub": savings["total_savings_rub"],
+        "fuel_saved_liters": savings["fuel_saved_liters"],
+        "range_bonus_km": None,
+        "oil_saved_rub": None,
+        "fuel_saved_rub": savings["fuel_saved_rub"],
+        "autonomy_days": None,
+        "harsh_accel_count": harsh_accel_count,
+        "harsh_brake_count": harsh_brake_count,
+        "rush_cost_rub": None,
+        "base_potential_rub": None,
         "smooth_score": smooth_score,
         "road_anomalies": int(detected_bumps),
-        "hunting_detected": hunting_detected,
+        "hunting_detected": None,
         "traffic_jam_seconds": traffic_jam_seconds,
         "math_status": math_status,
     }
@@ -950,7 +932,7 @@ async def process_telemetry_session(
             recording=await store_raw_capture(db, payload, parsed_uuid, digest, vehicle, quality)
             if reference_evaluation is not None:
                 recording.fuel_estimate={**recording.fuel_estimate,'reference_evaluation':reference_evaluation}
-            if quality["analysis_status"] != "available" and points_count < 50:
+            if quality["analysis_status"] != "available":
                 trip, result = unscored_trip(payload, parsed_uuid, digest, user, quality)
                 if reference_evaluation is not None:
                     result['metrics']['math_status']['reference_evaluation']=reference_evaluation
@@ -993,12 +975,8 @@ async def process_telemetry_session(
 
         # The user row stays locked until the trip, telemetry and balances commit.
         # A replay returns the stored receipt above and never reaches these credits.
-        user.total_distance_km = round(float(user.total_distance_km) + distance_km, 3)
+        user.total_distance_km = float(user.total_distance_km) + distance_km
         user.total_trips += 1
-        user.total_savings_rub = round(float(user.total_savings_rub) + float(total_savings_rub or 0.0), 2)
-        user.total_fuel_saved_liters = round(float(user.total_fuel_saved_liters) + float(fuel_saved_liters or 0.0), 3)
-        user.range_bank_km = round(float(user.range_bank_km) + float(range_bonus_km or 0.0), 2)
-        user.current_oil_wear_percent = min(100.0, round(float(user.current_oil_wear_percent) + float(oil_wear_pct or 0.0), 4))
         user.total_savings_rub = round(user.total_savings_rub + (total_savings_rub or 0.0), 2)
         user.total_fuel_saved_liters += fuel_saved_liters or 0.0
 
@@ -1156,7 +1134,7 @@ async def get_user_dashboard(user_id: str, db: AsyncSession = Depends(get_db),
     saved_liters = float(getattr(user, "total_fuel_saved_liters", 0.0) or 0.0)
     saved_range_km = float(getattr(user, "range_bank_km", 0.0) or 0.0)
 
-    est_autonomy_days = round(saved_liters / 4.2, 1)
+    est_autonomy_days = None
 
     month_start = datetime.now(timezone.utc).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     month_savings = await db.scalar(select(func.coalesce(func.sum(Trip.total_savings_rub), 0.0)).where(Trip.user_id == user_id, Trip.created_at >= month_start))

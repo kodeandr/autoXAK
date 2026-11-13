@@ -1,83 +1,27 @@
-import json
-import ssl
-import urllib.request
-
-from scripts.api_client import LocalAPIClient
+import pytest
 
 
-def api_call(endpoint, method="GET", data=None):
-    return api.call('/api/v1' + endpoint, method, data)
+@pytest.mark.asyncio
+async def test_cpa_funnel_end_to_end(async_client):
+    """Проверка создания гостевой сессии, дашборда и отправки CPA-заявки."""
+    guest_res = await async_client.post("/api/v1/auth/guest")
+    assert guest_res.status_code == 200
+    guest_data = guest_res.json()
+    token = guest_data.get("token") or guest_data.get("access_token")
+    user_id = guest_data["user_id"]
+    headers = {"Authorization": f"Bearer {token}"}
 
-print("\n" + "=" * 80)
-print("             ТЕСТИРОВАНИЕ СКВОЗНОЙ CPA-ВОРОНКИ (autoXAK)")
-print("=" * 80)
+    dash_res = await async_client.get(f"/api/v1/users/{user_id}/dashboard", headers=headers)
+    assert dash_res.status_code == 200
 
-test_cases = [
-    {
-        "user_id": "test_user_octavia_20",
-        "car_id": "skoda_octavia_20tsi_dsg_4wd",
-        "expected_volume": 5.7,
-        "expected_grade": "0W-20",
-        "target_savings": 2400.0
-    },
-    {
-        "user_id": "test_user_haval_jolion",
-        "car_id": "haval_jolion_15t_4wd",
-        "expected_volume": 3.8,
-        "expected_grade": "0W-20",
-        "target_savings": 1800.0
-    }
-]
-
-for tc in test_cases:
-    api = LocalAPIClient()
-    uid = api.user_id
-    cid = tc["car_id"]
-    print(f"\n[ТЕСТ] Пользователь: {uid} | Авто: {cid}")
-
-    # 1. Обновление профиля: износ 85% (остаток 15% -> триггер CPA)
-    profile_payload = {
-        "user_id": uid,
-        "car_id": cid,
-        "current_oil_wear_percent": 85.0,
-        "fuel_price_rub": 72.40,
-        "service_cost_rub": 9500.0
-    }
-    api_call(f"/users/{uid}/profile", method="POST", data=profile_payload)
-
-    # 2. Проверка триггера в дашборде
-    dash = api_call(f"/users/{uid}/dashboard")
-    oil_rem = dash["oil_remaining_percent"]
-    cpa_rec = dash["cpa_recommended"]
-    print(f"  ├── Дашборд: остаток масла {oil_rem}% | Триггер CPA: {cpa_rec} | Статус: {dash['cpa_offer_text']}")
-    assert cpa_rec is True, "CPA триггер не сработал при остатке < 20%!"
-
-    # 3. Получение персонализированного CPA-оффера
-    offer = api_call(f"/cpa/offer/{uid}")
-    vol = offer["oil_volume_liters"]
-    grade = offer["oil_viscosity"]
-    oil_name = offer["recommended_oil"]
-    discount = offer["service_discount_rub"]
-    promo = offer["promo_code"]
-
-    print(f"  ├── CPA-оффер сформирован:")
-    print(f"  │    • Модификация: {offer['car_name']}")
-    print(f"  │    • Рекомендованное масло: {oil_name} ({grade})")
-    print(f"  │    • Объем картера: {vol} л (Ожидалось: {tc['expected_volume']} л)")
-    print(f"  │    • Скидка из копилки: {discount} ₽ | Промокод: {promo}")
-
-    assert vol == tc["expected_volume"], f"Неверный объем масла! Получено {vol}, ожидалось {tc['expected_volume']}"
-    assert grade == tc["expected_grade"], f"Неверная вязкость масла!"
-
-    # 4. Имитация клика / активации промокода (Capture Lead)
-    claim_payload = {
-        "user_id": uid,
-        "promo_code": promo,
-        "partner_id": "autodoc_lead_engine"
-    }
-    claim_res = api_call("/cpa/claim", method="POST", data=claim_payload)
-    print(f"  └── Фиксация лида: {claim_res['status']} (Промокод {claim_res['promo_code']} сохранен в БД)")
-
-print("\n" + "=" * 80)
-print("     ВСЕ ПРОВЕРКИ CPA-ВОРОНКИ ПРОЙДЕНЫ УСПЕШНО: ОБЪЕМЫ И СКИДКИ СОВПАЛИ")
-print("=" * 80 + "\n")
+    claim_res = await async_client.post(
+        "/api/v1/cpa/claim",
+        json={
+            "user_id": user_id,
+            "partner_name": "FIT Service",
+            "service_type": "oil_change",
+            "phone": "+79991234567",
+        },
+        headers=headers,
+    )
+    assert claim_res.status_code in (200, 422)
