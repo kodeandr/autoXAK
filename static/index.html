@@ -1896,6 +1896,94 @@
         } catch(error) {console.warn('Session initialization:',error.message);}
     });
 
+    
+        // === AUTOXAK CALL RESILIENCE & RECOVERY ===
+        (function() {
+            const ACTIVE_TRIP_KEY = 'autoxak_active_trip_checkpoint_v1';
+            let _hiddenAtMs = 0;
+
+            function saveActiveCheckpoint() {
+                try {
+                    if (typeof isRecording === 'undefined' || !isRecording) return;
+                    const snap = {
+                        ts: Date.now(),
+                        sessionId: typeof currentSessionId !== 'undefined' ? currentSessionId : null,
+                        tripStartTime: typeof tripStartTime !== 'undefined' ? tripStartTime : Date.now(),
+                        liveDistanceKm: typeof liveDistanceKm !== 'undefined' ? liveDistanceKm : 0,
+                        liveSavingsRub: typeof liveSavingsRub !== 'undefined' ? liveSavingsRub : 0,
+                        liveSavedLiters: typeof liveSavedLiters !== 'undefined' ? liveSavedLiters : 0,
+                        liveBumpsCount: typeof liveBumpsCount !== 'undefined' ? liveBumpsCount : 0,
+                        harshEventsCount: typeof harshEventsCount !== 'undefined' ? harshEventsCount : 0,
+                        bufferTail: (typeof telemetryBuffer !== 'undefined' && Array.isArray(telemetryBuffer))
+                            ? telemetryBuffer.slice(-600) : []
+                    };
+                    localStorage.setItem(ACTIVE_TRIP_KEY, JSON.stringify(snap));
+                } catch (e) {}
+            }
+
+            // Сохраняем чекпоинт каждые 2 секунды и мгновенно при входящем звонке / уходе в фон
+            setInterval(saveActiveCheckpoint, 2000);
+
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    _hiddenAtMs = Date.now();
+                    saveActiveCheckpoint();
+                } else if (_hiddenAtMs > 0) {
+                    const pauseMs = Date.now() - _hiddenAtMs;
+                    _hiddenAtMs = 0;
+                    // Сдвигаем стартовое время на длительность звонка, чтобы не было разрыва > 2с
+                    if (typeof isRecording !== 'undefined' && isRecording && typeof tripStartTime !== 'undefined' && pauseMs > 1500) {
+                        tripStartTime += pauseMs;
+                    }
+                    if (typeof requestWakeLock === 'function' && typeof isRecording !== 'undefined' && isRecording) {
+                        requestWakeLock();
+                    }
+                }
+            });
+
+            window.addEventListener('pagehide', saveActiveCheckpoint);
+
+            // Автовосстановление экрана поездки, если браузер выгрузил вкладку во время звонка
+            window.addEventListener('DOMContentLoaded', function() {
+                try {
+                    const raw = localStorage.getItem(ACTIVE_TRIP_KEY);
+                    if (!raw) return;
+                    const snap = JSON.parse(raw);
+                    if (!snap || (Date.now() - snap.ts) > 2 * 3600 * 1000) {
+                        localStorage.removeItem(ACTIVE_TRIP_KEY);
+                        return;
+                    }
+                    setTimeout(function() {
+                        if (typeof isRecording !== 'undefined' && !isRecording && typeof startTrip === 'function') {
+                            startTrip();
+                            if (typeof currentSessionId !== 'undefined' && snap.sessionId) currentSessionId = snap.sessionId;
+                            if (typeof liveDistanceKm !== 'undefined') liveDistanceKm = Number(snap.liveDistanceKm) || 0;
+                            if (typeof liveSavingsRub !== 'undefined') liveSavingsRub = Number(snap.liveSavingsRub) || 0;
+                            if (typeof liveSavedLiters !== 'undefined') liveSavedLiters = Number(snap.liveSavedLiters) || 0;
+                            if (typeof liveBumpsCount !== 'undefined') liveBumpsCount = Number(snap.liveBumpsCount) || 0;
+                            if (typeof harshEventsCount !== 'undefined') harshEventsCount = Number(snap.harshEventsCount) || 0;
+                            if (typeof telemetryBuffer !== 'undefined' && Array.isArray(snap.bufferTail) && snap.bufferTail.length) {
+                                telemetryBuffer = snap.bufferTail;
+                            }
+                        }
+                    }, 600);
+                } catch (e) {}
+            });
+
+            // Очищаем чекпоинт при штатном завершении поездки
+            const _origFetch = window.fetch;
+            window.fetch = async function(...args) {
+                const res = await _origFetch.apply(this, args);
+                try {
+                    const url = String(args[0] || '');
+                    if (url.includes('/api/v1/telemetry/session') && res.ok) {
+                        localStorage.removeItem(ACTIVE_TRIP_KEY);
+                    }
+                } catch (_) {}
+                return res;
+            };
+        })();
+
     </script>
 </body>
 </html>
